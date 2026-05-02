@@ -1,0 +1,34 @@
+Antes de cantar victoria, valida que producción está sana. Abre la URL de Replit Deployment y corre este checklist:
+Landing carga sin errores en consola, hero/beneficios/FAQ se ven OK
+Signup nuevo con un email de prueba → confirma que se crea la fila en users (esto verifica que el webhook de Clerk apunta al dominio nuevo)
+Tu cuenta admin (mayckolco@gmail.com) sigue con rol administrator después del deploy
+Crear evento como admin → RSVP como otro user → notificación llega en tiempo real (SSE conecta)
+Self-protection funciona: intenta cambiarte el rol en /admin/usuarios → debe estar disabled, y un curl directo al endpoint debe dar 403
+Object Storage funciona: sube un avatar y publica un recurso con archivo
+Foro / Marketplace / Recursos abren sus listados sin error
+Si algo falla, los sospechosos comunes son:
+Síntoma
+Causa probable
+Fix
+Signup OK pero no hay fila en users
+Clerk webhook apunta al dev domain
+En Clerk Dashboard → Webhooks → cambia URL a https://<tu-app>.replit.app/api/webhooks/clerk
+CORS error en consola
+allowedOrigins no incluye el dominio prod
+Añadir el dominio en el config del API y redeploy
+Database connection failed
+Env vars no copiadas a Deployment
+Settings → Secrets del Deployment, verificar DATABASE_URL, CLERK_SECRET_KEY, CLERK_WEBHOOK_SECRET, VITE_CLERK_PUBLISHABLE_KEY
+SSE no conecta
+Autoscale matando conexiones largas
+Normal en cold start; si persiste, revisar keepalive interval
+(El checklist completo también quedó guardado en las Notas del row #18 del tracker, por si lo necesitas después.)
+Después del smoke test, dos caminos
+Camino A — Pulir antes de compartir (1–2 sesiones con Agent 4)
+Skeletons + empty states + error boundaries, accesibilidad (focus rings, aria-labels, keyboard nav), responsive mobile, meta tags + OG image + sitemap.xml + robots.txt, code splitting con React.lazy. Esto es lo que más mueve la aguja en un lanzamiento público.
+Camino B — Empezar Fase 5 ya (integraciones)
+Si quieres invitar a unos primeros 5–10 usuarios beta antes del pulido grande, puedes saltar directo a Resend (emails transaccionales y digest) o Sentry (error tracking en prod) que dan mucho valor con poco esfuerzo.
+Mi recomendación
+Haz el smoke test ahora mismo (15 min). Cuando termines, dime cómo fue:
+Si todo pasó verde → te armo el prompt de pulido + a11y + SEO para Agent 4 y vamos por el lanzamiento.
+Si algo falló → debugueamos juntos antes de seguir.
