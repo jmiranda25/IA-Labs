@@ -257,16 +257,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0">
-              <div className="flex h-14 items-center gap-2 px-4 border-b border-border">
+            <SheetContent side="left" className="w-64 p-0 flex flex-col">
+              <div className="flex h-14 items-center gap-2 px-4 border-b border-border shrink-0">
                 <Zap className="h-5 w-5 text-primary" aria-hidden="true" />
                 <span className="font-bold tracking-tight">AI Community</span>
                 <button className="ml-auto" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú" data-testid="button-close-menu">
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="p-3">
+              <div className="flex-1 overflow-y-auto p-3">
                 <NavLinks onClick={() => setMobileOpen(false)} />
+              </div>
+              <div className="border-t border-border p-3 space-y-1 shrink-0">
+                <Link href="/perfil" onClick={() => setMobileOpen(false)}>
+                  <span className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors cursor-pointer ${location === "/perfil" ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                    <User className="h-4 w-4" aria-hidden="true" />
+                    Mi perfil
+                  </span>
+                </Link>
+                <Link href="/settings" onClick={() => setMobileOpen(false)}>
+                  <span className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors cursor-pointer ${location === "/settings" ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                    <Settings className="h-4 w-4" aria-hidden="true" />
+                    Configuración
+                  </span>
+                </Link>
               </div>
             </SheetContent>
           </Sheet>

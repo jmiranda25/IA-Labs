@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /perfil
+Disallow: /mensajes
+Disallow: /settings
+Disallow: /api/
+
+Sitemap: https://aicommunity.app/api/sitemap.xml

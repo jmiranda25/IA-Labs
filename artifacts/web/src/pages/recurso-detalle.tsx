@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout";
 import { useGetResource } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -80,6 +81,13 @@ export default function RecursoDetallePage({ slug }: { slug: string }) {
 
   return (
     <Layout>
+      <Helmet>
+        <title>{r.title} — Recursos · AI Community</title>
+        <meta name="description" content={r.description?.slice(0, 155) ?? `Recurso de IA: ${r.title}`} />
+        <meta property="og:title" content={r.title} />
+        <meta property="og:description" content={r.description?.slice(0, 155) ?? ""} />
+        {r.coverUrl && <meta property="og:image" content={r.coverUrl} />}
+      </Helmet>
       <div className="max-w-3xl mx-auto p-6">
         {/* Back */}
         <Link href="/recursos">
@@ -96,6 +104,7 @@ export default function RecursoDetallePage({ slug }: { slug: string }) {
               src={r.coverUrl}
               alt={r.title}
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
         )}

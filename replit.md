@@ -100,6 +100,25 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **Admin tab** (`/admin` → "Marketplace" tab): pending queue with thumbnail, approve/reject buttons, side-by-side preview pane; reject dialog requires reason
 - Nav updated: `/messages` → `/mensajes`, `/marketplace/mis-anuncios` linked from marketplace header
 
+### Pre-launch Polish (SEO, A11y, Mobile, Performance)
+- **react-helmet-async**: `HelmetProvider` in `App.tsx`; per-route `<Helmet>` on all public pages (landing, eventos, recursos, marketplace, miembros, foro, foro-hilo, evento-detalle, recurso-detalle, marketplace-listing)
+- **JSON-LD**: Event schema on `/eventos/:slug`
+- **Sitemap**: Dynamic `/api/sitemap.xml` route in `artifacts/api-server/src/routes/seo.ts` — queries events, forum categories/threads, resources, marketplace listings
+- **robots.txt**: Static file at `artifacts/web/public/robots.txt` — disallows /admin /perfil /mensajes /settings /api/
+- **React.lazy**: All 20+ page components are lazy-loaded in `App.tsx` with `Suspense` + `ErrorBoundary`
+- **ErrorBoundary**: `artifacts/web/src/components/error-boundary.tsx` — catches render errors, shows Spanish fallback UI
+- **Focus rings**: Global `@layer base { :focus-visible { outline: 2px solid hsl(var(--ring)) } }` in `index.css`
+- **Lazy images**: `loading="lazy"` on cover images in eventos/recursos/marketplace pages
+- **Dialog mobile**: `max-h-[90dvh] overflow-y-auto` added to `DialogContent` component
+- **Mobile nav**: Layout Sheet now includes Mi perfil + Configuración links at the bottom (previously desktop-sidebar-only)
+- **Body overflow**: `body { overflow-x: hidden }` in `index.css`
+- **Admin table**: `overflow-x-auto` + `min-w-[480px]` on the user management table for mobile scroll
+- **Forum Layout fix**: `foro-categoria.tsx` and `foro-hilo.tsx` were missing `<Layout>` wrappers — fixed
+- **Foro Layout fix**: `foro.tsx` was missing `<Layout>` wrapper — fixed (prior session)
+- **not-found.tsx**: Rewritten in Spanish with back-link
+- **forbidden.tsx**: New page for 403/access-denied state
+- **aria-labels**: Added to all icon-only buttons (navigation back-arrows, dropdown triggers, send button, admin edit/delete)
+
 ### Schema Migration Notes
 - **Never run `pnpm --filter @workspace/db run push`** — it hangs; always use `psql "$DATABASE_URL"` directly
 - Forum schema renamed: `forum_posts` → `forum_threads` (threads), new `forum_posts` (replies), new `forum_reactions`

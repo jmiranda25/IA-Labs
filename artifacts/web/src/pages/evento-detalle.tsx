@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout";
 import {
   useGetEvent,
@@ -138,6 +139,31 @@ export default function EventoDetalle({ slug }: EventoDetalleProps) {
 
   return (
     <Layout>
+      <Helmet>
+        <title>{event.title} — AI Community</title>
+        <meta name="description" content={event.description?.slice(0, 155) ?? `Evento de la comunidad hispanohablante de IA: ${event.title}`} />
+        <meta property="og:title" content={event.title} />
+        <meta property="og:description" content={event.description?.slice(0, 155) ?? ""} />
+        {event.coverUrl && <meta property="og:image" content={event.coverUrl} />}
+        <meta property="og:type" content="event" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Event",
+          name: event.title,
+          startDate: event.startsAt,
+          endDate: event.endsAt,
+          description: event.description ?? undefined,
+          image: event.coverUrl ?? undefined,
+          eventStatus: "https://schema.org/EventScheduled",
+          eventAttendanceMode: event.isOnline
+            ? "https://schema.org/OnlineEventAttendanceMode"
+            : "https://schema.org/OfflineEventAttendanceMode",
+          location: event.isOnline
+            ? { "@type": "VirtualLocation", url: event.meetingUrl ?? undefined }
+            : { "@type": "Place", name: event.location ?? undefined },
+          organizer: { "@type": "Organization", name: "AI Community", url: "https://aicommunity.app" },
+        })}</script>
+      </Helmet>
       <div className="max-w-3xl mx-auto p-6 space-y-6">
         {/* Back link */}
         <Link
@@ -155,6 +181,7 @@ export default function EventoDetalle({ slug }: EventoDetalleProps) {
               src={event.coverUrl}
               alt={event.title}
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
         ) : (

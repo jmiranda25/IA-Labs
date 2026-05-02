@@ -1,5 +1,7 @@
 import { Link } from "wouter";
+import { Helmet } from "react-helmet-async";
 import { useListForumCategories } from "@workspace/api-client-react";
+import { Layout } from "@/components/layout";
 import { MessageSquare, Hash, FileText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -21,6 +23,13 @@ export default function ForoPage() {
   const { data: categories, isLoading, isError } = useListForumCategories();
 
   return (
+    <Layout>
+      <Helmet>
+        <title>Foro — AI Community</title>
+        <meta name="description" content="Discusiones, preguntas y debate sobre inteligencia artificial en español. Únete a la comunidad hispanohablante de IA." />
+        <meta property="og:title" content="Foro — AI Community" />
+        <meta property="og:description" content="Discusiones y debate sobre IA en español." />
+      </Helmet>
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -99,5 +108,6 @@ export default function ForoPage() {
         </div>
       )}
     </div>
+    </Layout>
   );
 }

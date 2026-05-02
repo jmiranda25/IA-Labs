@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout";
 import {
   useGetMarketplaceListing,
@@ -119,6 +120,14 @@ export default function MarketplaceListingPage({ slug }: { slug: string }) {
 
   return (
     <Layout>
+      <Helmet>
+        <title>{l.title} — Marketplace · AI Community</title>
+        <meta name="description" content={l.description?.slice(0, 155) ?? `${l.title} — disponible en el marketplace de AI Community`} />
+        <meta property="og:title" content={l.title} />
+        <meta property="og:description" content={l.description?.slice(0, 155) ?? ""} />
+        {l.images?.[0]?.url && <meta property="og:image" content={l.images[0].url} />}
+        <meta property="og:type" content="product" />
+      </Helmet>
       <div className="max-w-3xl mx-auto p-6 space-y-6">
         <Link href="/marketplace">
           <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2">
@@ -134,7 +143,7 @@ export default function MarketplaceListingPage({ slug }: { slug: string }) {
                 {images.map((img: any) => (
                   <CarouselItem key={img.id}>
                     <div className="h-72 w-full overflow-hidden">
-                      <img src={img.url} alt={l.title} className="w-full h-full object-cover" />
+                      <img src={img.url} alt={l.title} className="w-full h-full object-cover" loading="lazy" />
                     </div>
                   </CarouselItem>
                 ))}

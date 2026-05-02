@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { Layout } from "@/components/layout";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listForumThreads,
@@ -88,12 +89,13 @@ export default function ForoCategoriaPage({ slug }: Props) {
   }
 
   return (
+    <Layout>
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link href="/foro">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Volver al foro">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
@@ -243,5 +245,6 @@ export default function ForoCategoriaPage({ slug }: Props) {
         </DialogContent>
       </Dialog>
     </div>
+    </Layout>
   );
 }

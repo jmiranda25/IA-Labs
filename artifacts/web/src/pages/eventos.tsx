@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { listEvents, getListEventsQueryKey } from "@workspace/api-client-react";
@@ -41,6 +42,7 @@ function EventCard({ event }: { event: EventDetail }) {
               src={event.coverUrl}
               alt={event.title}
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
         )}
@@ -159,6 +161,12 @@ export default function EventosPage() {
 
   return (
     <Layout>
+      <Helmet>
+        <title>Eventos y workshops — AI Community</title>
+        <meta name="description" content="Meetups, talleres y conferencias de la comunidad hispanohablante de IA. Regístrate y asiste." />
+        <meta property="og:title" content="Eventos y workshops — AI Community" />
+        <meta property="og:description" content="Meetups, talleres y conferencias de la comunidad hispanohablante de IA." />
+      </Helmet>
       <div className="max-w-6xl mx-auto p-6 space-y-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">

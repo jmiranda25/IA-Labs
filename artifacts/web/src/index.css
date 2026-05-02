@@ -339,3 +339,26 @@
     inset: -1px;
   }
 }
+
+/* ── Base mobile resets ── */
+@layer base {
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* ── Accessibility: consistent focus rings for keyboard navigation ── */
+@layer base {
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* Ensure minimum 44×44px tap targets on mobile for key interactive elements */
+  @media (max-width: 640px) {
+    button:not([class*="h-"]),
+    a:not([class*="h-"]) {
+      min-height: 44px;
+    }
+  }
+}

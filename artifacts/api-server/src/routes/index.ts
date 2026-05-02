@@ -12,9 +12,11 @@ import communityRouter from "./community";
 import landingRouter from "./landing";
 import storageRouter from "./storage";
 import webhooksRouter from "./webhooks";
+import seoRouter from "./seo";
 
 const router: IRouter = Router();
 
+router.use(seoRouter);
 router.use(healthRouter);
 router.use(communityRouter);
 router.use(webhooksRouter);

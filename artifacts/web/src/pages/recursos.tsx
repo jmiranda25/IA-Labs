@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { useLocation, Link } from "wouter";
 import { Layout } from "@/components/layout";
 import { listResources } from "@workspace/api-client-react";
@@ -199,6 +200,12 @@ export default function RecursosPage() {
 
   return (
     <Layout>
+      <Helmet>
+        <title>Recursos de IA — AI Community</title>
+        <meta name="description" content="Tutoriales, herramientas y cursos de inteligencia artificial compartidos por la comunidad hispanohablante." />
+        <meta property="og:title" content="Recursos de IA — AI Community" />
+        <meta property="og:description" content="Tutoriales, herramientas y cursos de IA compartidos por la comunidad." />
+      </Helmet>
       <div className="max-w-6xl mx-auto p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

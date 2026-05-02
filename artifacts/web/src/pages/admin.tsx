@@ -334,8 +334,8 @@ function UserManagement() {
       {isLoading ? (
         <Skeleton className="h-48 rounded-xl" />
       ) : (
-        <div className="rounded-lg border border-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-lg border border-border overflow-hidden overflow-x-auto">
+          <table className="w-full min-w-[480px] text-sm">
             <thead className="bg-muted/40 border-b border-border">
               {table.getHeaderGroups().map((hg) => (
                 <tr key={hg.id}>
@@ -791,8 +791,8 @@ function EventosAdmin() {
                   <Button size="icon" variant="ghost" className="h-7 w-7 pointer-events-none" tabIndex={-1} asChild><span><Upload className="h-3.5 w-3.5" /></span></Button>
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCover(ev.slug, f); e.target.value = ""; }} />
                 </label>
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(ev)} data-testid={`btn-edit-event-${ev.slug}`}><Edit3 className="h-3.5 w-3.5" /></Button>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(ev.slug)} data-testid={`btn-delete-event-${ev.slug}`}><Trash2 className="h-3.5 w-3.5" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(ev)} data-testid={`btn-edit-event-${ev.slug}`} aria-label="Editar evento"><Edit3 className="h-3.5 w-3.5" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(ev.slug)} data-testid={`btn-delete-event-${ev.slug}`} aria-label="Eliminar evento"><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
             </CardContent>
           </Card>

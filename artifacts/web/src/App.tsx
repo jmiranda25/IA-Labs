@@ -1,46 +1,50 @@
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { esES } from "@clerk/localizations";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthLayout } from "@/components/auth-layout";
 import { ProtectedRoute, RequireAdmin } from "@/components/protected-route";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { queryClient } from "@/lib/queryClient";
+
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
-import DashboardPage from "@/pages/dashboard";
-import MembersPage from "@/pages/members";
-import MemberProfilePage from "@/pages/member-profile";
-import MiembrosPage from "@/pages/miembros";
-import MiembroPerfilPage from "@/pages/miembro-perfil";
-import EventsPage from "@/pages/events";
-import EventDetailPage from "@/pages/event-detail";
-import EventosPage from "@/pages/eventos";
-import EventoDetallePage from "@/pages/evento-detalle";
-import ForumPage from "@/pages/forum";
-import ForumPostPage from "@/pages/forum-post";
-import ForoPage from "@/pages/foro";
-import ForoCategoriaPage from "@/pages/foro-categoria";
-import ForoHiloPage from "@/pages/foro-hilo";
-import ResourcesPage from "@/pages/resources";
-import RecursosPage from "@/pages/recursos";
-import RecursoDetallePage from "@/pages/recurso-detalle";
-import RecursoNuevoPage from "@/pages/recurso-nuevo";
-import MarketplacePage from "@/pages/marketplace";
-import MarketplaceListingPage from "@/pages/marketplace-listing";
-import MisAnunciosPage from "@/pages/marketplace-mis-listings";
-import MessagesPage from "@/pages/messages";
-import MensajesThreadPage from "@/pages/mensajes-thread";
-import SettingsPage from "@/pages/settings";
-import PerfilPage from "@/pages/perfil";
-import AdminPage from "@/pages/admin";
-import NotificacionesPage from "@/pages/notificaciones";
-import PreferenciasNotificacionesPage from "@/pages/preferencias-notificaciones";
+
+const DashboardPage = lazy(() => import("@/pages/dashboard"));
+const MembersPage = lazy(() => import("@/pages/members"));
+const MemberProfilePage = lazy(() => import("@/pages/member-profile"));
+const MiembrosPage = lazy(() => import("@/pages/miembros"));
+const MiembroPerfilPage = lazy(() => import("@/pages/miembro-perfil"));
+const EventsPage = lazy(() => import("@/pages/events"));
+const EventosPage = lazy(() => import("@/pages/eventos"));
+const EventoDetallePage = lazy(() => import("@/pages/evento-detalle"));
+const ForumPage = lazy(() => import("@/pages/forum"));
+const ForumPostPage = lazy(() => import("@/pages/forum-post"));
+const ForoPage = lazy(() => import("@/pages/foro"));
+const ForoCategoriaPage = lazy(() => import("@/pages/foro-categoria"));
+const ForoHiloPage = lazy(() => import("@/pages/foro-hilo"));
+const ResourcesPage = lazy(() => import("@/pages/resources"));
+const RecursosPage = lazy(() => import("@/pages/recursos"));
+const RecursoDetallePage = lazy(() => import("@/pages/recurso-detalle"));
+const RecursoNuevoPage = lazy(() => import("@/pages/recurso-nuevo"));
+const MarketplacePage = lazy(() => import("@/pages/marketplace"));
+const MarketplaceListingPage = lazy(() => import("@/pages/marketplace-listing"));
+const MisAnunciosPage = lazy(() => import("@/pages/marketplace-mis-listings"));
+const MessagesPage = lazy(() => import("@/pages/messages"));
+const MensajesThreadPage = lazy(() => import("@/pages/mensajes-thread"));
+const SettingsPage = lazy(() => import("@/pages/settings"));
+const PerfilPage = lazy(() => import("@/pages/perfil"));
+const AdminPage = lazy(() => import("@/pages/admin"));
+const NotificacionesPage = lazy(() => import("@/pages/notificaciones"));
+const PreferenciasNotificacionesPage = lazy(() => import("@/pages/preferencias-notificaciones"));
+const ForbiddenPage = lazy(() => import("@/pages/forbidden"));
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -108,6 +112,18 @@ const clerkAppearance = {
   },
 };
 
+function PageSpinner() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div
+        className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
+        role="status"
+        aria-label="Cargando..."
+      />
+    </div>
+  );
+}
+
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
   const qc = useQueryClient();
@@ -127,7 +143,6 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
-/** Redirect signed-in users away from auth pages */
 function GuestOnlyPage({ children }: { children: React.ReactNode }) {
   return (
     <>
@@ -179,7 +194,6 @@ function SignUpPage() {
   );
 }
 
-/** /recuperar — Clerk's "Forgot password?" flow lives inside <SignIn> */
 function RecuperarPage() {
   return (
     <GuestOnlyPage>
@@ -232,157 +246,163 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <TooltipProvider>
-          <Switch>
-            <Route path="/" component={HomeRedirect} />
+          <ErrorBoundary>
+            <Suspense fallback={<PageSpinner />}>
+              <Switch>
+                <Route path="/" component={HomeRedirect} />
 
-            {/* Spanish auth routes (canonical) */}
-            <Route path="/iniciar-sesion/*?" component={SignInPage} />
-            <Route path="/registro/*?" component={SignUpPage} />
-            <Route path="/recuperar/*?" component={RecuperarPage} />
+                <Route path="/iniciar-sesion/*?" component={SignInPage} />
+                <Route path="/registro/*?" component={SignUpPage} />
+                <Route path="/recuperar/*?" component={RecuperarPage} />
 
-            {/* Legacy English routes → redirect to Spanish equivalents */}
-            <Route path="/sign-in/*?">
-              <Redirect to="/iniciar-sesion" />
-            </Route>
-            <Route path="/sign-up/*?">
-              <Redirect to="/registro" />
-            </Route>
+                <Route path="/sign-in/*?">
+                  <Redirect to="/iniciar-sesion" />
+                </Route>
+                <Route path="/sign-up/*?">
+                  <Redirect to="/registro" />
+                </Route>
 
-            <Route path="/dashboard">
-              <ProtectedRoute><DashboardPage /></ProtectedRoute>
-            </Route>
-            <Route path="/members">
-              <ProtectedRoute><MembersPage /></ProtectedRoute>
-            </Route>
-            <Route path="/members/:userId">
-              {(params) => (
-                <ProtectedRoute>
-                  <MemberProfilePage userId={params.userId as string} />
-                </ProtectedRoute>
-              )}
-            </Route>
-            <Route path="/miembros">
-              <ProtectedRoute><MiembrosPage /></ProtectedRoute>
-            </Route>
-            <Route path="/miembros/:username">
-              {(params) => (
-                <ProtectedRoute>
-                  <MiembroPerfilPage username={params.username as string} />
-                </ProtectedRoute>
-              )}
-            </Route>
-            {/* Spanish events routes (canonical) */}
-            <Route path="/eventos">
-              <ProtectedRoute><EventosPage /></ProtectedRoute>
-            </Route>
-            <Route path="/eventos/:slug">
-              {(params) => (
-                <ProtectedRoute>
-                  <EventoDetallePage slug={params.slug as string} />
-                </ProtectedRoute>
-              )}
-            </Route>
-            {/* Legacy English routes → redirect */}
-            <Route path="/events">
-              <ProtectedRoute><EventsPage /></ProtectedRoute>
-            </Route>
-            <Route path="/events/:eventId">
-              <ProtectedRoute><Redirect to="/eventos" /></ProtectedRoute>
-            </Route>
-            <Route path="/forum">
-              <ProtectedRoute><ForumPage /></ProtectedRoute>
-            </Route>
-            <Route path="/forum/:postId">
-              {(params) => (
-                <ProtectedRoute>
-                  <ForumPostPage postId={params.postId as string} />
-                </ProtectedRoute>
-              )}
-            </Route>
-            <Route path="/foro">
-              <ProtectedRoute><ForoPage /></ProtectedRoute>
-            </Route>
-            <Route path="/foro/:categoria/:hilo">
-              {(params) => (
-                <ProtectedRoute>
-                  <ForoHiloPage
-                    categorySlug={params.categoria as string}
-                    threadId={params.hilo as string}
-                  />
-                </ProtectedRoute>
-              )}
-            </Route>
-            <Route path="/foro/:categoria">
-              {(params) => (
-                <ProtectedRoute>
-                  <ForoCategoriaPage slug={params.categoria as string} />
-                </ProtectedRoute>
-              )}
-            </Route>
-            <Route path="/resources">
-              <ProtectedRoute><ResourcesPage /></ProtectedRoute>
-            </Route>
-            <Route path="/recursos/nuevo">
-              <ProtectedRoute><RecursoNuevoPage /></ProtectedRoute>
-            </Route>
-            <Route path="/recursos/:slug">
-              {(params) => (
-                <ProtectedRoute>
-                  <RecursoDetallePage slug={params.slug as string} />
-                </ProtectedRoute>
-              )}
-            </Route>
-            <Route path="/recursos">
-              <ProtectedRoute><RecursosPage /></ProtectedRoute>
-            </Route>
-            <Route path="/marketplace/mis-anuncios">
-              <ProtectedRoute><MisAnunciosPage /></ProtectedRoute>
-            </Route>
-            <Route path="/marketplace/:slug">
-              {(params) => (
-                <ProtectedRoute>
-                  <MarketplaceListingPage slug={params.slug as string} />
-                </ProtectedRoute>
-              )}
-            </Route>
-            <Route path="/marketplace">
-              <ProtectedRoute><MarketplacePage /></ProtectedRoute>
-            </Route>
-            <Route path="/mensajes/:listingId/:otherUserId">
-              {(params) => (
-                <ProtectedRoute>
-                  <MensajesThreadPage
-                    listingId={params.listingId as string}
-                    otherUserId={params.otherUserId as string}
-                  />
-                </ProtectedRoute>
-              )}
-            </Route>
-            <Route path="/mensajes">
-              <ProtectedRoute><MessagesPage /></ProtectedRoute>
-            </Route>
-            <Route path="/messages">
-              <ProtectedRoute><Redirect to="/mensajes" /></ProtectedRoute>
-            </Route>
-            <Route path="/settings">
-              <ProtectedRoute><SettingsPage /></ProtectedRoute>
-            </Route>
-            <Route path="/perfil">
-              <ProtectedRoute><PerfilPage /></ProtectedRoute>
-            </Route>
-            <Route path="/notificaciones">
-              <ProtectedRoute><NotificacionesPage /></ProtectedRoute>
-            </Route>
-            <Route path="/perfil/preferencias">
-              <ProtectedRoute><PreferenciasNotificacionesPage /></ProtectedRoute>
-            </Route>
-            <Route path="/admin">
-              <ProtectedRoute>
-                <RequireAdmin><AdminPage /></RequireAdmin>
-              </ProtectedRoute>
-            </Route>
-            <Route component={NotFound} />
-          </Switch>
+                <Route path="/403">
+                  <Suspense fallback={<PageSpinner />}>
+                    <ForbiddenPage />
+                  </Suspense>
+                </Route>
+
+                <Route path="/dashboard">
+                  <ProtectedRoute><DashboardPage /></ProtectedRoute>
+                </Route>
+                <Route path="/members">
+                  <ProtectedRoute><MembersPage /></ProtectedRoute>
+                </Route>
+                <Route path="/members/:userId">
+                  {(params) => (
+                    <ProtectedRoute>
+                      <MemberProfilePage userId={params.userId as string} />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/miembros">
+                  <ProtectedRoute><MiembrosPage /></ProtectedRoute>
+                </Route>
+                <Route path="/miembros/:username">
+                  {(params) => (
+                    <ProtectedRoute>
+                      <MiembroPerfilPage username={params.username as string} />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/eventos">
+                  <ProtectedRoute><EventosPage /></ProtectedRoute>
+                </Route>
+                <Route path="/eventos/:slug">
+                  {(params) => (
+                    <ProtectedRoute>
+                      <EventoDetallePage slug={params.slug as string} />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/events">
+                  <ProtectedRoute><EventsPage /></ProtectedRoute>
+                </Route>
+                <Route path="/events/:eventId">
+                  <ProtectedRoute><Redirect to="/eventos" /></ProtectedRoute>
+                </Route>
+                <Route path="/forum">
+                  <ProtectedRoute><ForumPage /></ProtectedRoute>
+                </Route>
+                <Route path="/forum/:postId">
+                  {(params) => (
+                    <ProtectedRoute>
+                      <ForumPostPage postId={params.postId as string} />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/foro">
+                  <ProtectedRoute><ForoPage /></ProtectedRoute>
+                </Route>
+                <Route path="/foro/:categoria/:hilo">
+                  {(params) => (
+                    <ProtectedRoute>
+                      <ForoHiloPage
+                        categorySlug={params.categoria as string}
+                        threadId={params.hilo as string}
+                      />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/foro/:categoria">
+                  {(params) => (
+                    <ProtectedRoute>
+                      <ForoCategoriaPage slug={params.categoria as string} />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/resources">
+                  <ProtectedRoute><ResourcesPage /></ProtectedRoute>
+                </Route>
+                <Route path="/recursos/nuevo">
+                  <ProtectedRoute><RecursoNuevoPage /></ProtectedRoute>
+                </Route>
+                <Route path="/recursos/:slug">
+                  {(params) => (
+                    <ProtectedRoute>
+                      <RecursoDetallePage slug={params.slug as string} />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/recursos">
+                  <ProtectedRoute><RecursosPage /></ProtectedRoute>
+                </Route>
+                <Route path="/marketplace/mis-anuncios">
+                  <ProtectedRoute><MisAnunciosPage /></ProtectedRoute>
+                </Route>
+                <Route path="/marketplace/:slug">
+                  {(params) => (
+                    <ProtectedRoute>
+                      <MarketplaceListingPage slug={params.slug as string} />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/marketplace">
+                  <ProtectedRoute><MarketplacePage /></ProtectedRoute>
+                </Route>
+                <Route path="/mensajes/:listingId/:otherUserId">
+                  {(params) => (
+                    <ProtectedRoute>
+                      <MensajesThreadPage
+                        listingId={params.listingId as string}
+                        otherUserId={params.otherUserId as string}
+                      />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/mensajes">
+                  <ProtectedRoute><MessagesPage /></ProtectedRoute>
+                </Route>
+                <Route path="/messages">
+                  <ProtectedRoute><Redirect to="/mensajes" /></ProtectedRoute>
+                </Route>
+                <Route path="/settings">
+                  <ProtectedRoute><SettingsPage /></ProtectedRoute>
+                </Route>
+                <Route path="/perfil">
+                  <ProtectedRoute><PerfilPage /></ProtectedRoute>
+                </Route>
+                <Route path="/notificaciones">
+                  <ProtectedRoute><NotificacionesPage /></ProtectedRoute>
+                </Route>
+                <Route path="/perfil/preferencias">
+                  <ProtectedRoute><PreferenciasNotificacionesPage /></ProtectedRoute>
+                </Route>
+                <Route path="/admin">
+                  <ProtectedRoute>
+                    <RequireAdmin><AdminPage /></RequireAdmin>
+                  </ProtectedRoute>
+                </Route>
+                <Route component={NotFound} />
+              </Switch>
+            </Suspense>
+          </ErrorBoundary>
           <Toaster />
           <SonnerToaster position="top-right" richColors theme="dark" />
         </TooltipProvider>
@@ -393,9 +413,11 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
-    </WouterRouter>
+    <HelmetProvider>
+      <WouterRouter base={basePath}>
+        <ClerkProviderWithRoutes />
+      </WouterRouter>
+    </HelmetProvider>
   );
 }
 

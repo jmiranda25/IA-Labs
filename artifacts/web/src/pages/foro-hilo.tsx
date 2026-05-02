@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { Link, useLocation } from "wouter";
+import { Layout } from "@/components/layout";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetForumThread,
@@ -172,7 +174,7 @@ function PostCard({ post, myId, isAdmin, threadId, onReactionToggle, onDelete, o
         {(editable || isAdmin || canReport) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7">
+              <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Más opciones">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -354,30 +356,41 @@ export default function ForoHiloPage({ categorySlug, threadId }: Props) {
 
   if (isLoading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-4">
-        <Skeleton className="h-8 w-1/2" />
-        <Skeleton className="h-32 w-full rounded-xl" />
-        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
-      </div>
+      <Layout>
+        <div className="max-w-3xl mx-auto px-4 py-8 space-y-4">
+          <Skeleton className="h-8 w-1/2" />
+          <Skeleton className="h-32 w-full rounded-xl" />
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
+        </div>
+      </Layout>
     );
   }
 
   if (isError || !thread) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-8 text-center text-destructive">
-        No se pudo cargar el tema.
-      </div>
+      <Layout>
+        <div className="max-w-3xl mx-auto px-4 py-8 text-center text-destructive">
+          No se pudo cargar el tema.
+        </div>
+      </Layout>
     );
   }
 
   const authorCanEdit = canEdit(thread.authorId, myId, thread.createdAt as unknown as string, isAdmin);
 
   return (
+    <Layout>
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-5">
+      {thread && (
+        <Helmet>
+          <title>{thread.title} — Foro · AI Community</title>
+          <meta name="description" content={`${thread.title} — debate en el foro de la comunidad hispanohablante de IA.`} />
+        </Helmet>
+      )}
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href={`/foro/${categorySlug}`}>
-          <Button variant="ghost" size="icon" className="h-8 w-8 mt-0.5 flex-shrink-0">
+          <Button variant="ghost" size="icon" className="h-8 w-8 mt-0.5 flex-shrink-0" aria-label="Volver a la categoría">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
@@ -413,7 +426,7 @@ export default function ForoHiloPage({ categorySlug, threadId }: Props) {
         {(authorCanEdit || isAdmin) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" aria-label="Opciones del tema">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -605,5 +618,6 @@ export default function ForoHiloPage({ categorySlug, threadId }: Props) {
         </div>
       )}
     </div>
+    </Layout>
   );
 }

@@ -1,8 +1,8 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Zap } from "lucide-react";
+import { Lock, Zap } from "lucide-react";
 
-export default function NotFound() {
+export default function Forbidden() {
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background text-foreground px-4 text-center gap-6">
       <div className="flex items-center gap-2">
@@ -10,29 +10,33 @@ export default function NotFound() {
         <span className="font-bold text-lg tracking-tight">AI Community</span>
       </div>
 
+      <div className="rounded-full bg-destructive/10 p-4">
+        <Lock className="h-8 w-8 text-destructive" aria-hidden="true" />
+      </div>
+
       <div className="space-y-3">
         <p
-          className="text-8xl font-black tabular-nums leading-none select-none"
-          style={{ color: "hsl(var(--primary) / 0.15)" }}
+          className="text-7xl font-black tabular-nums leading-none select-none"
+          style={{ color: "hsl(var(--destructive) / 0.15)" }}
           aria-hidden="true"
         >
-          404
+          403
         </p>
-        <h1 className="text-2xl font-bold">Página no encontrada</h1>
+        <h1 className="text-2xl font-bold">Acceso restringido</h1>
         <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
-          La página que buscas no existe o fue movida. Verifica la URL o regresa al inicio.
+          No tienes permisos para ver esta página. Si crees que es un error, contacta a un administrador.
         </p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
-        <Link href="/">
+        <Link href="/dashboard">
           <Button size="lg" className="min-h-[44px] min-w-[140px]">
-            Ir al inicio
+            Ir al dashboard
           </Button>
         </Link>
-        <Link href="/dashboard">
+        <Link href="/">
           <Button size="lg" variant="outline" className="min-h-[44px] min-w-[140px]">
-            Mi dashboard
+            Inicio
           </Button>
         </Link>
       </div>

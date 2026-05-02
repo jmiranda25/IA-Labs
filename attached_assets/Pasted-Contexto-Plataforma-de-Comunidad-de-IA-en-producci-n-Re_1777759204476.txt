@@ -1,0 +1,93 @@
+Contexto: Plataforma de Comunidad de IA en producción (Replit Autoscale). Stack: React + Vite + TypeScript, Tailwind + shadcn/ui, React Hook Form + Zod, Express 5, Drizzle + Postgres, Clerk, SSE, Replit Object Storage. Rutas en español: /, /iniciar-sesion, /registro, /recuperar, /perfil, /perfil/preferencias, /miembros, /miembros/:username, /eventos, /eventos/:slug, /foro, /foro/:categoria, /foro/:categoria/:id, /recursos, /recursos/:slug, /recursos/nuevo, /marketplace, /marketplace/:slug, /marketplace/mis-anuncios, /mensajes, /mensajes/:listingId/:otherUserId, /notificaciones, /admin.
+
+Objetivo: hacer un sweep de pulido pre-lanzamiento público para que el producto se sienta y se vea como un SaaS comercial, no como un MVP. NO agregar features nuevos. NO romper nada existente. Cada cambio debe ser puramente de UX, a11y, SEO o performance.
+
+Cubre estos 5 frentes en orden, y al final dame un reporte por frente con qué se modificó:
+
+═══════════════════════════════════════════════
+1) LOADING / EMPTY / ERROR STATES
+═══════════════════════════════════════════════
+- Skeleton loaders con shadcn/ui Skeleton en todas las listas y tablas mientras useQuery está pending: directorio de miembros, eventos, foro (categorías + threads + posts), recursos, marketplace, mensajes, /admin (users, reports, metrics).
+- Empty states con ilustración (puede ser un icono lucide grande gris) + título + subtítulo + CTA cuando una lista venga vacía. Ej: "Aún no hay eventos próximos. ¿Quieres crear el primero?" con botón visible solo a admin.
+- Error boundaries de React en cada route group (public, authenticated, admin) con un fallback amigable que muestre "Algo salió mal" + botón "Reintentar" + link a /. Captura el error en console.error pero NO rompas la app.
+- Para 404 (página no existe): componente NotFoundPage con mensaje en español + link al home.
+- Para 403 (sin permisos): componente ForbiddenPage en español, no un dump de JSON.
+
+═══════════════════════════════════════════════
+2) ACCESIBILIDAD (WCAG AA)
+═══════════════════════════════════════════════
+- Auditar todos los componentes interactivos: botones, links, inputs, dropdowns, dialogs, tabs.
+- Asegurar focus rings visibles en todos ellos (Tailwind: focus-visible:ring-2 focus-visible:ring-offset-2).
+- aria-label en botones que solo tienen icono (campana de notificaciones, botones de like/reaccionar, cerrar dialog, edit/delete inline, drag handles).
+- aria-live="polite" en regiones que cambian dinámicamente (toasts de Sonner ya lo tienen — verificar que el resto también).
+- Roles ARIA correctos en componentes custom: tabs, accordion, dialog, popover (la mayoría vienen de shadcn/Radix con roles correctos, solo verificar custom wrappers).
+- Navegación completa con teclado: Tab debe moverse en orden lógico, Enter activa primario, Esc cierra modales y popovers.
+- Contraste de texto: revisar texto gris claro sobre fondos claros (especialmente placeholders y muted-foreground en dark mode si existe).
+- Imágenes con alt text descriptivo (no "image", no vacío para imágenes informativas).
+- Formularios: cada input con label asociado (htmlFor/id) y mensaje de error con aria-describedby cuando hay validación de Zod fallando.
+
+═══════════════════════════════════════════════
+3) RESPONSIVE MOBILE (320px – 768px)
+═══════════════════════════════════════════════
+- Probar cada ruta en 375px (iPhone SE) y 320px (mínimo viable).
+- Sidebar de /admin debe colapsar a un menú hamburguesa en mobile.
+- Tablas (admin users, reports, marketplace mis-anuncios) deben volverse cards verticales en <768px o tener scroll horizontal con sticky header column.
+- Diálogos modales deben tomar pantalla completa o casi en mobile, no quedar cortados.
+- Botones de acción primaria (publicar, enviar, RSVP) deben ser fácilmente tappable: min-height 44px.
+- Forum thread + posts: el editor inline de markdown no debe romper el layout en mobile.
+- Marketplace listing detail: galería de imágenes debe ser swipeable o scroll horizontal en mobile.
+- Navegación principal: si hay un top nav con muchos items, colapsar a hamburguesa en <768px.
+- No layout shift al cargar: reservar espacio para imágenes con aspect-ratio o width/height.
+
+═══════════════════════════════════════════════
+4) SEO + OPEN GRAPH + SITEMAP
+═══════════════════════════════════════════════
+- Meta tags por ruta pública usando react-helmet-async o equivalente:
+  - / (landing): title "Comunidad de IA — Networking, eventos y recursos" + description ~155 chars + canonical.
+  - /eventos: title "Eventos y workshops — Comunidad de IA" + description.
+  - /eventos/:slug: title dinámico con título del evento.
+  - /foro: title "Foro de la comunidad — Discusiones de IA".
+  - /foro/:categoria/:id: title dinámico con título del thread.
+  - /recursos: title "Biblioteca de recursos de IA".
+  - /marketplace: title "Marketplace — Servicios y agentes de IA".
+- Open Graph en cada ruta pública: og:title, og:description, og:type, og:url, og:image (1200x630 PNG genérica de la comunidad por ahora — puede ser placeholder con logo + tagline).
+- Twitter Card: twitter:card="summary_large_image" + mismos campos.
+- Generar sitemap.xml dinámico desde el servidor: incluir / + /eventos públicos + /foro/categorias + /foro threads públicos + /recursos publicados + /marketplace listings publicados. Excluir rutas autenticadas y admin.
+- Generar robots.txt: permitir todo excepto /admin/*, /perfil/*, /mensajes/*, /api/*.
+- JSON-LD structured data en /:
+  - schema.org/Organization (name, url, logo, sameAs si hay redes).
+  - schema.org/FAQPage con las preguntas y respuestas de la landing FAQ.
+- JSON-LD en /eventos/:slug: schema.org/Event con name, startDate, endDate, location virtual, organizer.
+
+═══════════════════════════════════════════════
+5) PERFORMANCE
+═══════════════════════════════════════════════
+- React.lazy + Suspense en TODAS las rutas excepto la landing (que debe ser fast initial paint). Cada page component como dynamic import.
+- Preload de la siguiente ruta probable (ej. del hero CTA al /registro) con <link rel="prefetch">.
+- Auditar imports: si hay alguna lib pesada importada en el entry bundle que se use solo en una ruta, moverla al chunk de esa ruta.
+- Imágenes: loading="lazy" en imágenes below the fold (avatares en directorio, imágenes de marketplace en lista).
+- Asegurar que el cache de /api/landing/content (60s) sigue funcionando post-deploy.
+- Verificar que no haya re-renders innecesarios en componentes con SSE: el hook de notificaciones no debe causar re-render de toda la app, solo de la campana.
+
+═══════════════════════════════════════════════
+DEFINITION OF DONE
+═══════════════════════════════════════════════
+- Lighthouse en producción >= 90 en Performance, Accessibility, SEO, Best Practices para /, /eventos, /foro, /recursos, /marketplace.
+- Probar manualmente con Tab + Shift+Tab + Enter + Esc en /, /eventos, /foro, /admin: todo navegable sin mouse.
+- Compartir el link de prod en WhatsApp/Twitter: debe mostrar OG image + title + description correctos.
+- En Chrome DevTools mobile emulation (iPhone SE 375px): no horizontal scroll, todos los botones tappable.
+- Probar con NVDA o VoiceOver (o al menos con axe DevTools): no errores críticos de a11y.
+
+═══════════════════════════════════════════════
+NO HACER
+═══════════════════════════════════════════════
+- No instalar libs nuevas pesadas. shadcn/ui ya tiene Skeleton; lucide-react ya tiene iconos; react-helmet-async para meta tags es OK.
+- No cambiar lógica de negocio.
+- No tocar el schema de DB.
+- No tocar Clerk, webhooks ni el helper notify().
+- No modificar las rutas en español ni los redirects legacy.
+
+Entregables:
+- Lista de archivos creados/modificados agrupados por frente (1 a 5).
+- Reporte de Lighthouse antes/después en al menos 2 rutas.
+- Capturas o nota textual de cómo verificar cada frente.

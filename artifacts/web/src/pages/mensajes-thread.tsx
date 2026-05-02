@@ -109,7 +109,7 @@ export default function MensajesThreadPage({
         {/* Header */}
         <div className="flex items-center gap-3 mb-4 shrink-0">
           <Link href="/mensajes">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Volver a mensajes">
               <ChevronLeft className="h-4 w-4" />
             </Button>
           </Link>
@@ -198,6 +198,7 @@ export default function MensajesThreadPage({
             size="icon"
             onClick={handleSend}
             disabled={send.isPending || !message.trim()}
+            aria-label="Enviar mensaje"
           >
             <Send className="h-4 w-4" />
           </Button>

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
 import { LandingHeader } from "@/components/landing/landing-header";
 import { HeroSection } from "@/components/landing/hero-section";
@@ -105,7 +105,7 @@ function findSection(sections: LandingSection[], key: string): LandingSection | 
 }
 
 export default function LandingPage() {
-  const [location] = useLocation();
+  useLocation();
   const isPreview = typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("preview") === "1";
 
@@ -122,50 +122,20 @@ export default function LandingPage() {
   const sections = (data as any)?.sections as LandingSection[] | undefined;
   const faqs = (data as any)?.faqs as LandingFaq[] | undefined;
 
-  useEffect(() => {
-    document.title =
-      "Comunidad de IA en español — Aprende, conecta y construye";
-
-    const setMeta = (sel: string, val: string) => {
-      const el = document.querySelector<HTMLMetaElement>(sel);
-      if (el) el.content = val;
-    };
-    setMeta(
-      'meta[name="description"]',
-      "Únete a la comunidad hispanohablante de IA. Eventos, recursos, foro y marketplace para builders, founders y profesionales."
-    );
-    setMeta(
-      'meta[property="og:title"]',
-      "Comunidad de IA en español — Aprende, conecta y construye"
-    );
-    setMeta(
-      'meta[property="og:description"]',
-      "Únete a la comunidad hispanohablante de IA. Eventos, recursos, foro y marketplace para builders, founders y profesionales."
-    );
-    setMeta(
-      'meta[name="twitter:title"]',
-      "Comunidad de IA en español — Aprende, conecta y construye"
-    );
-    setMeta(
-      'meta[name="twitter:description"]',
-      "Únete a la comunidad hispanohablante de IA. Eventos, recursos, foro y marketplace para builders, founders y profesionales."
-    );
-
-    const script = document.createElement("script");
-    script.type = "application/ld+json";
-    script.id = "json-ld-landing";
-    script.textContent = JSON_LD;
-    const existing = document.getElementById("json-ld-landing");
-    if (existing) existing.remove();
-    document.head.appendChild(script);
-
-    return () => {
-      document.getElementById("json-ld-landing")?.remove();
-    };
-  }, []);
-
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <Helmet>
+        <title>Comunidad de IA en español — Aprende, conecta y construye</title>
+        <meta name="description" content="Únete a la comunidad hispanohablante de IA. Eventos, recursos, foro y marketplace para builders, founders y profesionales." />
+        <meta property="og:title" content="Comunidad de IA en español — Aprende, conecta y construye" />
+        <meta property="og:description" content="Únete a la comunidad hispanohablante de IA. Eventos, recursos, foro y marketplace para builders, founders y profesionales." />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="/og-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Comunidad de IA en español — Aprende, conecta y construye" />
+        <meta name="twitter:description" content="Únete a la comunidad hispanohablante de IA. Eventos, recursos, foro y marketplace para builders, founders y profesionales." />
+        <script type="application/ld+json">{JSON_LD}</script>
+      </Helmet>
       {/* Skip link */}
       <a
         href="#main-content"
