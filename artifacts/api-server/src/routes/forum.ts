@@ -108,7 +108,8 @@ router.get("/forum/posts/trending", async (req, res) => {
 
 // GET /forum/posts/:postId
 router.get("/forum/posts/:postId", async (req, res) => {
-  const post = await db.query.forumPostsTable.findFirst({ where: eq(forumPostsTable.id, req.params.postId) });
+  const postId = req.params.postId as string;
+  const post = await db.query.forumPostsTable.findFirst({ where: eq(forumPostsTable.id, postId) });
   if (!post) { res.status(404).json({ error: "Not found" }); return; }
   const cat = await db.query.forumCategoriesTable.findFirst({ where: eq(forumCategoriesTable.id, post.categoryId) });
   const author = await db.query.usersTable.findFirst({ where: eq(usersTable.id, post.authorId) });
@@ -123,9 +124,10 @@ router.get("/forum/posts/:postId", async (req, res) => {
 
 // PUT /forum/posts/:postId
 router.put("/forum/posts/:postId", requireAuth, async (req, res) => {
+  const postId = req.params.postId as string;
   const { title, body, isPinned, isLocked } = req.body;
   const [updated] = await db.update(forumPostsTable).set({ title, body, isPinned, isLocked, updatedAt: new Date() })
-    .where(eq(forumPostsTable.id, req.params.postId)).returning();
+    .where(eq(forumPostsTable.id, postId)).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   const cat = await db.query.forumCategoriesTable.findFirst({ where: eq(forumCategoriesTable.id, updated.categoryId) });
   const author = await db.query.usersTable.findFirst({ where: eq(usersTable.id, updated.authorId) });
@@ -134,14 +136,16 @@ router.put("/forum/posts/:postId", requireAuth, async (req, res) => {
 
 // DELETE /forum/posts/:postId
 router.delete("/forum/posts/:postId", requireAuth, async (req, res) => {
-  await db.delete(forumPostsTable).where(eq(forumPostsTable.id, req.params.postId));
+  const postId = req.params.postId as string;
+  await db.delete(forumPostsTable).where(eq(forumPostsTable.id, postId));
   res.status(204).send();
 });
 
 // GET /forum/posts/:postId/replies
 router.get("/forum/posts/:postId/replies", async (req, res) => {
+  const postId = req.params.postId as string;
   const allReplies = await db.query.forumRepliesTable.findMany({
-    where: eq(forumRepliesTable.postId, req.params.postId), orderBy: forumRepliesTable.createdAt,
+    where: eq(forumRepliesTable.postId, postId), orderBy: forumRepliesTable.createdAt,
   });
   const topReplies = allReplies.filter((r) => !r.parentReplyId);
   const enriched = await Promise.all(topReplies.map((r) => enrichReply(r, req.userId, allReplies)));
@@ -150,26 +154,29 @@ router.get("/forum/posts/:postId/replies", async (req, res) => {
 
 // POST /forum/posts/:postId/replies
 router.post("/forum/posts/:postId/replies", requireAuth, async (req, res) => {
+  const postId = req.params.postId as string;
   const { body, parentReplyId } = req.body;
   const [reply] = await db.insert(forumRepliesTable).values({
-    id: randomUUID(), postId: req.params.postId, parentReplyId: parentReplyId ?? null, authorId: req.userId!, body,
+    id: randomUUID(), postId, parentReplyId: parentReplyId ?? null, authorId: req.userId!, body,
   }).returning();
   await db.update(forumPostsTable).set({ replyCount: sql`reply_count + 1`, lastActivityAt: new Date() })
-    .where(eq(forumPostsTable.id, req.params.postId));
+    .where(eq(forumPostsTable.id, postId));
   res.status(201).json(await enrichReply(reply, req.userId, []));
 });
 
 // PUT /forum/replies/:replyId
 router.put("/forum/replies/:replyId", requireAuth, async (req, res) => {
+  const replyId = req.params.replyId as string;
   const [updated] = await db.update(forumRepliesTable).set({ body: req.body.body, updatedAt: new Date() })
-    .where(eq(forumRepliesTable.id, req.params.replyId)).returning();
+    .where(eq(forumRepliesTable.id, replyId)).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   res.json(await enrichReply(updated, req.userId, []));
 });
 
 // DELETE /forum/replies/:replyId
 router.delete("/forum/replies/:replyId", requireAuth, async (req, res) => {
-  await db.delete(forumRepliesTable).where(eq(forumRepliesTable.id, req.params.replyId));
+  const replyId = req.params.replyId as string;
+  await db.delete(forumRepliesTable).where(eq(forumRepliesTable.id, replyId));
   res.status(204).send();
 });
 

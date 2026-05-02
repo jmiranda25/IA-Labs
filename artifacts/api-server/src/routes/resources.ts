@@ -41,16 +41,17 @@ router.get("/resources/categories", async (_req, res) => {
 
 // GET /resources/:resourceId
 router.get("/resources/:resourceId", async (req, res) => {
-  const resource = await db.query.resourcesTable.findFirst({ where: eq(resourcesTable.id, req.params.resourceId) });
+  const resourceId = req.params.resourceId as string;
+  const resource = await db.query.resourcesTable.findFirst({ where: eq(resourcesTable.id, resourceId) });
   if (!resource) { res.status(404).json({ error: "Not found" }); return; }
-  // Increment download count
   await db.update(resourcesTable).set({ downloadCount: sql`download_count + 1` }).where(eq(resourcesTable.id, resource.id));
   res.json(await enrichResource({ ...resource, downloadCount: resource.downloadCount + 1 }));
 });
 
 // DELETE /resources/:resourceId
 router.delete("/resources/:resourceId", requireAuth, async (req, res) => {
-  await db.delete(resourcesTable).where(eq(resourcesTable.id, req.params.resourceId));
+  const resourceId = req.params.resourceId as string;
+  await db.delete(resourcesTable).where(eq(resourcesTable.id, resourceId));
   res.status(204).send();
 });
 

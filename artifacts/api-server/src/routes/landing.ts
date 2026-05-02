@@ -6,7 +6,6 @@ import { randomUUID } from "crypto";
 
 const router = Router();
 
-// Seed default sections if empty
 async function ensureDefaultSections() {
   const defaults = [
     { section: "hero", content: { headline: "Connect, collaborate, and grow with AI practitioners", subtitle: "Join a thriving community of builders, researchers, and enthusiasts pushing the boundaries of artificial intelligence.", cta: "Join the Community" } },
@@ -29,14 +28,15 @@ router.get("/landing/content", async (_req, res) => {
 
 // PUT /landing/content/:section
 router.put("/landing/content/:section", requireAdmin, async (req, res) => {
+  const sectionKey = req.params.section as string;
   const { content } = req.body;
-  const existing = await db.query.landingSectionsTable.findFirst({ where: eq(landingSectionsTable.section, req.params.section) });
+  const existing = await db.query.landingSectionsTable.findFirst({ where: eq(landingSectionsTable.section, sectionKey) });
   let section;
   if (existing) {
     [section] = await db.update(landingSectionsTable).set({ content, updatedAt: new Date() })
-      .where(eq(landingSectionsTable.section, req.params.section)).returning();
+      .where(eq(landingSectionsTable.section, sectionKey)).returning();
   } else {
-    [section] = await db.insert(landingSectionsTable).values({ id: randomUUID(), section: req.params.section, content }).returning();
+    [section] = await db.insert(landingSectionsTable).values({ id: randomUUID(), section: sectionKey, content }).returning();
   }
   res.json(section);
 });

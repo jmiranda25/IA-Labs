@@ -48,22 +48,25 @@ router.get("/marketplace/listings/featured", async (req, res) => {
 
 // GET /marketplace/listings/:listingId
 router.get("/marketplace/listings/:listingId", async (req, res) => {
-  const listing = await db.query.marketplaceListingsTable.findFirst({ where: eq(marketplaceListingsTable.id, req.params.listingId) });
+  const listingId = req.params.listingId as string;
+  const listing = await db.query.marketplaceListingsTable.findFirst({ where: eq(marketplaceListingsTable.id, listingId) });
   if (!listing) { res.status(404).json({ error: "Not found" }); return; }
   res.json(await enrichListing(listing));
 });
 
 // PUT /marketplace/listings/:listingId
 router.put("/marketplace/listings/:listingId", requireAuth, async (req, res) => {
+  const listingId = req.params.listingId as string;
   const [updated] = await db.update(marketplaceListingsTable).set({ ...req.body, updatedAt: new Date() })
-    .where(eq(marketplaceListingsTable.id, req.params.listingId)).returning();
+    .where(eq(marketplaceListingsTable.id, listingId)).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   res.json(await enrichListing(updated));
 });
 
 // DELETE /marketplace/listings/:listingId
 router.delete("/marketplace/listings/:listingId", requireAuth, async (req, res) => {
-  await db.delete(marketplaceListingsTable).where(eq(marketplaceListingsTable.id, req.params.listingId));
+  const listingId = req.params.listingId as string;
+  await db.delete(marketplaceListingsTable).where(eq(marketplaceListingsTable.id, listingId));
   res.status(204).send();
 });
 
@@ -74,7 +77,6 @@ router.get("/marketplace/messages", requireAuth, async (req, res) => {
     where: or(eq(marketplaceMessagesTable.senderId, userId), eq(marketplaceMessagesTable.receiverId, userId)),
     orderBy: desc(marketplaceMessagesTable.createdAt),
   });
-  // Build threads (one per listing)
   const threadMap = new Map<string, { listingId: string; otherUserId: string; lastMessage: string; unreadCount: number; updatedAt: Date }>();
   for (const m of msgs) {
     const otherUserId = m.senderId === userId ? m.receiverId : m.senderId;
@@ -95,10 +97,11 @@ router.get("/marketplace/messages", requireAuth, async (req, res) => {
 
 // GET /marketplace/messages/:listingId
 router.get("/marketplace/messages/:listingId", requireAuth, async (req, res) => {
+  const listingId = req.params.listingId as string;
   const userId = req.userId!;
   const msgs = await db.query.marketplaceMessagesTable.findMany({
     where: and(
-      eq(marketplaceMessagesTable.listingId, req.params.listingId),
+      eq(marketplaceMessagesTable.listingId, listingId),
       or(eq(marketplaceMessagesTable.senderId, userId), eq(marketplaceMessagesTable.receiverId, userId))
     ),
     orderBy: marketplaceMessagesTable.createdAt,
@@ -107,20 +110,19 @@ router.get("/marketplace/messages/:listingId", requireAuth, async (req, res) => 
     const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, m.senderId) });
     return { ...m, senderName: sender?.displayName ?? "Unknown", senderAvatar: sender?.avatarUrl ?? null };
   }));
-  // Mark as read
   await db.update(marketplaceMessagesTable).set({ isRead: true })
-    .where(and(eq(marketplaceMessagesTable.listingId, req.params.listingId), eq(marketplaceMessagesTable.receiverId, userId)));
+    .where(and(eq(marketplaceMessagesTable.listingId, listingId), eq(marketplaceMessagesTable.receiverId, userId)));
   res.json(enriched);
 });
 
 // POST /marketplace/messages/:listingId
 router.post("/marketplace/messages/:listingId", requireAuth, async (req, res) => {
+  const listingId = req.params.listingId as string;
   const { receiverId, body } = req.body;
   const [msg] = await db.insert(marketplaceMessagesTable).values({
-    id: randomUUID(), listingId: req.params.listingId, senderId: req.userId!, receiverId, body,
+    id: randomUUID(), listingId, senderId: req.userId!, receiverId, body,
   }).returning();
-  // Update listing message count
-  await db.update(marketplaceListingsTable).set({ messageCount: sql`message_count + 1` }).where(eq(marketplaceListingsTable.id, req.params.listingId));
+  await db.update(marketplaceListingsTable).set({ messageCount: sql`message_count + 1` }).where(eq(marketplaceListingsTable.id, listingId));
   const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, req.userId!) });
   res.status(201).json({ ...msg, senderName: sender?.displayName ?? "Unknown", senderAvatar: sender?.avatarUrl ?? null });
 });

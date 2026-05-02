@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, ilike, or, sql } from "drizzle-orm";
+import { eq, ilike, or, sql, and } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
 import { requireAuth } from "../lib/requireAuth";
@@ -14,7 +14,6 @@ router.get("/users/me", requireAuth, async (req, res) => {
     where: eq(usersTable.clerkId, clerkId),
   });
   if (!user) {
-    // Auto-create profile on first access
     const auth = getAuth(req);
     const claims = auth?.sessionClaims as Record<string, unknown> | null;
     const name =
@@ -25,7 +24,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
     [user] = await db
       .insert(usersTable)
       .values({
-        id: clerkId,
+        id: randomUUID(),
         clerkId,
         displayName: name,
         avatarUrl: avatar,
@@ -71,23 +70,24 @@ router.get("/users", async (req, res) => {
     );
   }
   if (role) conditions.push(eq(usersTable.role, role));
-  const whereClause = conditions.length ? sql`${conditions.reduce((a, b) => sql`${a} AND ${b}`)}` : undefined;
+  const where = conditions.length ? and(...conditions) : undefined;
   const users = await db.query.usersTable.findMany({
-    where: whereClause,
+    where,
     limit: parseInt(limit),
     offset: parseInt(offset),
   });
   const total = await db
     .select({ count: sql<number>`count(*)` })
     .from(usersTable)
-    .where(whereClause);
+    .where(where);
   res.json({ users, total: Number(total[0]?.count ?? 0) });
 });
 
 // GET /users/:userId
 router.get("/users/:userId", async (req, res) => {
+  const userId = req.params.userId as string;
   const user = await db.query.usersTable.findFirst({
-    where: eq(usersTable.clerkId, req.params.userId),
+    where: eq(usersTable.clerkId, userId),
   });
   if (!user) { res.status(404).json({ error: "Not found" }); return; }
   res.json(user);

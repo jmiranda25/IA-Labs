@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, sql, and, gte, lte, or } from "drizzle-orm";
+import { eq, sql, and, gte, lte } from "drizzle-orm";
 import { db, eventsTable, eventRsvpsTable, usersTable } from "@workspace/db";
 import { requireAuth, requireAdmin } from "../lib/requireAuth";
 import { randomUUID } from "crypto";
@@ -92,30 +92,34 @@ router.get("/events/upcoming", async (req, res) => {
 
 // GET /events/:eventId
 router.get("/events/:eventId", async (req, res) => {
-  const event = await db.query.eventsTable.findFirst({ where: eq(eventsTable.id, req.params.eventId) });
+  const eventId = req.params.eventId as string;
+  const event = await db.query.eventsTable.findFirst({ where: eq(eventsTable.id, eventId) });
   if (!event) { res.status(404).json({ error: "Not found" }); return; }
   res.json(await enrichEvent(event, req.userId));
 });
 
 // PUT /events/:eventId
 router.put("/events/:eventId", requireAdmin, async (req, res) => {
+  const eventId = req.params.eventId as string;
   const [event] = await db.update(eventsTable).set({ ...req.body, updatedAt: new Date() })
-    .where(eq(eventsTable.id, req.params.eventId)).returning();
+    .where(eq(eventsTable.id, eventId)).returning();
   if (!event) { res.status(404).json({ error: "Not found" }); return; }
   res.json(await enrichEvent(event, req.userId));
 });
 
 // DELETE /events/:eventId
 router.delete("/events/:eventId", requireAdmin, async (req, res) => {
-  await db.delete(eventsTable).where(eq(eventsTable.id, req.params.eventId));
+  const eventId = req.params.eventId as string;
+  await db.delete(eventsTable).where(eq(eventsTable.id, eventId));
   res.status(204).send();
 });
 
 // PUT /events/:eventId/rsvp
 router.put("/events/:eventId/rsvp", requireAuth, async (req, res) => {
+  const eventId = req.params.eventId as string;
   const { status } = req.body;
   const existing = await db.query.eventRsvpsTable.findFirst({
-    where: and(eq(eventRsvpsTable.eventId, req.params.eventId), eq(eventRsvpsTable.userId, req.userId!)),
+    where: and(eq(eventRsvpsTable.eventId, eventId), eq(eventRsvpsTable.userId, req.userId!)),
   });
   let rsvp;
   if (existing) {
@@ -124,7 +128,7 @@ router.put("/events/:eventId/rsvp", requireAuth, async (req, res) => {
   } else {
     [rsvp] = await db.insert(eventRsvpsTable).values({
       id: randomUUID(),
-      eventId: req.params.eventId,
+      eventId,
       userId: req.userId!,
       status,
     }).returning();
@@ -134,16 +138,18 @@ router.put("/events/:eventId/rsvp", requireAuth, async (req, res) => {
 
 // DELETE /events/:eventId/rsvp
 router.delete("/events/:eventId/rsvp", requireAuth, async (req, res) => {
+  const eventId = req.params.eventId as string;
   await db.delete(eventRsvpsTable).where(
-    and(eq(eventRsvpsTable.eventId, req.params.eventId), eq(eventRsvpsTable.userId, req.userId!))
+    and(eq(eventRsvpsTable.eventId, eventId), eq(eventRsvpsTable.userId, req.userId!))
   );
   res.status(204).send();
 });
 
 // GET /events/:eventId/attendees
 router.get("/events/:eventId/attendees", async (req, res) => {
+  const eventId = req.params.eventId as string;
   const rsvps = await db.query.eventRsvpsTable.findMany({
-    where: and(eq(eventRsvpsTable.eventId, req.params.eventId), eq(eventRsvpsTable.status, "going")),
+    where: and(eq(eventRsvpsTable.eventId, eventId), eq(eventRsvpsTable.status, "going")),
   });
   const enriched = await Promise.all(rsvps.map(async (r) => {
     const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, r.userId) });

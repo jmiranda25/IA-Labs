@@ -24,8 +24,8 @@ export default function ForumPage() {
 
   const { data: categories } = useListForumCategories();
   const { data: postsData, isLoading } = useListForumPosts(
-    { categoryId: selectedCategory || undefined, search: search || undefined, limit: "20" },
-    { query: { queryKey: getListForumPostsQueryKey({ categoryId: selectedCategory || undefined, search: search || undefined, limit: "20" }) } }
+    { categoryId: selectedCategory || undefined, search: search || undefined, limit: 20 },
+    { query: { queryKey: getListForumPostsQueryKey({ categoryId: selectedCategory || undefined, search: search || undefined, limit: 20 }) } }
   );
   const createPost = useCreateForumPost();
 

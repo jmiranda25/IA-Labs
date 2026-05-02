@@ -60,8 +60,8 @@ export default function ResourcesPage() {
   const qc = useQueryClient();
 
   const { data, isLoading } = useListResources(
-    { search: search || undefined, category: category || undefined, limit: "20" },
-    { query: { queryKey: getListResourcesQueryKey({ search: search || undefined, category: category || undefined, limit: "20" }) } }
+    { search: search || undefined, category: category || undefined, limit: 20 },
+    { query: { queryKey: getListResourcesQueryKey({ search: search || undefined, category: category || undefined, limit: 20 }) } }
   );
   const { data: cats } = useListResourceCategories();
   const createResource = useCreateResource();
@@ -75,9 +75,9 @@ export default function ResourcesPage() {
     if (!uploadFile) return;
     setUploading(true);
     try {
-      const urlData = await requestUrl.mutateAsync({ data: { filename: uploadFile.name, contentType: uploadFile.type, size: uploadFile.size } });
-      await fetch((urlData as any).uploadUrl, { method: "PUT", body: uploadFile, headers: { "Content-Type": uploadFile.type } });
-      const fileUrl = (urlData as any).objectUrl;
+      const urlData = await requestUrl.mutateAsync({ data: { objectPath: `resources/${Date.now()}_${uploadFile.name}`, contentType: uploadFile.type } });
+      await fetch((urlData as any).uploadURL, { method: "PUT", body: uploadFile, headers: { "Content-Type": uploadFile.type } });
+      const fileUrl = (urlData as any).objectPath;
       const tags = fields.tags ? fields.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
       await createResource.mutateAsync({ data: { title: fields.title, description: fields.description, fileUrl, fileType: uploadFile.type, fileSize: uploadFile.size, category: fields.category, tags } });
       qc.invalidateQueries({ queryKey: getListResourcesQueryKey({}) });

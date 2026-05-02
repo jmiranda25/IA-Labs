@@ -16,8 +16,8 @@ export default function MembersPage() {
   const debouncedSearch = useDebounce(search, 300);
 
   const { data, isLoading } = useListUsers(
-    debouncedSearch ? { search: debouncedSearch, limit: "24" } : { limit: "24" },
-    { query: { queryKey: getListUsersQueryKey(debouncedSearch ? { search: debouncedSearch, limit: "24" } : { limit: "24" }) } }
+    debouncedSearch ? { search: debouncedSearch, limit: 24 } : { limit: 24 },
+    { query: { queryKey: getListUsersQueryKey(debouncedSearch ? { search: debouncedSearch, limit: 24 } : { limit: 24 }) } }
   );
 
   const users = (data as any)?.users ?? [];

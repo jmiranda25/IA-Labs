@@ -1,30 +1,25 @@
 import { Router } from "express";
 import { eq, and, desc, sql } from "drizzle-orm";
+import type { Response } from "express";
 import { db, notificationsTable } from "@workspace/db";
 import { requireAuth } from "../lib/requireAuth";
 import { randomUUID } from "crypto";
 
 const router = Router();
 
-// SSE clients registry
-export const sseClients = new Map<string, Set<ReturnType<typeof createSseClient>>>();
-
-function createSseClient(res: ReturnType<Router["use"]> extends never ? never : Parameters<Parameters<Router["get"]>[1]>[1]) {
-  return res;
-}
+export const sseClients = new Map<string, Set<Response>>();
 
 // GET /notifications/stream — SSE endpoint
-router.get("/notifications/stream", requireAuth, (req, res: any) => {
+router.get("/notifications/stream", requireAuth, (req, res: Response) => {
   const userId = req.userId!;
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
-  res.flushHeaders?.();
+  (res as unknown as { flushHeaders?: () => void }).flushHeaders?.();
 
   if (!sseClients.has(userId)) sseClients.set(userId, new Set());
   sseClients.get(userId)!.add(res);
 
-  // Send heartbeat every 30s
   const heartbeat = setInterval(() => {
     res.write(": heartbeat\n\n");
   }, 30000);
@@ -40,7 +35,7 @@ export function pushNotification(userId: string, notification: unknown) {
   if (!clients) return;
   const data = JSON.stringify(notification);
   for (const client of clients) {
-    (client as any).write(`data: ${data}\n\n`);
+    client.write(`data: ${data}\n\n`);
   }
 }
 
@@ -67,7 +62,8 @@ router.post("/notifications/mark-all-read", requireAuth, async (req, res) => {
 
 // POST /notifications/:notificationId/read
 router.post("/notifications/:notificationId/read", requireAuth, async (req, res) => {
-  await db.update(notificationsTable).set({ isRead: true }).where(eq(notificationsTable.id, req.params.notificationId));
+  const notificationId = req.params.notificationId as string;
+  await db.update(notificationsTable).set({ isRead: true }).where(eq(notificationsTable.id, notificationId));
   res.status(204).send();
 });
 

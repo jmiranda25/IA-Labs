@@ -43,7 +43,7 @@ function AdminStats() {
 function UserManagement() {
   const [search, setSearch] = useState("");
   const qc = useQueryClient();
-  const { data } = useAdminListUsers({ search: search || undefined, limit: "50" }, { query: { queryKey: getAdminListUsersQueryKey({ search: search || undefined, limit: "50" }) } });
+  const { data } = useAdminListUsers({ search: search || undefined, limit: 50 }, { query: { queryKey: getAdminListUsersQueryKey({ search: search || undefined, limit: 50 }) } });
   const updateRole = useAdminUpdateUserRole();
   const banUser = useAdminBanUser();
   const users = (data as any)?.users ?? [];
@@ -71,7 +71,7 @@ function UserManagement() {
                 <div className="flex items-center gap-2 shrink-0">
                   <Select
                     value={u.role}
-                    onValueChange={(role) => updateRole.mutate({ userId: u.clerkId, data: { role } }, { onSuccess: () => qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({}) }) })}
+                    onValueChange={(role) => updateRole.mutate({ userId: u.clerkId, data: { role: role as "participant" | "administrator" } }, { onSuccess: () => qc.invalidateQueries({ queryKey: getAdminListUsersQueryKey({}) }) })}
                   >
                     <SelectTrigger className="h-7 text-xs w-32" data-testid={`select-role-${u.id}`}><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -104,7 +104,7 @@ function ModerationQueue() {
   const items = (data as any[]) ?? [];
 
   const handleResolve = (itemId: string, action: string) => {
-    resolve.mutate({ itemId, data: { action } }, { onSuccess: () => qc.invalidateQueries({ queryKey: getGetModerationQueueQueryKey() }) });
+    resolve.mutate({ itemId, data: { action: action as "remove" | "keep" } }, { onSuccess: () => qc.invalidateQueries({ queryKey: getGetModerationQueueQueryKey() }) });
   };
 
   return (

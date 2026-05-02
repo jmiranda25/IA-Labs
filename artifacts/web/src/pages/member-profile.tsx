@@ -13,7 +13,7 @@ export default function MemberProfilePage({ userId }: { userId: string }) {
     query: { queryKey: getGetUserByIdQueryKey(userId) },
   });
 
-  const { data: postsData } = useListForumPosts({ limit: "5" });
+  const { data: postsData } = useListForumPosts({ limit: 5 });
   const userPosts = ((postsData as any)?.posts ?? []).filter((p: any) => p.authorId === (user as any)?.id);
 
   if (isLoading) {

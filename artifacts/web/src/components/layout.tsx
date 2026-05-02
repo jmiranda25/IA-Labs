@@ -24,7 +24,7 @@ const navItems = [
 ];
 
 function NotificationBell() {
-  const { data: notifsData } = useListNotifications({ unreadOnly: "false", limit: "10" });
+  const { data: notifsData } = useListNotifications({ unreadOnly: false, limit: 10 });
   const markAllRead = useMarkAllNotificationsRead();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -38,7 +38,7 @@ function NotificationBell() {
     const es = new EventSource(`${basePath}/api/notifications/stream`, { withCredentials: true });
     eventSourceRef.current = es;
     es.onmessage = () => {
-      qc.invalidateQueries({ queryKey: getListNotificationsQueryKey({ unreadOnly: "false", limit: "10" }) });
+      qc.invalidateQueries({ queryKey: getListNotificationsQueryKey({ unreadOnly: false, limit: 10 }) });
     };
     return () => { es.close(); eventSourceRef.current = null; };
   }, [user, qc]);
@@ -65,7 +65,7 @@ function NotificationBell() {
             <button
               className="text-xs text-primary hover:underline"
               onClick={() => {
-                markAllRead.mutate(undefined, { onSuccess: () => qc.invalidateQueries({ queryKey: getListNotificationsQueryKey({ unreadOnly: "false", limit: "10" }) }) });
+                markAllRead.mutate(undefined, { onSuccess: () => qc.invalidateQueries({ queryKey: getListNotificationsQueryKey({ unreadOnly: false, limit: 10 }) }) });
               }}
               data-testid="button-mark-all-read"
             >

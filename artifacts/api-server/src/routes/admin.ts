@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { eq, ilike, sql, desc } from "drizzle-orm";
-import { db, usersTable, eventsTable, forumPostsTable, resourcesTable, marketplaceListingsTable, moderationItemsTable, notificationsTable } from "@workspace/db";
+import { db, usersTable, eventsTable, forumPostsTable, resourcesTable, marketplaceListingsTable, moderationItemsTable } from "@workspace/db";
 import { requireAdmin } from "../lib/requireAuth";
 
 const router = Router();
@@ -40,17 +40,19 @@ router.get("/admin/users", requireAdmin, async (req, res) => {
 
 // PUT /admin/users/:userId/role
 router.put("/admin/users/:userId/role", requireAdmin, async (req, res) => {
+  const userId = req.params.userId as string;
   const { role } = req.body;
   const [updated] = await db.update(usersTable).set({ role, updatedAt: new Date() })
-    .where(eq(usersTable.clerkId, req.params.userId)).returning();
+    .where(eq(usersTable.clerkId, userId)).returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
   res.json(updated);
 });
 
 // POST /admin/users/:userId/ban
 router.post("/admin/users/:userId/ban", requireAdmin, async (req, res) => {
+  const userId = req.params.userId as string;
   await db.update(usersTable).set({ isBanned: true, updatedAt: new Date() })
-    .where(eq(usersTable.clerkId, req.params.userId));
+    .where(eq(usersTable.clerkId, userId));
   res.status(204).send();
 });
 
@@ -65,10 +67,11 @@ router.get("/admin/moderation/queue", requireAdmin, async (_req, res) => {
 
 // POST /admin/moderation/:itemId/resolve
 router.post("/admin/moderation/:itemId/resolve", requireAdmin, async (req, res) => {
+  const itemId = req.params.itemId as string;
   const { action, note } = req.body;
   const status = action === "remove" ? "resolved_remove" : "resolved_keep";
   await db.update(moderationItemsTable).set({ status, note, resolvedBy: req.userId!, resolvedAt: new Date() })
-    .where(eq(moderationItemsTable.id, req.params.itemId));
+    .where(eq(moderationItemsTable.id, itemId));
   res.status(204).send();
 });
 

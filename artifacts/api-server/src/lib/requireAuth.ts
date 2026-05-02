@@ -10,9 +10,16 @@ declare global {
   }
 }
 
+type ClerkClaims = {
+  userId?: string;
+  publicMetadata?: { role?: string };
+  [key: string]: unknown;
+};
+
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId as string | undefined || auth?.userId;
+  const claims = auth?.sessionClaims as ClerkClaims | null;
+  const userId = claims?.userId as string | undefined || auth?.userId;
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -23,13 +30,14 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const auth = getAuth(req);
-  const userId = auth?.sessionClaims?.userId as string | undefined || auth?.userId;
+  const claims = auth?.sessionClaims as ClerkClaims | null;
+  const userId = claims?.userId as string | undefined || auth?.userId;
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
   req.userId = userId;
-  const role = auth?.sessionClaims?.publicMetadata?.role as string | undefined;
+  const role = claims?.publicMetadata?.role;
   if (role !== "administrator") {
     res.status(403).json({ error: "Forbidden" });
     return;

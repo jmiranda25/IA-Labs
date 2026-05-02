@@ -65,9 +65,11 @@ export default function MarketplacePage() {
   const [createOpen, setCreateOpen] = useState(false);
   const qc = useQueryClient();
 
+  type ListingType = "offering" | "seeking";
+  type ListingStatus = "active" | "closed";
   const { data, isLoading } = useListMarketplaceListings(
-    { search: search || undefined, type: type || undefined, status: "active", limit: "20" },
-    { query: { queryKey: getListMarketplaceListingsQueryKey({ search: search || undefined, type: type || undefined, status: "active", limit: "20" }) } }
+    { search: search || undefined, type: (type || undefined) as ListingType | undefined, status: "active" as ListingStatus, limit: 20 },
+    { query: { queryKey: getListMarketplaceListingsQueryKey({ search: search || undefined, type: (type || undefined) as ListingType | undefined, status: "active" as ListingStatus, limit: 20 }) } }
   );
   const createListing = useCreateMarketplaceListing();
 

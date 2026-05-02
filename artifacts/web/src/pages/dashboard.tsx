@@ -30,9 +30,9 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: any; label: string;
 export default function DashboardPage() {
   const { data: me } = useGetMe();
   const { data: stats, isLoading: statsLoading } = useGetCommunityStats();
-  const { data: feed, isLoading: feedLoading } = useGetActivityFeed({ limit: "10" });
-  const { data: upcomingEvents } = useGetUpcomingEvents({ limit: "3" });
-  const { data: trending } = useGetTrendingForumPosts({ limit: "5" });
+  const { data: feed, isLoading: feedLoading } = useGetActivityFeed({ limit: 10 });
+  const { data: upcomingEvents } = useGetUpcomingEvents({ limit: 3 });
+  const { data: trending } = useGetTrendingForumPosts({ limit: 5 });
 
   return (
     <Layout>

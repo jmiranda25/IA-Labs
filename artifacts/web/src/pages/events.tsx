@@ -75,9 +75,10 @@ function EventCard({ event }: { event: any }) {
 
 export default function EventsPage() {
   const [tab, setTab] = useState("upcoming");
+  type EventStatus = "upcoming" | "ongoing" | "past" | "cancelled";
   const { data, isLoading } = useListEvents(
-    { status: tab, limit: "12" },
-    { query: { queryKey: getListEventsQueryKey({ status: tab, limit: "12" }) } }
+    { status: tab as EventStatus, limit: 12 },
+    { query: { queryKey: getListEventsQueryKey({ status: tab as EventStatus, limit: 12 }) } }
   );
   const events = (data as any)?.events ?? [];
 
