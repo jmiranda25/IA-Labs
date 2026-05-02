@@ -39,6 +39,32 @@ export interface ActivityItem {
   createdAt: string;
 }
 
+export type PublicUserRole =
+  (typeof PublicUserRole)[keyof typeof PublicUserRole];
+
+export const PublicUserRole = {
+  participant: "participant",
+  administrator: "administrator",
+} as const;
+
+export interface PublicUser {
+  id: string;
+  username?: string | null;
+  displayName: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  role: PublicUserRole;
+  location?: string | null;
+  website?: string | null;
+  skills: string[];
+  joinedAt: string;
+}
+
+export interface MemberListResponse {
+  items: PublicUser[];
+  nextCursor: string | null;
+}
+
 export type UserProfileRole =
   (typeof UserProfileRole)[keyof typeof UserProfileRole];
 
@@ -575,10 +601,13 @@ export type CheckUsernameAvailabilityParams = {
 };
 
 export type ListUsersParams = {
-  search?: string;
+  q?: string;
   role?: ListUsersRole;
+  cursor?: string;
+  /**
+   * @maximum 60
+   */
   limit?: number;
-  offset?: number;
 };
 
 export type ListUsersRole = (typeof ListUsersRole)[keyof typeof ListUsersRole];

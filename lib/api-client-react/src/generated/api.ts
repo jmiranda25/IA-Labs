@@ -55,9 +55,11 @@ import type {
   ListingListResponse,
   MarketplaceListing,
   MarketplaceMessage,
+  MemberListResponse,
   MessageThread,
   ModerationItem,
   NotificationListResponse,
+  PublicUser,
   ReactionResult,
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
@@ -677,7 +679,96 @@ export function useCheckUsernameAvailability<
 }
 
 /**
- * @summary List members (directory)
+ * @summary Get a public user profile by username
+ */
+export const getGetUserByUsernameUrl = (username: string) => {
+  return `/api/users/by-username/${username}`;
+};
+
+export const getUserByUsername = async (
+  username: string,
+  options?: RequestInit,
+): Promise<PublicUser> => {
+  return customFetch<PublicUser>(getGetUserByUsernameUrl(username), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetUserByUsernameQueryKey = (username: string) => {
+  return [`/api/users/by-username/${username}`] as const;
+};
+
+export const getGetUserByUsernameQueryOptions = <
+  TData = Awaited<ReturnType<typeof getUserByUsername>>,
+  TError = ErrorType<void>,
+>(
+  username: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUserByUsername>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetUserByUsernameQueryKey(username);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getUserByUsername>>
+  > = ({ signal }) =>
+    getUserByUsername(username, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!username,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getUserByUsername>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetUserByUsernameQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getUserByUsername>>
+>;
+export type GetUserByUsernameQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a public user profile by username
+ */
+
+export function useGetUserByUsername<
+  TData = Awaited<ReturnType<typeof getUserByUsername>>,
+  TError = ErrorType<void>,
+>(
+  username: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUserByUsername>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetUserByUsernameQueryOptions(username, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List members (public directory, cursor-paginated)
  */
 export const getListUsersUrl = (params?: ListUsersParams) => {
   const normalizedParams = new URLSearchParams();
@@ -698,8 +789,8 @@ export const getListUsersUrl = (params?: ListUsersParams) => {
 export const listUsers = async (
   params?: ListUsersParams,
   options?: RequestInit,
-): Promise<UserListResponse> => {
-  return customFetch<UserListResponse>(getListUsersUrl(params), {
+): Promise<MemberListResponse> => {
+  return customFetch<MemberListResponse>(getListUsersUrl(params), {
     ...options,
     method: "GET",
   });
@@ -744,7 +835,7 @@ export type ListUsersQueryResult = NonNullable<
 export type ListUsersQueryError = ErrorType<unknown>;
 
 /**
- * @summary List members (directory)
+ * @summary List members (public directory, cursor-paginated)
  */
 
 export function useListUsers<

@@ -154,13 +154,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/CheckUsernameResponse"
 
+  /users/by-username/{username}:
+    get:
+      operationId: getUserByUsername
+      tags: [users]
+      summary: Get a public user profile by username
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicUser"
+        "404":
+          description: User not found
+
   /users:
     get:
       operationId: listUsers
       tags: [users]
-      summary: List members (directory)
+      summary: List members (public directory, cursor-paginated)
       parameters:
-        - name: search
+        - name: q
           in: query
           schema:
             type: string
@@ -169,23 +190,23 @@ paths:
           schema:
             type: string
             enum: [participant, administrator]
+        - name: cursor
+          in: query
+          schema:
+            type: string
         - name: limit
           in: query
           schema:
             type: integer
             default: 24
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
+            maximum: 60
       responses:
         "200":
-          description: Paginated member list
+          description: Cursor-paginated member list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserListResponse"
+                $ref: "#/components/schemas/MemberListResponse"
 
   /users/{userId}:
     get:
@@ -1230,6 +1251,52 @@ components:
       required: [id, type, actorId, actorName, title, link, createdAt]
 
     # ── Users ──────────────────────────────────────────────────────────────────
+    PublicUser:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+          nullable: true
+        displayName:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [participant, administrator]
+        location:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        skills:
+          type: array
+          items:
+            type: string
+        joinedAt:
+          type: string
+          format: date-time
+      required: [id, displayName, role, skills, joinedAt]
+
+    MemberListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicUser"
+        nextCursor:
+          type: string
+          nullable: true
+      required: [items, nextCursor]
+
     UserProfile:
       type: object
       properties:

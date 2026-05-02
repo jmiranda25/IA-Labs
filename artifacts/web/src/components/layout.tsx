@@ -18,7 +18,7 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const navItems = [
   { href: "/dashboard",       label: "Dashboard",       icon: LayoutDashboard },
-  { href: "/members",         label: "Miembros",        icon: Users },
+  { href: "/miembros",        label: "Miembros",        icon: Users },
   { href: "/events",          label: "Eventos",         icon: Calendar },
   { href: "/forum",           label: "Foro",            icon: MessageSquare },
   { href: "/resources",       label: "Recursos",        icon: BookOpen },

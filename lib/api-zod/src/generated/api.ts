@@ -121,36 +121,57 @@ export const CheckUsernameAvailabilityResponse = zod.object({
 });
 
 /**
- * @summary List members (directory)
+ * @summary Get a public user profile by username
+ */
+export const GetUserByUsernameParams = zod.object({
+  username: zod.coerce.string(),
+});
+
+export const GetUserByUsernameResponse = zod.object({
+  id: zod.string(),
+  username: zod.string().nullish(),
+  displayName: zod.string(),
+  bio: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  role: zod.enum(["participant", "administrator"]),
+  location: zod.string().nullish(),
+  website: zod.string().nullish(),
+  skills: zod.array(zod.string()),
+  joinedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List members (public directory, cursor-paginated)
  */
 export const listUsersQueryLimitDefault = 24;
-export const listUsersQueryOffsetDefault = 0;
+export const listUsersQueryLimitMax = 60;
 
 export const ListUsersQueryParams = zod.object({
-  search: zod.coerce.string().optional(),
+  q: zod.coerce.string().optional(),
   role: zod.enum(["participant", "administrator"]).optional(),
-  limit: zod.coerce.number().default(listUsersQueryLimitDefault),
-  offset: zod.coerce.number().default(listUsersQueryOffsetDefault),
+  cursor: zod.coerce.string().optional(),
+  limit: zod.coerce
+    .number()
+    .max(listUsersQueryLimitMax)
+    .default(listUsersQueryLimitDefault),
 });
 
 export const ListUsersResponse = zod.object({
-  users: zod.array(
+  items: zod.array(
     zod.object({
       id: zod.string(),
-      clerkId: zod.string(),
       username: zod.string().nullish(),
       displayName: zod.string(),
       bio: zod.string().nullish(),
       avatarUrl: zod.string().nullish(),
       role: zod.enum(["participant", "administrator"]),
-      skills: zod.array(zod.string()),
       location: zod.string().nullish(),
       website: zod.string().nullish(),
-      isBanned: zod.boolean(),
+      skills: zod.array(zod.string()),
       joinedAt: zod.coerce.date(),
     }),
   ),
-  total: zod.number(),
+  nextCursor: zod.string().nullable(),
 });
 
 /**

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, ilike, or, sql, and, ne } from "drizzle-orm";
+import { eq, ilike, or, sql, and, ne, lt, desc } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
 import { requireAuth } from "../lib/requireAuth";
@@ -13,7 +13,21 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
 
 const USERNAME_RE = /^[a-z0-9_]{3,24}$/;
 
-// GET /users/me
+// Safe columns for the public directory — never include email / clerkId / isBanned
+const PUBLIC_COLS = {
+  id: true,
+  username: true,
+  displayName: true,
+  bio: true,
+  avatarUrl: true,
+  role: true,
+  location: true,
+  website: true,
+  skills: true,
+  joinedAt: true,
+} as const;
+
+// ── GET /users/me ────────────────────────────────────────────────────────────
 router.get("/users/me", requireAuth, async (req, res) => {
   const clerkId = req.userId!;
   let user = await db.query.usersTable.findFirst({
@@ -42,7 +56,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
   res.json(user);
 });
 
-// PUT /users/me  — role field is intentionally excluded; only admins may change roles
+// ── PUT /users/me ─────────────────────────────────────────────────────────────
 router.put("/users/me", requireAuth, async (req, res) => {
   const clerkId = req.userId!;
   const { displayName, bio, avatarUrl, skills, location, website, username } = req.body;
@@ -79,7 +93,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
   }
 });
 
-// POST /users/me/avatar
+// ── POST /users/me/avatar ─────────────────────────────────────────────────────
 router.post("/users/me/avatar", requireAuth, upload.single("avatar"), async (req, res) => {
   const clerkId = req.userId!;
   const file = req.file;
@@ -104,16 +118,11 @@ router.post("/users/me/avatar", requireAuth, upload.single("avatar"), async (req
   }
 
   const avatarUrl = `/api/storage/objects/${subPath}`;
-
-  await db
-    .update(usersTable)
-    .set({ avatarUrl, updatedAt: new Date() })
-    .where(eq(usersTable.clerkId, clerkId));
-
+  await db.update(usersTable).set({ avatarUrl, updatedAt: new Date() }).where(eq(usersTable.clerkId, clerkId));
   res.json({ avatarUrl });
 });
 
-// GET /users/check-username
+// ── GET /users/check-username ─────────────────────────────────────────────────
 router.get("/users/check-username", requireAuth, async (req, res) => {
   const clerkId = req.userId!;
   const value = req.query.value as string;
@@ -130,34 +139,87 @@ router.get("/users/check-username", requireAuth, async (req, res) => {
   res.json({ available: !existing });
 });
 
-// GET /users
-router.get("/users", requireAuth, async (req, res) => {
-  const { search, role, limit = "24", offset = "0" } = req.query as Record<string, string>;
-  const conditions = [];
-  if (search) {
-    conditions.push(
-      or(
-        ilike(usersTable.displayName, `%${search}%`),
-        ilike(usersTable.bio, `%${search}%`),
-        ilike(usersTable.location, `%${search}%`)
-      )
-    );
-  }
-  if (role) conditions.push(eq(usersTable.role, role));
-  const where = conditions.length ? and(...conditions) : undefined;
-  const users = await db.query.usersTable.findMany({
-    where,
-    limit: parseInt(limit),
-    offset: parseInt(offset),
+// ── GET /users/by-username/:username ──────────────────────────────────────────
+router.get("/users/by-username/:username", requireAuth, async (req, res) => {
+  const { username } = req.params;
+  const user = await db.query.usersTable.findFirst({
+    where: eq(usersTable.username, username),
+    columns: PUBLIC_COLS,
   });
-  const total = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(usersTable)
-    .where(where);
-  res.json({ users, total: Number(total[0]?.count ?? 0) });
+  if (!user) {
+    res.status(404).json({ error: "Usuario no encontrado" });
+    return;
+  }
+  res.json(user);
 });
 
-// GET /users/:userId
+// ── GET /users (cursor-paginated public directory) ────────────────────────────
+// TODO: add a GIN trigram index on (display_name || ' ' || username) when the
+//       directory grows beyond a few thousand rows.
+router.get("/users", requireAuth, async (req, res) => {
+  const { q, role, cursor, limit: limitRaw } = req.query as Record<string, string>;
+  const limit = Math.min(parseInt(limitRaw ?? "24") || 24, 60);
+
+  const conditions: ReturnType<typeof eq>[] = [];
+
+  if (q) {
+    conditions.push(
+      or(
+        ilike(usersTable.displayName, `%${q}%`),
+        ilike(usersTable.username, `%${q}%`),
+      ) as ReturnType<typeof eq>
+    );
+  }
+
+  if (role) {
+    conditions.push(eq(usersTable.role, role) as ReturnType<typeof eq>);
+  }
+
+  // Cursor decoding: base64(JSON.stringify({ joinedAt, id }))
+  if (cursor) {
+    try {
+      const decoded = JSON.parse(Buffer.from(cursor, "base64").toString()) as {
+        joinedAt: string;
+        id: string;
+      };
+      const cursorDate = new Date(decoded.joinedAt);
+      conditions.push(
+        or(
+          lt(usersTable.joinedAt, cursorDate),
+          and(eq(usersTable.joinedAt, cursorDate), lt(usersTable.id, decoded.id)),
+        ) as ReturnType<typeof eq>
+      );
+    } catch {
+      // ignore malformed cursor
+    }
+  }
+
+  const where = conditions.length ? and(...conditions) : undefined;
+
+  const rows = await db.query.usersTable.findMany({
+    where,
+    columns: PUBLIC_COLS,
+    orderBy: [desc(usersTable.joinedAt), desc(usersTable.id)],
+    limit: limit + 1,
+  });
+
+  const hasMore = rows.length > limit;
+  if (hasMore) rows.pop();
+
+  const nextCursor =
+    hasMore && rows.length > 0
+      ? Buffer.from(
+          JSON.stringify({
+            joinedAt: rows[rows.length - 1].joinedAt.toISOString(),
+            id: rows[rows.length - 1].id,
+          }),
+        ).toString("base64")
+      : null;
+
+  res.json({ items: rows, nextCursor });
+});
+
+// ── GET /users/:userId (legacy — keep for backward compat) ───────────────────
 router.get("/users/:userId", requireAuth, async (req, res) => {
   const userId = req.params.userId as string;
   const user = await db.query.usersTable.findFirst({

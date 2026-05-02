@@ -16,6 +16,8 @@ import LandingPage from "@/pages/landing";
 import DashboardPage from "@/pages/dashboard";
 import MembersPage from "@/pages/members";
 import MemberProfilePage from "@/pages/member-profile";
+import MiembrosPage from "@/pages/miembros";
+import MiembroPerfilPage from "@/pages/miembro-perfil";
 import EventsPage from "@/pages/events";
 import EventDetailPage from "@/pages/event-detail";
 import ForumPage from "@/pages/forum";
@@ -245,6 +247,16 @@ function ClerkProviderWithRoutes() {
               {(params) => (
                 <ProtectedRoute>
                   <MemberProfilePage userId={params.userId as string} />
+                </ProtectedRoute>
+              )}
+            </Route>
+            <Route path="/miembros">
+              <ProtectedRoute><MiembrosPage /></ProtectedRoute>
+            </Route>
+            <Route path="/miembros/:username">
+              {(params) => (
+                <ProtectedRoute>
+                  <MiembroPerfilPage username={params.username as string} />
                 </ProtectedRoute>
               )}
             </Route>
