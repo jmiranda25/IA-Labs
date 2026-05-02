@@ -1,0 +1,48 @@
+Context: Stack from step 1. Auth = Clerk. requireAdmin already on the
+API. Role toggling must update BOTH our `users` table AND Clerk's
+publicMetadata.role via the Clerk Backend SDK so the JWT picks it up
+on the next session refresh. Everything inside Replit + Agent 4.
+
+Goals:
+
+DB (Drizzle):
+- New table reports: id, target_type (enum: 'forum_post' | 'forum_thread' |
+  'listing'), target_id (uuid), reporter_id (text fk → users.id),
+  reason (text), status (enum: 'open' | 'resolved' | 'dismissed'),
+  created_at, resolved_at nullable
+- Add to users: disabled_at (timestamptz nullable)
+
+Backend (all under /api/admin/* with requireAdmin):
+- GET /api/admin/metrics →
+    { totalMembers, members30dGrowth, upcomingEvents,
+      activeThreads7d, pendingListings, pendingResources, openReports }
+  Each computed via Drizzle aggregate queries.
+- GET   /api/admin/users?q=&role=&cursor=
+- PATCH /api/admin/users/:id/role { role: 'participant' | 'administrator' }
+        → updates `users.role` AND calls Clerk Backend SDK:
+          await clerkClient.users.updateUser(id, { publicMetadata: { role } })
+- POST  /api/admin/users/:id/disable
+        → sets users.disabled_at = now() AND calls Clerk's user.lock()
+          so they can't sign in.
+- GET   /api/admin/moderation/queue
+        → unified list of pending listings + pending resources + open reports
+- POST  /api/reports  (auth required, any user)
+        → from "Reportar" buttons; body { target_type, target_id, reason }
+- POST  /api/admin/reports/:id/resolve { action: 'remove' | 'dismiss' }
+        → if 'remove', soft-delete the target; notify() the reporter
+        with the outcome
+- All admin mutations return updated data so React Query (Orval) auto-merges.
+
+Frontend (all under /admin/*, gated by <ProtectedRoute requireAdmin>):
+- /admin: shadcn dashboard with KPI cards + simple sparkline (recharts).
+  Click each card to drill into the corresponding section.
+- /admin/usuarios: shadcn data table (TanStack Table) with search,
+  role filter, role-toggle action (with confirm dialog), disable action.
+- /admin/moderacion: tabs for Listings pendientes / Recursos pendientes /
+  Reportes abiertos; each shows a side-by-side preview pane.
+- "Reportar" button on forum posts and listings → opens shadcn <Dialog>
+  with a reason textarea → POST /api/reports.
+- After approve/reject/resolve actions: toast + remove from queue
+  optimistically.
+
+Deliverables: a functional admin command center.
