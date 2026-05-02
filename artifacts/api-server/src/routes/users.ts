@@ -51,12 +51,15 @@ const PUBLIC_COLS = {
 // ── GET /users/me ────────────────────────────────────────────────────────────
 router.get("/users/me", requireAuth, async (req, res) => {
   const clerkId = req.userId!;
+  const auth = getAuth(req);
+  const claims = auth?.sessionClaims as Record<string, unknown> | null;
+  const clerkRole = (claims?.publicMetadata as Record<string, unknown> | null)?.role as string | undefined;
+
   let user = await db.query.usersTable.findFirst({
     where: eq(usersTable.clerkId, clerkId),
   });
+
   if (!user) {
-    const auth = getAuth(req);
-    const claims = auth?.sessionClaims as Record<string, unknown> | null;
     const name =
       (claims?.name as string) ||
       (claims?.email as string)?.split("@")[0] ||
@@ -69,11 +72,20 @@ router.get("/users/me", requireAuth, async (req, res) => {
         clerkId,
         displayName: name,
         avatarUrl: avatar,
-        role: "participant",
+        role: clerkRole ?? "participant",
         skills: [],
       })
       .returning();
+  } else if (clerkRole && clerkRole !== user.role) {
+    // Sync role from Clerk JWT → DB (e.g. after admin seed or role change)
+    [user] = await db
+      .update(usersTable)
+      .set({ role: clerkRole, updatedAt: new Date() })
+      .where(eq(usersTable.clerkId, clerkId))
+      .returning();
+    req.log.info({ clerkId, oldRole: user.role, newRole: clerkRole }, "Role synced from Clerk metadata");
   }
+
   res.json(user);
 });
 
