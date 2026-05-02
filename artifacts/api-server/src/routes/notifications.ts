@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, lt } from "drizzle-orm";
 import type { Response } from "express";
 import { db, notificationsTable } from "@workspace/db";
 import { requireAuth } from "../lib/requireAuth";
@@ -39,19 +39,30 @@ router.get("/notifications/unread-count", requireAuth, async (req, res) => {
   res.json({ count: Number(row?.count ?? 0) });
 });
 
-// GET /notifications
+// GET /notifications — cursor-paginated
 router.get("/notifications", requireAuth, async (req, res) => {
-  const { unreadOnly = "false", limit = "30" } = req.query as Record<string, string>;
+  const { unreadOnly = "false", limit = "30", cursor } = req.query as Record<string, string>;
+  const pageSize = Math.min(parseInt(limit) || 30, 100);
   const conditions = [eq(notificationsTable.userId, req.userId!)];
   if (unreadOnly === "true") conditions.push(eq(notificationsTable.isRead, false));
-  const notifications = await db.query.notificationsTable.findMany({
+  if (cursor) conditions.push(lt(notificationsTable.createdAt, new Date(cursor)));
+
+  const rows = await db.query.notificationsTable.findMany({
     where: and(...conditions),
-    limit: parseInt(limit),
+    limit: pageSize + 1,
     orderBy: desc(notificationsTable.createdAt),
   });
-  const [unreadResult] = await db.select({ count: sql<number>`count(*)` }).from(notificationsTable)
+
+  const hasMore = rows.length > pageSize;
+  const notifications = hasMore ? rows.slice(0, pageSize) : rows;
+  const nextCursor = hasMore ? notifications[notifications.length - 1]?.createdAt.toISOString() : null;
+
+  const [unreadResult] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(notificationsTable)
     .where(and(eq(notificationsTable.userId, req.userId!), eq(notificationsTable.isRead, false)));
-  res.json({ notifications, unreadCount: Number(unreadResult?.count ?? 0) });
+
+  res.json({ notifications, unreadCount: Number(unreadResult?.count ?? 0), nextCursor });
 });
 
 // POST /notifications/mark-all-read

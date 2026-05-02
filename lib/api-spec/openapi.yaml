@@ -1144,7 +1144,7 @@ paths:
     get:
       operationId: listNotifications
       tags: [notifications]
-      summary: List notifications for current user
+      summary: List notifications for current user (cursor-paginated)
       parameters:
         - name: unreadOnly
           in: query
@@ -1156,6 +1156,11 @@ paths:
           schema:
             type: integer
             default: 30
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: ISO timestamp cursor for pagination
       responses:
         "200":
           description: Notifications
@@ -1163,6 +1168,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationListResponse"
+
+  /users/me/notification-preferences:
+    get:
+      operationId: getMyNotificationPreferences
+      tags: [users]
+      summary: Get current user's notification preferences
+      responses:
+        "200":
+          description: Preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+    put:
+      operationId: updateMyNotificationPreferences
+      tags: [users]
+      summary: Update current user's notification preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationPreferences"
+      responses:
+        "200":
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
 
   /notifications/unread-count:
     get:
@@ -2195,7 +2230,27 @@ components:
             $ref: "#/components/schemas/Notification"
         unreadCount:
           type: integer
+        nextCursor:
+          type: string
+          nullable: true
       required: [notifications, unreadCount]
+
+    NotificationPreferences:
+      type: object
+      properties:
+        forum_reply:
+          type: boolean
+        event_rsvp:
+          type: boolean
+        marketplace_message:
+          type: boolean
+        admin_action:
+          type: boolean
+        resource_status:
+          type: boolean
+        listing_status:
+          type: boolean
+      required: [forum_reply, event_rsvp, marketplace_message, admin_action, resource_status, listing_status]
 
     # ── Admin ──────────────────────────────────────────────────────────────────
     UpdateUserRoleBody:

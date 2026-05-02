@@ -12,7 +12,8 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Bell, Menu, LayoutDashboard, Users, Calendar, MessageSquare,
   BookOpen, ShoppingBag, MessageCircle, Settings, Shield, Zap, X,
@@ -101,8 +102,8 @@ function NotificationBell() {
   const notifications = notifsData?.notifications ?? [];
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative" aria-label="Notificaciones" data-testid="button-notifications">
           <Bell className="h-5 w-5" />
           {unread > 0 && (
@@ -111,16 +112,20 @@ function NotificationBell() {
             </span>
           )}
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between px-3 py-2">
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-0">
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
           <span className="text-sm font-semibold">Notificaciones</span>
           {unread > 0 && (
             <button
               className="text-xs text-primary hover:underline"
               onClick={() => {
                 markAllRead.mutate(undefined, {
-                  onSuccess: () => qc.invalidateQueries({ queryKey: getListNotificationsQueryKey({ unreadOnly: false, limit: 10 }) }),
+                  onSuccess: () => {
+                    qc.invalidateQueries({ queryKey: getListNotificationsQueryKey({ unreadOnly: false, limit: 10 }) });
+                    qc.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
+                  },
                 });
               }}
               data-testid="button-mark-all-read"
@@ -129,21 +134,41 @@ function NotificationBell() {
             </button>
           )}
         </div>
-        <DropdownMenuSeparator />
-        {notifications.length === 0 ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">Sin notificaciones</div>
-        ) : (
-          notifications.map((n: any) => (
-            <DropdownMenuItem key={n.id} asChild>
-              <Link href={n.link ?? "#"} className={`block px-3 py-2 ${!n.isRead ? "bg-primary/5" : ""}`}>
-                <p className="text-sm font-medium">{n.title}</p>
-                <p className="text-xs text-muted-foreground">{n.body}</p>
-              </Link>
-            </DropdownMenuItem>
-          ))
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+
+        {/* Notification list */}
+        <ScrollArea className="max-h-[360px]">
+          {notifications.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              <Bell className="h-7 w-7 mx-auto mb-2 opacity-30" />
+              Sin notificaciones
+            </div>
+          ) : (
+            <div className="divide-y divide-border/50">
+              {notifications.map((n: any) => (
+                <Link
+                  key={n.id}
+                  href={n.link ?? "/notificaciones"}
+                  onClick={() => setOpen(false)}
+                  className={`block px-3 py-2.5 hover:bg-muted/50 transition-colors ${!n.isRead ? "bg-primary/5" : ""}`}
+                >
+                  <p className="text-sm font-medium leading-snug">{n.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+
+        {/* Footer */}
+        <div className="border-t border-border px-3 py-2">
+          <Link href="/notificaciones" onClick={() => setOpen(false)}>
+            <span className="text-xs text-primary hover:underline cursor-pointer">
+              Ver todas las notificaciones →
+            </span>
+          </Link>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 

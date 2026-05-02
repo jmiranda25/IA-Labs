@@ -6,6 +6,27 @@ import { requireAuth } from "../lib/requireAuth";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { randomUUID } from "crypto";
 import multer from "multer";
+import { z } from "zod/v4";
+
+const NOTIF_PREF_KEYS = ["forum_reply", "event_rsvp", "marketplace_message", "admin_action", "resource_status", "listing_status"] as const;
+
+const DEFAULT_NOTIF_PREFS = {
+  forum_reply: true,
+  event_rsvp: true,
+  marketplace_message: true,
+  admin_action: true,
+  resource_status: true,
+  listing_status: true,
+};
+
+const notifPrefsSchema = z.object({
+  forum_reply: z.boolean(),
+  event_rsvp: z.boolean(),
+  marketplace_message: z.boolean(),
+  admin_action: z.boolean(),
+  resource_status: z.boolean(),
+  listing_status: z.boolean(),
+});
 
 const router = Router();
 const objectStorageService = new ObjectStorageService();
@@ -91,6 +112,28 @@ router.put("/users/me", requireAuth, async (req, res) => {
     }
     throw err;
   }
+});
+
+// ── GET /users/me/notification-preferences ───────────────────────────────────
+router.get("/users/me/notification-preferences", requireAuth, async (req, res) => {
+  const user = await db.query.usersTable.findFirst({
+    where: eq(usersTable.clerkId, req.userId!),
+    columns: { notificationPreferences: true },
+  });
+  if (!user) { res.status(404).json({ error: "Not found" }); return; }
+  res.json({ ...DEFAULT_NOTIF_PREFS, ...(user.notificationPreferences as object ?? {}) });
+});
+
+// ── PUT /users/me/notification-preferences ────────────────────────────────────
+router.put("/users/me/notification-preferences", requireAuth, async (req, res) => {
+  const parsed = notifPrefsSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Preferencias no válidas" }); return; }
+  const [updated] = await db
+    .update(usersTable)
+    .set({ notificationPreferences: parsed.data, updatedAt: new Date() })
+    .where(eq(usersTable.clerkId, req.userId!))
+    .returning();
+  res.json({ ...DEFAULT_NOTIF_PREFS, ...(updated.notificationPreferences as object ?? {}) });
 });
 
 // ── POST /users/me/avatar ─────────────────────────────────────────────────────

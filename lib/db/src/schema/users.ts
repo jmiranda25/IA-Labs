@@ -15,6 +15,14 @@ export const usersTable = pgTable("users", {
   location: text("location"),
   website: text("website"),
   isBanned: boolean("is_banned").notNull().default(false),
+  notificationPreferences: jsonb("notification_preferences").notNull().default({
+    forum_reply: true,
+    event_rsvp: true,
+    marketplace_message: true,
+    admin_action: true,
+    resource_status: true,
+    listing_status: true,
+  }),
   joinedAt: timestamp("joined_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

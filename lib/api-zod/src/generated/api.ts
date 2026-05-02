@@ -1236,7 +1236,7 @@ export const GetMessageThreadResponseItem = zod.object({
 export const GetMessageThreadResponse = zod.array(GetMessageThreadResponseItem);
 
 /**
- * @summary List notifications for current user
+ * @summary List notifications for current user (cursor-paginated)
  */
 export const listNotificationsQueryUnreadOnlyDefault = false;
 export const listNotificationsQueryLimitDefault = 30;
@@ -1246,6 +1246,10 @@ export const ListNotificationsQueryParams = zod.object({
     .boolean()
     .default(listNotificationsQueryUnreadOnlyDefault),
   limit: zod.coerce.number().default(listNotificationsQueryLimitDefault),
+  cursor: zod.coerce
+    .string()
+    .optional()
+    .describe("ISO timestamp cursor for pagination"),
 });
 
 export const ListNotificationsResponse = zod.object({
@@ -1269,6 +1273,40 @@ export const ListNotificationsResponse = zod.object({
     }),
   ),
   unreadCount: zod.number(),
+  nextCursor: zod.string().nullish(),
+});
+
+/**
+ * @summary Get current user's notification preferences
+ */
+export const GetMyNotificationPreferencesResponse = zod.object({
+  forum_reply: zod.boolean(),
+  event_rsvp: zod.boolean(),
+  marketplace_message: zod.boolean(),
+  admin_action: zod.boolean(),
+  resource_status: zod.boolean(),
+  listing_status: zod.boolean(),
+});
+
+/**
+ * @summary Update current user's notification preferences
+ */
+export const UpdateMyNotificationPreferencesBody = zod.object({
+  forum_reply: zod.boolean(),
+  event_rsvp: zod.boolean(),
+  marketplace_message: zod.boolean(),
+  admin_action: zod.boolean(),
+  resource_status: zod.boolean(),
+  listing_status: zod.boolean(),
+});
+
+export const UpdateMyNotificationPreferencesResponse = zod.object({
+  forum_reply: zod.boolean(),
+  event_rsvp: zod.boolean(),
+  marketplace_message: zod.boolean(),
+  admin_action: zod.boolean(),
+  resource_status: zod.boolean(),
+  listing_status: zod.boolean(),
 });
 
 /**

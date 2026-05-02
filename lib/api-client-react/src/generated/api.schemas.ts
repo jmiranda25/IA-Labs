@@ -456,6 +456,16 @@ export interface Notification {
 export interface NotificationListResponse {
   notifications: Notification[];
   unreadCount: number;
+  nextCursor?: string | null;
+}
+
+export interface NotificationPreferences {
+  forum_reply: boolean;
+  event_rsvp: boolean;
+  marketplace_message: boolean;
+  admin_action: boolean;
+  resource_status: boolean;
+  listing_status: boolean;
 }
 
 export type UpdateUserRoleBodyRole =
@@ -666,6 +676,10 @@ export type UploadListingImagesBody = {
 export type ListNotificationsParams = {
   unreadOnly?: boolean;
   limit?: number;
+  /**
+   * ISO timestamp cursor for pagination
+   */
+  cursor?: string;
 };
 
 export type GetNotificationsUnreadCount200 = {

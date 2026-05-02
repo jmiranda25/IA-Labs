@@ -1,5 +1,6 @@
+import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import { db, notificationsTable } from "@workspace/db";
+import { db, notificationsTable, usersTable } from "@workspace/db";
 import { sseClients } from "../routes/notifications";
 
 // TODO: when scaling beyond a single instance, swap the in-process pub/sub
@@ -14,7 +15,25 @@ export interface NotifyOptions {
   link?: string;
 }
 
+const DEFAULT_PREFS: Record<string, boolean> = {
+  forum_reply: true,
+  event_rsvp: true,
+  marketplace_message: true,
+  admin_action: true,
+  resource_status: true,
+  listing_status: true,
+};
+
 export async function notify({ recipientId, type, title, body, link }: NotifyOptions) {
+  const recipient = await db.query.usersTable.findFirst({
+    where: eq(usersTable.id, recipientId),
+    columns: { notificationPreferences: true },
+  });
+
+  const prefs = (recipient?.notificationPreferences as Record<string, boolean> | null) ?? DEFAULT_PREFS;
+  // If the key is explicitly false, skip insert + push
+  if (prefs[type] === false) return;
+
   const [row] = await db
     .insert(notificationsTable)
     .values({ id: randomUUID(), userId: recipientId, type, title, body, link: link ?? null, isRead: false })

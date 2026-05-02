@@ -40,6 +40,7 @@ import SettingsPage from "@/pages/settings";
 import PerfilPage from "@/pages/perfil";
 import AdminPage from "@/pages/admin";
 import NotificacionesPage from "@/pages/notificaciones";
+import PreferenciasNotificacionesPage from "@/pages/preferencias-notificaciones";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -371,6 +372,9 @@ function ClerkProviderWithRoutes() {
             </Route>
             <Route path="/notificaciones">
               <ProtectedRoute><NotificacionesPage /></ProtectedRoute>
+            </Route>
+            <Route path="/perfil/preferencias">
+              <ProtectedRoute><PreferenciasNotificacionesPage /></ProtectedRoute>
             </Route>
             <Route path="/admin">
               <ProtectedRoute>
