@@ -45,6 +45,7 @@ const AdminPage = lazy(() => import("@/pages/admin"));
 const NotificacionesPage = lazy(() => import("@/pages/notificaciones"));
 const PreferenciasNotificacionesPage = lazy(() => import("@/pages/preferencias-notificaciones"));
 const ForbiddenPage = lazy(() => import("@/pages/forbidden"));
+const CuentaPage = lazy(() => import("@/pages/cuenta"));
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -387,6 +388,9 @@ function ClerkProviderWithRoutes() {
                 </Route>
                 <Route path="/perfil">
                   <ProtectedRoute><PerfilPage /></ProtectedRoute>
+                </Route>
+                <Route path="/cuenta/*?">
+                  <ProtectedRoute><CuentaPage /></ProtectedRoute>
                 </Route>
                 <Route path="/notificaciones">
                   <ProtectedRoute><NotificacionesPage /></ProtectedRoute>

@@ -303,6 +303,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </span>
             </Link>
             <UserButton
+              userProfileMode="navigation"
+              userProfileUrl={`${basePath}/cuenta`}
               appearance={{
                 elements: { avatarBox: "h-7 w-7" },
               }}
