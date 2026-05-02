@@ -141,7 +141,7 @@ router.get("/users/check-username", requireAuth, async (req, res) => {
 
 // ── GET /users/by-username/:username ──────────────────────────────────────────
 router.get("/users/by-username/:username", requireAuth, async (req, res) => {
-  const { username } = req.params;
+  const username = req.params.username as string;
   const user = await db.query.usersTable.findFirst({
     where: eq(usersTable.username, username),
     columns: PUBLIC_COLS,

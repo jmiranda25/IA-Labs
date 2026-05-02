@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { UserButton } from "@clerk/react";
-import { useGetMe, useListNotifications, useMarkAllNotificationsRead, getListNotificationsQueryKey } from "@workspace/api-client-react";
+import {
+  useGetMe,
+  useListNotifications,
+  useMarkAllNotificationsRead,
+  useGetNotificationsUnreadCount,
+  getListNotificationsQueryKey,
+  getGetNotificationsUnreadCountQueryKey,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -11,8 +18,9 @@ import {
   BookOpen, ShoppingBag, MessageCircle, Settings, Shield, Zap, X,
   BellRing, User,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useUser } from "@clerk/react";
+import { toast } from "sonner";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -29,23 +37,67 @@ const navItems = [
 
 function NotificationBell() {
   const { data: notifsData } = useListNotifications({ unreadOnly: false, limit: 10 });
+  const { data: unreadData } = useGetNotificationsUnreadCount();
   const markAllRead = useMarkAllNotificationsRead();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const backoffRef = useRef(1000);
   const { user } = useUser();
+
+  const invalidateAll = useCallback(() => {
+    qc.invalidateQueries({ queryKey: getListNotificationsQueryKey({ unreadOnly: false, limit: 10 }) });
+    qc.invalidateQueries({ queryKey: getGetNotificationsUnreadCountQueryKey() });
+  }, [qc]);
 
   useEffect(() => {
     if (!user) return;
-    const es = new EventSource(`${basePath}/api/notifications/stream`, { withCredentials: true });
-    eventSourceRef.current = es;
-    es.onmessage = () => {
-      qc.invalidateQueries({ queryKey: getListNotificationsQueryKey({ unreadOnly: false, limit: 10 }) });
-    };
-    return () => { es.close(); eventSourceRef.current = null; };
-  }, [user, qc]);
+    let cancelled = false;
 
-  const unread = notifsData?.unreadCount ?? 0;
+    function connect() {
+      if (cancelled) return;
+      const es = new EventSource(`${basePath}/api/notifications/stream`, { withCredentials: true });
+      eventSourceRef.current = es;
+
+      es.addEventListener("notification", (e: MessageEvent) => {
+        try {
+          const n = JSON.parse(e.data) as { title: string; body: string; link?: string };
+          invalidateAll();
+          window.dispatchEvent(new CustomEvent("sse-notification", { detail: n }));
+          toast(n.title, {
+            description: n.body,
+            action: n.link
+              ? { label: "Ver", onClick: () => { window.location.href = `${basePath}${n.link}`; } }
+              : undefined,
+          });
+        } catch { /* ignore malformed */ }
+      });
+
+      es.onerror = () => {
+        es.close();
+        eventSourceRef.current = null;
+        if (!cancelled) {
+          setTimeout(() => {
+            backoffRef.current = Math.min(backoffRef.current * 2, 30000);
+            connect();
+          }, backoffRef.current);
+        }
+      };
+
+      es.onopen = () => {
+        backoffRef.current = 1000;
+      };
+    }
+
+    connect();
+    return () => {
+      cancelled = true;
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
+    };
+  }, [user, invalidateAll]);
+
+  const unread = unreadData?.count ?? notifsData?.unreadCount ?? 0;
   const notifications = notifsData?.notifications ?? [];
 
   return (

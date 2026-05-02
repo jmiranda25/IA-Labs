@@ -9,7 +9,7 @@ import {
   usersTable,
 } from "@workspace/db";
 import { requireAuth, requireAdmin } from "../lib/requireAuth";
-import { pushNotification } from "./notifications";
+import { notify } from "../lib/notify";
 import { randomUUID } from "crypto";
 
 const router = Router();
@@ -394,12 +394,13 @@ router.post("/forum/threads/:threadId/posts", requireAuth, async (req, res) => {
 
   // Notify thread author (skip if replying to self)
   if (thread.authorId !== req.userId) {
-    pushNotification(thread.authorId, {
-      type: "forum_post",
-      threadId,
-      threadTitle: thread.title,
-      postId: post.id,
-    });
+    notify({
+      recipientId: thread.authorId,
+      type: "forum_reply",
+      title: "Nueva respuesta en tu hilo",
+      body: `Alguien respondió en "${thread.title}"`,
+      link: `/foro/${thread.slug}`,
+    }).catch(() => {});
   }
 
   res.status(201).json(await enrichPost(post, req.userId));

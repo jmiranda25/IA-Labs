@@ -7,7 +7,7 @@ import { requireAuth, requireAdmin } from "../lib/requireAuth";
 import { randomUUID } from "crypto";
 import multer from "multer";
 import { ObjectStorageService } from "../lib/objectStorage";
-import { pushNotification } from "./notifications";
+import { notify } from "../lib/notify";
 
 const objectStorageService = new ObjectStorageService();
 
@@ -256,12 +256,13 @@ router.post("/marketplace/listings/:slug/messages", requireAuth, async (req, res
     .returning();
 
   const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, fromId) });
-  pushNotification(toId, {
-    type: "message_received",
+  notify({
+    recipientId: toId,
+    type: "marketplace_message",
     title: "Nuevo mensaje",
     body: `${sender?.displayName ?? "Alguien"}: ${body.slice(0, 80)}`,
     link: `/mensajes/${listing.id}/${fromId}`,
-  });
+  }).catch(() => {});
 
   res.status(201).json({ ...msg, fromName: sender?.displayName ?? "Unknown", fromAvatar: sender?.avatarUrl ?? null });
 });
@@ -386,12 +387,13 @@ router.post("/admin/marketplace/listings/:slug/approve", requireAdmin, async (re
     .set({ status: "active", updatedAt: new Date() })
     .where(eq(marketplaceListingsTable.slug, slug))
     .returning();
-  pushNotification(listing.sellerId, {
-    type: "admin_action",
+  notify({
+    recipientId: listing.sellerId,
+    type: "listing_status",
     title: "Anuncio aprobado",
     body: `Tu anuncio "${listing.title}" ha sido aprobado y ya está activo.`,
     link: `/marketplace/${listing.slug}`,
-  });
+  }).catch(() => {});
   res.json(await enrichListing(updated));
 });
 
@@ -408,12 +410,13 @@ router.post("/admin/marketplace/listings/:slug/reject", requireAdmin, async (req
     .set({ status: "rejected", updatedAt: new Date() })
     .where(eq(marketplaceListingsTable.slug, slug))
     .returning();
-  pushNotification(listing.sellerId, {
-    type: "admin_action",
+  notify({
+    recipientId: listing.sellerId,
+    type: "listing_status",
     title: "Anuncio rechazado",
     body: `Tu anuncio "${listing.title}" fue rechazado. Motivo: ${reason}`,
     link: `/marketplace/mis-anuncios`,
-  });
+  }).catch(() => {});
   res.json(await enrichListing(updated));
 });
 

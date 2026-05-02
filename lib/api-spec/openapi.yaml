@@ -1164,6 +1164,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/NotificationListResponse"
 
+  /notifications/unread-count:
+    get:
+      operationId: getNotificationsUnreadCount
+      tags: [notifications]
+      summary: Get unread notification count
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                required: [count]
+
   /notifications/mark-all-read:
     post:
       operationId: markAllNotificationsRead

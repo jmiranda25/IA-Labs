@@ -1,0 +1,43 @@
+Context: Stack from step 1 — real-time channel chosen is SSE.
+Auth = Clerk. Everything inside Replit + Agent 4.
+
+Goals:
+
+DB (Drizzle):
+- notifications: id, recipient_id (text fk → users.id, indexed),
+  type (text: 'forum_reply' | 'event_rsvp' | 'marketplace_message' |
+  'admin_action' | 'resource_status' | 'listing_status'),
+  title (text), body (text), link (text),
+  read_at (timestamptz nullable, indexed), created_at (indexed desc)
+
+Backend (artifacts/api-server):
+- Helper at src/lib/notify.ts:
+    notify({ recipientId, type, title, body, link })
+    1. Insert the row.
+    2. Push to that user's SSE channel (publish in-process).
+    3. Add a TODO comment: when scaling beyond a single instance,
+       swap the in-process pub/sub for Redis pub/sub.
+- GET /api/notifications/stream  → SSE endpoint with requireAuth.
+    * Sends `event: notification` with the new row as JSON each time
+      the user receives one.
+    * Sends a `: keepalive` comment every 25s to keep the connection alive.
+    * On disconnect, clean up the subscription.
+- GET /api/notifications/unread-count  → { count: number }
+- Hook notify() into existing flows from earlier steps:
+    * New post on a thread → notify the thread author
+      (skip if the author is replying to their own thread)
+    * New RSVP on an event → notify the event creator
+    * New marketplace message → notify the recipient
+    * Admin approve/reject of a resource or listing → notify the owner
+
+Frontend (artifacts/react-vite):
+- In the authenticated shell from step 6: open an EventSource to
+  /api/notifications/stream on mount; close on unmount or sign-out.
+- On `event: notification`:
+    * Invalidate the query for /api/notifications/unread-count.
+    * Show a shadcn toast with title + body + click-to-link.
+- Bell badge in the top bar shows unread count from
+  /api/notifications/unread-count (also auto-invalidated on each push).
+- Reconnect with exponential backoff if the SSE connection drops.
+
+Deliverables: real-time notifications visible without page refresh.

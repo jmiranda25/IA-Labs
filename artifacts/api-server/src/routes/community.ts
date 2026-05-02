@@ -46,7 +46,7 @@ router.get("/activity/feed", requireAuth, async (req, res) => {
     items.push({ id: `resource_${r.id}`, type: "resource_uploaded", actorId: r.authorId, actorName: "", actorAvatar: null, title: `Resource: ${r.title}`, link: `/resources/${r.id}`, createdAt: r.createdAt.toISOString() });
   }
   for (const l of recentListings) {
-    items.push({ id: `listing_${l.id}`, type: "listing_created", actorId: l.authorId, actorName: "", actorAvatar: null, title: `Listing: ${l.title}`, link: `/marketplace/${l.id}`, createdAt: l.createdAt.toISOString() });
+    items.push({ id: `listing_${l.id}`, type: "listing_created", actorId: l.sellerId, actorName: "", actorAvatar: null, title: `Listing: ${l.title}`, link: `/marketplace/${l.slug}`, createdAt: l.createdAt.toISOString() });
   }
 
   items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

@@ -40,6 +40,7 @@ import type {
   ForumThread,
   ForumThreadDetail,
   GetActivityFeedParams,
+  GetNotificationsUnreadCount200,
   GetUpcomingEventsParams,
   HealthStatus,
   LandingSection,
@@ -4706,6 +4707,86 @@ export function useListNotifications<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListNotificationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get unread notification count
+ */
+export const getGetNotificationsUnreadCountUrl = () => {
+  return `/api/notifications/unread-count`;
+};
+
+export const getNotificationsUnreadCount = async (
+  options?: RequestInit,
+): Promise<GetNotificationsUnreadCount200> => {
+  return customFetch<GetNotificationsUnreadCount200>(
+    getGetNotificationsUnreadCountUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetNotificationsUnreadCountQueryKey = () => {
+  return [`/api/notifications/unread-count`] as const;
+};
+
+export const getGetNotificationsUnreadCountQueryOptions = <
+  TData = Awaited<ReturnType<typeof getNotificationsUnreadCount>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getNotificationsUnreadCount>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetNotificationsUnreadCountQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getNotificationsUnreadCount>>
+  > = ({ signal }) =>
+    getNotificationsUnreadCount({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getNotificationsUnreadCount>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetNotificationsUnreadCountQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getNotificationsUnreadCount>>
+>;
+export type GetNotificationsUnreadCountQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get unread notification count
+ */
+
+export function useGetNotificationsUnreadCount<
+  TData = Awaited<ReturnType<typeof getNotificationsUnreadCount>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getNotificationsUnreadCount>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetNotificationsUnreadCountQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

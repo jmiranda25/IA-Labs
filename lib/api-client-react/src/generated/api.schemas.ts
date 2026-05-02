@@ -668,6 +668,10 @@ export type ListNotificationsParams = {
   limit?: number;
 };
 
+export type GetNotificationsUnreadCount200 = {
+  count: number;
+};
+
 export type AdminListUsersParams = {
   search?: string;
   limit?: number;

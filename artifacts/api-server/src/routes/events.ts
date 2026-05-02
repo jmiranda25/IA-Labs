@@ -13,6 +13,7 @@ import {
 import { db, eventsTable, rsvpsTable } from "@workspace/db";
 import { requireAuth, requireAdmin } from "../lib/requireAuth";
 import { ObjectStorageService } from "../lib/objectStorage";
+import { notify } from "../lib/notify";
 import { randomUUID } from "crypto";
 import multer from "multer";
 
@@ -263,6 +264,17 @@ router.post("/events/:slug/rsvp", requireAuth, async (req, res) => {
       .insert(rsvpsTable)
       .values({ id: randomUUID(), eventId: event.id, userId, status })
       .returning();
+  }
+
+  // Notify event creator about new RSVP (skip if creator is RSVPing to own event)
+  if (event.createdBy !== userId && status !== "none") {
+    notify({
+      recipientId: event.createdBy,
+      type: "event_rsvp",
+      title: "Nueva inscripción en tu evento",
+      body: `Alguien se ha apuntado a "${event.title}" (${status === "going" ? "Asistirá" : "Interesado"})`,
+      link: `/eventos/${event.slug}`,
+    }).catch(() => {});
   }
 
   res.json(rsvp);

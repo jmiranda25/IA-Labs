@@ -9,7 +9,7 @@ import {
 import { requireAuth, requireAdmin } from "../lib/requireAuth";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { setObjectAclPolicy } from "../lib/objectAcl";
-import { pushNotification } from "./notifications";
+import { notify } from "../lib/notify";
 import { randomUUID } from "crypto";
 import multer from "multer";
 
@@ -355,11 +355,13 @@ router.post("/admin/resources/:slug/publish", requireAdmin, async (req, res) => 
     } catch { /* ignore */ }
   }
 
-  pushNotification(resource.authorId, {
-    type: "admin_action",
+  notify({
+    recipientId: resource.authorId,
+    type: "resource_status",
     title: "Recurso aprobado",
     body: `Tu recurso "${resource.title}" ha sido publicado.`,
-  });
+    link: `/recursos/${resource.slug}`,
+  }).catch(() => {});
 
   res.json(await enrichResource(updated));
 });
@@ -385,11 +387,12 @@ router.post("/admin/resources/:slug/reject", requireAdmin, async (req, res) => {
 
   await db.delete(resourcesTable).where(eq(resourcesTable.id, resource.id));
 
-  pushNotification(resource.authorId, {
-    type: "admin_action",
+  notify({
+    recipientId: resource.authorId,
+    type: "resource_status",
     title: "Recurso rechazado",
     body: `Tu recurso "${resource.title}" fue rechazado. Motivo: ${reason}`,
-  });
+  }).catch(() => {});
 
   res.status(204).send();
 });

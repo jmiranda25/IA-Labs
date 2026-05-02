@@ -3,7 +3,6 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import type { Response } from "express";
 import { db, notificationsTable } from "@workspace/db";
 import { requireAuth } from "../lib/requireAuth";
-import { randomUUID } from "crypto";
 
 const router = Router();
 
@@ -20,24 +19,25 @@ router.get("/notifications/stream", requireAuth, (req, res: Response) => {
   if (!sseClients.has(userId)) sseClients.set(userId, new Set());
   sseClients.get(userId)!.add(res);
 
-  const heartbeat = setInterval(() => {
-    res.write(": heartbeat\n\n");
-  }, 30000);
+  const keepalive = setInterval(() => {
+    res.write(": keepalive\n\n");
+  }, 25000);
 
   req.on("close", () => {
-    clearInterval(heartbeat);
+    clearInterval(keepalive);
     sseClients.get(userId)?.delete(res);
+    if (sseClients.get(userId)?.size === 0) sseClients.delete(userId);
   });
 });
 
-export function pushNotification(userId: string, notification: unknown) {
-  const clients = sseClients.get(userId);
-  if (!clients) return;
-  const data = JSON.stringify(notification);
-  for (const client of clients) {
-    client.write(`data: ${data}\n\n`);
-  }
-}
+// GET /notifications/unread-count
+router.get("/notifications/unread-count", requireAuth, async (req, res) => {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(notificationsTable)
+    .where(and(eq(notificationsTable.userId, req.userId!), eq(notificationsTable.isRead, false)));
+  res.json({ count: Number(row?.count ?? 0) });
+});
 
 // GET /notifications
 router.get("/notifications", requireAuth, async (req, res) => {

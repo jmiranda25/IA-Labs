@@ -1272,6 +1272,13 @@ export const ListNotificationsResponse = zod.object({
 });
 
 /**
+ * @summary Get unread notification count
+ */
+export const GetNotificationsUnreadCountResponse = zod.object({
+  count: zod.number(),
+});
+
+/**
  * @summary Mark a single notification as read
  */
 export const MarkNotificationReadParams = zod.object({
