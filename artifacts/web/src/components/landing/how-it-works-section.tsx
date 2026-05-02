@@ -8,23 +8,23 @@ const REDUCED =
 const steps = [
   {
     n: "01",
-    title: "Crea tu perfil",
-    body: "Regístrate en menos de 2 minutos. Describe tus habilidades, intereses y lo que buscas en la comunidad.",
+    title: "Regístrate gratis",
+    body: "Con tu email, en menos de un minuto.",
   },
   {
     n: "02",
-    title: "Explora y conecta",
-    body: "Busca miembros por especialidad, asiste a eventos, lee el foro y descubre recursos que otros han probado.",
+    title: "Completa tu perfil",
+    body: "Con tus intereses en IA para conectar con quien te complementa.",
   },
   {
     n: "03",
-    title: "Participa activamente",
-    body: "Abre hilos de debate, comparte recursos, responde preguntas y construye tu reputación como referente.",
+    title: "Participa",
+    body: "Foro, eventos, marketplace, recursos — todo en un solo lugar.",
   },
   {
     n: "04",
-    title: "Haz crecer tu negocio",
-    body: "Publica en el marketplace, acepta proyectos freelance y accede a oportunidades que no encontrarás en LinkedIn.",
+    title: "Crece",
+    body: "Aprende, conecta y construye con la comunidad.",
   },
 ];
 
@@ -38,11 +38,14 @@ export function HowItWorksSection() {
       className="max-w-6xl mx-auto px-4 sm:px-6 py-24"
     >
       <div className="text-center mb-14">
-        <h2 id="howitworks-heading" className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+        <h2
+          id="howitworks-heading"
+          className="text-3xl sm:text-4xl font-bold text-foreground mb-4"
+        >
           Cómo funciona
         </h2>
         <p className="text-muted-foreground max-w-xl mx-auto">
-          Cuatro pasos para pasar de nuevo miembro a referente de la comunidad.
+          Cuatro pasos para pasar de nuevo miembro a parte activa de la comunidad.
         </p>
       </div>
 

@@ -8,28 +8,36 @@ import {
 
 const faqs = [
   {
-    q: "¿Es gratuito unirse?",
-    a: "Sí. La membresía básica es completamente gratuita e incluye acceso al directorio, foro, eventos públicos y recursos. En el futuro existirán planes premium con funcionalidades adicionales.",
+    q: "¿Qué es esta comunidad y a quién está dirigida?",
+    a: "Es una comunidad hispanohablante para personas que construyen, aprenden o trabajan con IA: builders, founders, consultores y profesionales que quieren integrar IA en su día a día. No es un grupo solo de consumo de noticias: el foco está en hacer.",
   },
   {
-    q: "¿Qué nivel técnico se requiere?",
-    a: "Ninguno en particular. Tenemos miembros desde estudiantes hasta doctores y CTOs de empresas Fortune 500. Lo importante es el interés genuino por la inteligencia artificial.",
+    q: "¿Tiene algún costo unirse?",
+    a: "El acceso a la comunidad y al MVP es gratuito. En el futuro podrían existir niveles premium para eventos cerrados o marketplace, pero el núcleo seguirá siendo abierto.",
   },
   {
-    q: "¿Puedo publicar ofertas de trabajo o servicios?",
-    a: "Sí. El marketplace está abierto a todos los miembros registrados. Puedes publicar servicios que ofreces, proyectos en los que buscas colaboradores o posiciones abiertas en tu empresa.",
+    q: "¿Qué nivel técnico necesito para participar?",
+    a: "Ninguno específico. Hay miembros que recién empiezan y otros que ya tienen productos en producción. Lo importante es tener ganas de construir y compartir.",
   },
   {
-    q: "¿Cómo se modera el contenido?",
-    a: "Contamos con un equipo de moderadores y administradores que revisan el contenido. También disponemos de herramientas de reporte comunitario. Seguimos un código de conducta estricto que prioriza el respeto y la calidad técnica.",
+    q: "¿Cómo funcionan los eventos y workshops?",
+    a: "Publicamos eventos dentro de la plataforma. Te registras con un clic (RSVP) y recibes el enlace y los recordatorios. La mayoría son online; algunos presenciales por ciudad.",
   },
   {
-    q: "¿Los eventos son presenciales o virtuales?",
-    a: "Ambos. Organizamos meetups virtuales semanales, talleres online y, cuando es posible, eventos presenciales en distintas ciudades. Puedes filtrar por formato en la sección de eventos.",
+    q: "¿Puedo publicar mis servicios o productos en el marketplace?",
+    a: "Sí. Cualquier participante puede crear un listado (servicio, plantilla, agente, curso). Un administrador revisa antes de publicar para mantener la calidad. En el MVP no hay pasarela de pagos: el contacto inicial se hace dentro de la plataforma.",
   },
   {
-    q: "¿Puedo conectar con miembros de forma privada?",
-    a: "Sí. El sistema de mensajería directa está disponible para todos los miembros verificados. Puedes iniciar conversaciones desde el perfil de cualquier usuario.",
+    q: "¿Cómo se modera el foro?",
+    a: "Tenemos guías de comunidad simples: respeto, contenido on-topic y cero spam. Los administradores pueden cerrar, fijar o eliminar hilos cuando sea necesario.",
+  },
+  {
+    q: "¿Mis datos están seguros?",
+    a: "Usamos autenticación con Clerk y políticas de Row Level Security que aseguran que cada usuario solo accede a lo suyo. No vendemos datos a terceros.",
+  },
+  {
+    q: "¿Cómo me convierto en colaborador o admin?",
+    a: "Los roles de administrador se asignan manualmente desde el panel admin. Si quieres colaborar (organizar eventos, curar recursos, moderar), escríbenos desde tu perfil.",
   },
 ];
 
@@ -50,7 +58,7 @@ export function FaqSection() {
           Preguntas frecuentes
         </h2>
         <p className="text-muted-foreground">
-          ¿No encuentras tu respuesta? Escríbenos por el foro de soporte.
+          ¿No encuentras tu respuesta? Escríbenos desde tu perfil.
         </p>
       </div>
 
@@ -64,10 +72,10 @@ export function FaqSection() {
         <Accordion type="single" collapsible className="w-full">
           {faqs.map(({ q, a }, i) => (
             <AccordionItem key={i} value={`faq-${i}`}>
-              <AccordionTrigger className="text-left text-base font-medium text-foreground hover:no-underline hover:text-primary transition-colors">
+              <AccordionTrigger className="text-left text-base font-medium text-foreground hover:no-underline hover:text-primary transition-colors py-5">
                 {q}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground leading-relaxed">
+              <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
                 {a}
               </AccordionContent>
             </AccordionItem>

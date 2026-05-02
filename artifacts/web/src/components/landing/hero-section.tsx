@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -9,7 +9,11 @@ const REDUCED =
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const base = { opacity: 0, y: REDUCED ? 0 : 24 };
-const into = (delay: number) => ({ opacity: 1, y: 0, transition: { duration: 0.55, delay, ease: "easeOut" as const } });
+const into = (delay: number) => ({
+  opacity: 1,
+  y: 0,
+  transition: { duration: 0.55, delay, ease: "easeOut" as const },
+});
 
 export function HeroSection() {
   return (
@@ -17,6 +21,7 @@ export function HeroSection() {
       aria-labelledby="hero-heading"
       className="relative overflow-hidden pt-20 pb-24 sm:pt-28 sm:pb-32 text-center px-4"
     >
+      {/* Radial glow */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 flex items-start justify-center"
@@ -27,8 +32,8 @@ export function HeroSection() {
       <div className="relative max-w-4xl mx-auto">
         <motion.div initial={base} animate={into(0)}>
           <Badge variant="secondary" className="mb-6 gap-1.5 px-3 py-1 text-xs inline-flex">
-            <Sparkles className="h-3 w-3 text-primary" aria-hidden="true" />
-            La comunidad de referencia para profesionales de IA
+            <span aria-hidden="true">🤝</span>
+            Comunidad de IA en español
           </Badge>
         </motion.div>
 
@@ -38,9 +43,9 @@ export function HeroSection() {
           animate={into(0.1)}
           className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6"
         >
-          Conecta, colabora y{" "}
+          Construye, aprende y crece con la{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-[hsl(190_100%_50%)]">
-            crece en IA
+            comunidad de IA más activa.
           </span>
         </motion.h1>
 
@@ -49,24 +54,44 @@ export function HeroSection() {
           animate={into(0.2)}
           className="text-lg sm:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
         >
-          Más de 1&nbsp;000 constructores, investigadores y entusiastas que empujan los
-          límites de la inteligencia artificial — todo en un mismo lugar.
+          Conéctate con builders, founders y profesionales que están creando con IA
+          todos los días. Eventos, recursos, foro y marketplace en un solo lugar.
         </motion.p>
 
         <motion.div
           initial={base}
           animate={into(0.3)}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
+          className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
         >
           <Button size="lg" className="gap-2 text-base" asChild>
             <Link href="/registro">
-              Únete gratis
+              Unirme gratis
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </Button>
           <Button size="lg" variant="outline" className="text-base" asChild>
             <Link href="/sign-in">Ya tengo cuenta</Link>
           </Button>
+        </motion.div>
+
+        {/* Key stats */}
+        <motion.div
+          initial={base}
+          animate={into(0.4)}
+          className="grid grid-cols-3 gap-6 max-w-lg mx-auto"
+        >
+          {[
+            { value: "+500", label: "miembros activos" },
+            { value: "+20", label: "workshops realizados" },
+            { value: "+100", label: "recursos curados" },
+          ].map(({ value, label }) => (
+            <div key={label} className="text-center">
+              <div className="text-2xl sm:text-3xl font-extrabold text-primary tabular-nums">
+                {value}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground mt-1">{label}</div>
+            </div>
+          ))}
         </motion.div>
       </div>
     </section>

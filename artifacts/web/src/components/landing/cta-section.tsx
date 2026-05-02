@@ -23,24 +23,33 @@ export function CtaSection() {
         transition={{ duration: 0.55, ease: "easeOut" }}
         className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/20 via-[hsl(190_100%_50%)]/8 to-primary/5 p-12 sm:p-16 text-center"
       >
-        <div aria-hidden="true" className="pointer-events-none absolute -top-20 -left-20 h-64 w-64 rounded-full bg-primary/15 blur-3xl" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-[hsl(190_100%_50%)]/15 blur-3xl" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-20 -left-20 h-64 w-64 rounded-full bg-primary/15 blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-[hsl(190_100%_50%)]/15 blur-3xl"
+        />
 
         <div className="relative">
-          <h2 id="cta-heading" className="text-3xl sm:text-4xl font-extrabold text-foreground mb-4">
-            Empieza hoy, gratis.
+          <h2
+            id="cta-heading"
+            className="text-3xl sm:text-4xl font-extrabold text-foreground mb-4"
+          >
+            Tu próximo proyecto con IA empieza aquí.
           </h2>
           <p className="text-muted-foreground mb-8 max-w-lg mx-auto text-lg">
-            Crea tu perfil en 2 minutos y accede inmediatamente al directorio, los eventos y el foro de la comunidad.
+            Únete gratis y empieza a construir con la comunidad hoy mismo.
           </p>
           <Button size="lg" className="gap-2 text-base px-8" asChild>
             <Link href="/registro">
-              Crear mi cuenta gratis
+              Crear mi cuenta
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </Button>
           <p className="mt-4 text-xs text-muted-foreground/70">
-            Sin tarjeta de crédito · Cancela cuando quieras
+            Sin tarjeta de crédito · Gratis para siempre en el núcleo
           </p>
         </div>
       </motion.div>

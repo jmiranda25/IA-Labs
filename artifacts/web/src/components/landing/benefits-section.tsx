@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Users, Lightbulb, TrendingUp } from "lucide-react";
+import { GraduationCap, MessageSquare, Bell } from "lucide-react";
 import { useInView } from "./use-in-view";
 
 const REDUCED =
@@ -8,19 +8,19 @@ const REDUCED =
 
 const benefits = [
   {
-    icon: Users,
-    title: "Red profesional de alto valor",
-    body: "Accede a un directorio curado de expertos en IA. Encuentra colaboradores, mentores y clientes con la experiencia exacta que necesitas.",
+    icon: GraduationCap,
+    title: "Workshops y eventos",
+    body: "Sesiones prácticas mensuales para aprender haciendo.",
   },
   {
-    icon: Lightbulb,
-    title: "Conocimiento compartido",
-    body: "Foros temáticos, biblioteca de recursos y eventos en vivo donde la comunidad comparte lo que realmente funciona — sin filtros corporativos.",
+    icon: MessageSquare,
+    title: "Foro activo",
+    body: "Resuelve dudas, comparte avances y aprende en público.",
   },
   {
-    icon: TrendingUp,
-    title: "Impulsa tu carrera",
-    body: "Publica tus servicios en el marketplace, participa en proyectos abiertos y hazte visible ante empresas que buscan talento en IA.",
+    icon: Bell,
+    title: "Novedades al día",
+    body: "Lo más relevante del ecosistema de IA, filtrado y resumido.",
   },
 ];
 
@@ -34,11 +34,14 @@ export function BenefitsSection() {
       className="max-w-6xl mx-auto px-4 sm:px-6 pb-24"
     >
       <div className="text-center mb-12">
-        <h2 id="benefits-heading" className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-          ¿Por qué unirte?
+        <h2
+          id="benefits-heading"
+          className="text-3xl sm:text-4xl font-bold text-foreground mb-4"
+        >
+          Todo lo que necesitas para crecer con IA
         </h2>
         <p className="text-muted-foreground max-w-xl mx-auto">
-          No es otra red social. Es la plataforma donde ocurre el trabajo real en IA.
+          Un ecosistema completo para aprender, conectar y construir.
         </p>
       </div>
 

@@ -9,26 +9,26 @@ const REDUCED =
 const testimonials = [
   {
     quote:
-      "En tres semanas encontré dos colaboradores para mi startup de visión computacional. Imposible en cualquier otra plataforma.",
-    name: "Ana Ruiz",
-    role: "Co-fundadora, VisualAI Labs",
-    initials: "AR",
+      "Aquí encontré la comunidad que no sabía que necesitaba para empezar a construir agentes en serio.",
+    name: "Nombre Apellido",
+    role: "Founder en [Empresa]",
+    initials: "NA",
     color: "from-primary/30 to-primary/10",
   },
   {
     quote:
-      "El foro tiene un nivel técnico que no encontré ni en Slack ni en Discord. Las discusiones son serias y las respuestas, rápidas.",
-    name: "Carlos Méndez",
-    role: "ML Engineer, Freelance",
-    initials: "CM",
+      "Los workshops valen oro. Aprendí más en un mes que en seis meses solo.",
+    name: "Nombre Apellido",
+    role: "AI Engineer",
+    initials: "NA",
     color: "from-[hsl(190_100%_50%)]/30 to-[hsl(190_100%_50%)]/10",
   },
   {
     quote:
-      "Publiqué un servicio de fine-tuning el primer día y tuve tres clientes en menos de un mes. El marketplace realmente funciona.",
-    name: "Laura Pinto",
-    role: "AI Consultant",
-    initials: "LP",
+      "El marketplace me trajo mis primeros tres clientes consultando con IA.",
+    name: "Nombre Apellido",
+    role: "Consultor independiente",
+    initials: "NA",
     color: "from-primary/30 to-[hsl(190_100%_50%)]/10",
   },
 ];
@@ -44,7 +44,10 @@ export function TestimonialsSection() {
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-12">
-          <h2 id="testimonials-heading" className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+          <h2
+            id="testimonials-heading"
+            className="text-3xl sm:text-4xl font-bold text-foreground mb-4"
+          >
             Lo que dicen nuestros miembros
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
@@ -55,12 +58,11 @@ export function TestimonialsSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {testimonials.map(({ quote, name, role, initials, color }, i) => (
             <motion.figure
-              key={name}
+              key={i}
               initial={{ opacity: 0, y: REDUCED ? 0 : 20 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: i * 0.12, ease: "easeOut" }}
               className="rounded-2xl border border-border bg-card p-8 flex flex-col gap-6"
-              aria-label={`Testimonio de ${name}`}
             >
               <Quote className="h-5 w-5 text-primary/60 shrink-0" aria-hidden="true" />
               <blockquote>
