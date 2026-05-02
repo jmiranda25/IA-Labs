@@ -1,26 +1,30 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useClerk, useUser } from "@clerk/react";
+import { UserButton } from "@clerk/react";
 import { useGetMe, useListNotifications, useMarkAllNotificationsRead, getListNotificationsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Bell, Menu, LayoutDashboard, Users, Calendar, MessageSquare,
-  BookOpen, ShoppingBag, MessageCircle, Settings, Shield, LogOut, Zap, X
+  BookOpen, ShoppingBag, MessageCircle, Settings, Shield, Zap, X,
+  BellRing, User,
 } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { useUser } from "@clerk/react";
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/members", label: "Members", icon: Users },
-  { href: "/events", label: "Events", icon: Calendar },
-  { href: "/forum", label: "Forum", icon: MessageSquare },
-  { href: "/resources", label: "Resources", icon: BookOpen },
-  { href: "/marketplace", label: "Marketplace", icon: ShoppingBag },
-  { href: "/messages", label: "Messages", icon: MessageCircle },
+  { href: "/dashboard",       label: "Dashboard",       icon: LayoutDashboard },
+  { href: "/members",         label: "Miembros",        icon: Users },
+  { href: "/events",          label: "Eventos",         icon: Calendar },
+  { href: "/forum",           label: "Foro",            icon: MessageSquare },
+  { href: "/resources",       label: "Recursos",        icon: BookOpen },
+  { href: "/marketplace",     label: "Marketplace",     icon: ShoppingBag },
+  { href: "/messages",        label: "Mensajes",        icon: MessageCircle },
+  { href: "/notificaciones",  label: "Notificaciones",  icon: BellRing },
 ];
 
 function NotificationBell() {
@@ -31,10 +35,8 @@ function NotificationBell() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const { user } = useUser();
 
-  // SSE for real-time notifications
   useEffect(() => {
     if (!user) return;
-    const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
     const es = new EventSource(`${basePath}/api/notifications/stream`, { withCredentials: true });
     eventSourceRef.current = es;
     es.onmessage = () => {
@@ -49,7 +51,7 @@ function NotificationBell() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" data-testid="button-notifications">
+        <Button variant="ghost" size="icon" className="relative" aria-label="Notificaciones" data-testid="button-notifications">
           <Bell className="h-5 w-5" />
           {unread > 0 && (
             <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
@@ -60,22 +62,24 @@ function NotificationBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-sm font-semibold">Notifications</span>
+          <span className="text-sm font-semibold">Notificaciones</span>
           {unread > 0 && (
             <button
               className="text-xs text-primary hover:underline"
               onClick={() => {
-                markAllRead.mutate(undefined, { onSuccess: () => qc.invalidateQueries({ queryKey: getListNotificationsQueryKey({ unreadOnly: false, limit: 10 }) }) });
+                markAllRead.mutate(undefined, {
+                  onSuccess: () => qc.invalidateQueries({ queryKey: getListNotificationsQueryKey({ unreadOnly: false, limit: 10 }) }),
+                });
               }}
               data-testid="button-mark-all-read"
             >
-              Mark all read
+              Marcar todas leídas
             </button>
           )}
         </div>
         <DropdownMenuSeparator />
         {notifications.length === 0 ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">No notifications</div>
+          <div className="py-6 text-center text-sm text-muted-foreground">Sin notificaciones</div>
         ) : (
           notifications.map((n: any) => (
             <DropdownMenuItem key={n.id} asChild>
@@ -93,7 +97,6 @@ function NotificationBell() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { signOut } = useClerk();
   const { data: me } = useGetMe();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -111,7 +114,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               }`}
               data-testid={`nav-${label.toLowerCase()}`}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
               {label}
             </span>
           </Link>
@@ -119,8 +122,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
       })}
       {me?.role === "administrator" && (
         <Link href="/admin" onClick={onClick}>
-          <span className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${location === "/admin" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="nav-admin">
-            <Shield className="h-4 w-4 shrink-0" />
+          <span
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
+              location === "/admin" || location.startsWith("/admin/")
+                ? "bg-primary/15 text-primary"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+            data-testid="nav-admin"
+          >
+            <Shield className="h-4 w-4 shrink-0" aria-hidden="true" />
             Admin
           </span>
         </Link>
@@ -133,17 +143,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-border bg-sidebar">
         <div className="flex h-14 items-center gap-2 px-4 border-b border-border">
-          <Zap className="h-5 w-5 text-primary" />
+          <Zap className="h-5 w-5 text-primary" aria-hidden="true" />
           <span className="font-bold text-foreground tracking-tight">AI Community</span>
         </div>
         <div className="flex-1 overflow-y-auto p-3">
           <NavLinks />
         </div>
-        <div className="border-t border-border p-3">
+        <div className="border-t border-border p-3 space-y-1">
+          <Link href={`/members/${me?.clerkId}`}>
+            <span className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer" data-testid="nav-profile">
+              <User className="h-4 w-4" aria-hidden="true" />
+              Ver perfil
+            </span>
+          </Link>
           <Link href="/settings">
             <span className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer" data-testid="nav-settings">
-              <Settings className="h-4 w-4" />
-              Settings
+              <Settings className="h-4 w-4" aria-hidden="true" />
+              Configuración
             </span>
           </Link>
         </div>
@@ -154,15 +170,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <header className="flex h-14 items-center gap-3 border-b border-border bg-background/95 backdrop-blur px-4 sticky top-0 z-40">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden" data-testid="button-mobile-menu">
+              <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menú" data-testid="button-mobile-menu">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
               <div className="flex h-14 items-center gap-2 px-4 border-b border-border">
-                <Zap className="h-5 w-5 text-primary" />
+                <Zap className="h-5 w-5 text-primary" aria-hidden="true" />
                 <span className="font-bold tracking-tight">AI Community</span>
-                <button className="ml-auto" onClick={() => setMobileOpen(false)} data-testid="button-close-menu"><X className="h-4 w-4" /></button>
+                <button className="ml-auto" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú" data-testid="button-close-menu">
+                  <X className="h-4 w-4" />
+                </button>
               </div>
               <div className="p-3">
                 <NavLinks onClick={() => setMobileOpen(false)} />
@@ -170,8 +188,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
 
+          {/* Brand mark (mobile only) */}
           <div className="flex items-center gap-2 lg:hidden">
-            <Zap className="h-5 w-5 text-primary" />
+            <Zap className="h-5 w-5 text-primary" aria-hidden="true" />
             <span className="font-bold text-sm tracking-tight">AI Community</span>
           </div>
 
@@ -179,30 +198,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           <NotificationBell />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-muted transition-colors" data-testid="button-user-menu">
-                <Avatar className="h-7 w-7">
-                  <AvatarImage src={me?.avatarUrl ?? undefined} />
-                  <AvatarFallback className="text-xs">{me?.displayName?.charAt(0) ?? "U"}</AvatarFallback>
-                </Avatar>
-                <span className="hidden sm:block text-sm font-medium max-w-[120px] truncate">{me?.displayName}</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/members/${me?.clerkId}`} className="cursor-pointer"><span>View Profile</span></Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/settings" className="cursor-pointer"><span>Settings</span></Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-destructive focus:text-destructive" data-testid="button-sign-out">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* User area */}
+          <div className="flex items-center gap-2 pl-1">
+            <span className="hidden sm:block text-sm font-medium max-w-[120px] truncate text-foreground">
+              {me?.displayName}
+            </span>
+            <UserButton
+              appearance={{
+                elements: { avatarBox: "h-7 w-7" },
+              }}
+            />
+          </div>
         </header>
 
         {/* Main content */}

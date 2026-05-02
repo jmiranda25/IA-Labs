@@ -39,7 +39,7 @@ async function enrichEvent(event: typeof eventsTable.$inferSelect, userId?: stri
 }
 
 // GET /events
-router.get("/events", async (req, res) => {
+router.get("/events", requireAuth, async (req, res) => {
   const { status = "upcoming", limit = "12", offset = "0" } = req.query as Record<string, string>;
   const userId = req.userId;
   const now = new Date();
@@ -78,7 +78,7 @@ router.post("/events", requireAdmin, async (req, res) => {
 });
 
 // GET /events/upcoming
-router.get("/events/upcoming", async (req, res) => {
+router.get("/events/upcoming", requireAuth, async (req, res) => {
   const { limit = "5" } = req.query as Record<string, string>;
   const now = new Date();
   const events = await db.query.eventsTable.findMany({
@@ -91,7 +91,7 @@ router.get("/events/upcoming", async (req, res) => {
 });
 
 // GET /events/:eventId
-router.get("/events/:eventId", async (req, res) => {
+router.get("/events/:eventId", requireAuth, async (req, res) => {
   const eventId = req.params.eventId as string;
   const event = await db.query.eventsTable.findFirst({ where: eq(eventsTable.id, eventId) });
   if (!event) { res.status(404).json({ error: "Not found" }); return; }
@@ -146,7 +146,7 @@ router.delete("/events/:eventId/rsvp", requireAuth, async (req, res) => {
 });
 
 // GET /events/:eventId/attendees
-router.get("/events/:eventId/attendees", async (req, res) => {
+router.get("/events/:eventId/attendees", requireAuth, async (req, res) => {
   const eventId = req.params.eventId as string;
   const rsvps = await db.query.eventRsvpsTable.findMany({
     where: and(eq(eventRsvpsTable.eventId, eventId), eq(eventRsvpsTable.status, "going")),

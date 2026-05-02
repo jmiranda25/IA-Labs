@@ -45,7 +45,7 @@ async function enrichReply(reply: typeof forumRepliesTable.$inferSelect, userId?
 }
 
 // GET /forum/categories
-router.get("/forum/categories", async (_req, res) => {
+router.get("/forum/categories", requireAuth, async (_req, res) => {
   const cats = await db.query.forumCategoriesTable.findMany({ orderBy: forumCategoriesTable.name });
   res.json(cats);
 });
@@ -58,7 +58,7 @@ router.post("/forum/categories", requireAdmin, async (req, res) => {
 });
 
 // GET /forum/posts
-router.get("/forum/posts", async (req, res) => {
+router.get("/forum/posts", requireAuth, async (req, res) => {
   const { categoryId, search, limit = "20", offset = "0" } = req.query as Record<string, string>;
   const conditions = [];
   if (categoryId) conditions.push(eq(forumPostsTable.categoryId, categoryId));
@@ -92,7 +92,7 @@ router.post("/forum/posts", requireAuth, async (req, res) => {
 });
 
 // GET /forum/posts/trending
-router.get("/forum/posts/trending", async (req, res) => {
+router.get("/forum/posts/trending", requireAuth, async (req, res) => {
   const { limit = "5" } = req.query as Record<string, string>;
   const posts = await db.query.forumPostsTable.findMany({
     limit: parseInt(limit),
@@ -107,7 +107,7 @@ router.get("/forum/posts/trending", async (req, res) => {
 });
 
 // GET /forum/posts/:postId
-router.get("/forum/posts/:postId", async (req, res) => {
+router.get("/forum/posts/:postId", requireAuth, async (req, res) => {
   const postId = req.params.postId as string;
   const post = await db.query.forumPostsTable.findFirst({ where: eq(forumPostsTable.id, postId) });
   if (!post) { res.status(404).json({ error: "Not found" }); return; }
@@ -142,7 +142,7 @@ router.delete("/forum/posts/:postId", requireAuth, async (req, res) => {
 });
 
 // GET /forum/posts/:postId/replies
-router.get("/forum/posts/:postId/replies", async (req, res) => {
+router.get("/forum/posts/:postId/replies", requireAuth, async (req, res) => {
   const postId = req.params.postId as string;
   const allReplies = await db.query.forumRepliesTable.findMany({
     where: eq(forumRepliesTable.postId, postId), orderBy: forumRepliesTable.createdAt,

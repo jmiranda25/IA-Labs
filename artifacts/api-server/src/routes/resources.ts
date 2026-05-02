@@ -12,7 +12,7 @@ async function enrichResource(r: typeof resourcesTable.$inferSelect) {
 }
 
 // GET /resources
-router.get("/resources", async (req, res) => {
+router.get("/resources", requireAuth, async (req, res) => {
   const { search, category, limit = "20", offset = "0" } = req.query as Record<string, string>;
   const conditions = [];
   if (search) conditions.push(or(ilike(resourcesTable.title, `%${search}%`), ilike(resourcesTable.description, `%${search}%`)));
@@ -34,13 +34,13 @@ router.post("/resources", requireAuth, async (req, res) => {
 });
 
 // GET /resources/categories
-router.get("/resources/categories", async (_req, res) => {
+router.get("/resources/categories", requireAuth, async (_req, res) => {
   const rows = await db.selectDistinct({ category: resourcesTable.category }).from(resourcesTable);
   res.json(rows.map((r) => r.category));
 });
 
 // GET /resources/:resourceId
-router.get("/resources/:resourceId", async (req, res) => {
+router.get("/resources/:resourceId", requireAuth, async (req, res) => {
   const resourceId = req.params.resourceId as string;
   const resource = await db.query.resourcesTable.findFirst({ where: eq(resourcesTable.id, resourceId) });
   if (!resource) { res.status(404).json({ error: "Not found" }); return; }

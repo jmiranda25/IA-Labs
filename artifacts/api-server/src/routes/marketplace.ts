@@ -12,7 +12,7 @@ async function enrichListing(l: typeof marketplaceListingsTable.$inferSelect) {
 }
 
 // GET /marketplace/listings
-router.get("/marketplace/listings", async (req, res) => {
+router.get("/marketplace/listings", requireAuth, async (req, res) => {
   const { search, type, status = "active", limit = "20", offset = "0" } = req.query as Record<string, string>;
   const conditions = [];
   if (search) conditions.push(or(ilike(marketplaceListingsTable.title, `%${search}%`), ilike(marketplaceListingsTable.description, `%${search}%`)));
@@ -35,7 +35,7 @@ router.post("/marketplace/listings", requireAuth, async (req, res) => {
 });
 
 // GET /marketplace/listings/featured
-router.get("/marketplace/listings/featured", async (req, res) => {
+router.get("/marketplace/listings/featured", requireAuth, async (req, res) => {
   const { limit = "6" } = req.query as Record<string, string>;
   const listings = await db.query.marketplaceListingsTable.findMany({
     where: eq(marketplaceListingsTable.status, "active"),
@@ -47,7 +47,7 @@ router.get("/marketplace/listings/featured", async (req, res) => {
 });
 
 // GET /marketplace/listings/:listingId
-router.get("/marketplace/listings/:listingId", async (req, res) => {
+router.get("/marketplace/listings/:listingId", requireAuth, async (req, res) => {
   const listingId = req.params.listingId as string;
   const listing = await db.query.marketplaceListingsTable.findFirst({ where: eq(marketplaceListingsTable.id, listingId) });
   if (!listing) { res.status(404).json({ error: "Not found" }); return; }

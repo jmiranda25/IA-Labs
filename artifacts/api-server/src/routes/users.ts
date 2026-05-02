@@ -58,7 +58,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
 });
 
 // GET /users
-router.get("/users", async (req, res) => {
+router.get("/users", requireAuth, async (req, res) => {
   const { search, role, limit = "24", offset = "0" } = req.query as Record<string, string>;
   const conditions = [];
   if (search) {
@@ -85,7 +85,7 @@ router.get("/users", async (req, res) => {
 });
 
 // GET /users/:userId
-router.get("/users/:userId", async (req, res) => {
+router.get("/users/:userId", requireAuth, async (req, res) => {
   const userId = req.params.userId as string;
   const user = await db.query.usersTable.findFirst({
     where: eq(usersTable.clerkId, userId),

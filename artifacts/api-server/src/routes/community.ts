@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { sql, desc } from "drizzle-orm";
 import { db, usersTable, eventsTable, forumPostsTable, resourcesTable, marketplaceListingsTable } from "@workspace/db";
+import { requireAuth } from "../lib/requireAuth";
 
 const router = Router();
 
 // GET /community/stats
-router.get("/community/stats", async (_req, res) => {
+router.get("/community/stats", requireAuth, async (_req, res) => {
   const [members] = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
   const [events] = await db.select({ count: sql<number>`count(*)` }).from(eventsTable);
   const [posts] = await db.select({ count: sql<number>`count(*)` }).from(forumPostsTable);
@@ -21,7 +22,7 @@ router.get("/community/stats", async (_req, res) => {
 });
 
 // GET /activity/feed
-router.get("/activity/feed", async (req, res) => {
+router.get("/activity/feed", requireAuth, async (req, res) => {
   const limit = parseInt((req.query.limit as string) ?? "20");
   // Aggregate recent activity from multiple tables
   const recentUsers = await db.query.usersTable.findMany({ limit: 5, orderBy: desc(usersTable.joinedAt) });

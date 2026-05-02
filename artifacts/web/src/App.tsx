@@ -6,9 +6,10 @@ import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthLayout } from "@/components/auth-layout";
-import { ProtectedRoute } from "@/components/protected-route";
+import { ProtectedRoute, RequireAdmin } from "@/components/protected-route";
 import { queryClient } from "@/lib/queryClient";
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
@@ -25,6 +26,7 @@ import MarketplaceListingPage from "@/pages/marketplace-listing";
 import MessagesPage from "@/pages/messages";
 import SettingsPage from "@/pages/settings";
 import AdminPage from "@/pages/admin";
+import NotificacionesPage from "@/pages/notificaciones";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -284,12 +286,18 @@ function ClerkProviderWithRoutes() {
             <Route path="/settings">
               <ProtectedRoute><SettingsPage /></ProtectedRoute>
             </Route>
+            <Route path="/notificaciones">
+              <ProtectedRoute><NotificacionesPage /></ProtectedRoute>
+            </Route>
             <Route path="/admin">
-              <ProtectedRoute><AdminPage /></ProtectedRoute>
+              <ProtectedRoute>
+                <RequireAdmin><AdminPage /></RequireAdmin>
+              </ProtectedRoute>
             </Route>
             <Route component={NotFound} />
           </Switch>
           <Toaster />
+          <SonnerToaster position="top-right" richColors theme="dark" />
         </TooltipProvider>
       </QueryClientProvider>
     </ClerkProvider>
