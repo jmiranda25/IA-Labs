@@ -19,6 +19,7 @@ import type {
 import type {
   ActivityItem,
   AdminListUsersParams,
+  AdminRejectListingBody,
   AdminRejectResourceBody,
   AdminStats,
   AdminUploadEventCoverBody,
@@ -39,7 +40,6 @@ import type {
   ForumThread,
   ForumThreadDetail,
   GetActivityFeedParams,
-  GetFeaturedListingsParams,
   GetUpcomingEventsParams,
   HealthStatus,
   LandingSection,
@@ -49,9 +49,10 @@ import type {
   ListNotificationsParams,
   ListResourcesParams,
   ListUsersParams,
+  ListingImage,
   ListingListResponse,
+  ListingMessage,
   MarketplaceListing,
-  MarketplaceMessage,
   MemberListResponse,
   MessageThread,
   ModerationItem,
@@ -76,6 +77,7 @@ import type {
   UpdateUserRoleBody,
   UploadAvatarBody,
   UploadAvatarResponse,
+  UploadListingImagesBody,
   UploadResourceFileBody,
   UserListResponse,
   UserProfile,
@@ -3470,7 +3472,7 @@ export const useAdminRejectResource = <
 };
 
 /**
- * @summary List marketplace listings
+ * @summary List marketplace listings (active; sellers see own too)
  */
 export const getListMarketplaceListingsUrl = (
   params?: ListMarketplaceListingsParams,
@@ -3546,7 +3548,7 @@ export type ListMarketplaceListingsQueryResult = NonNullable<
 export type ListMarketplaceListingsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List marketplace listings
+ * @summary List marketplace listings (active; sellers see own too)
  */
 
 export function useListMarketplaceListings<
@@ -3573,7 +3575,7 @@ export function useListMarketplaceListings<
 }
 
 /**
- * @summary Create a marketplace listing
+ * @summary Create a listing (status=pending)
  */
 export const getCreateMarketplaceListingUrl = () => {
   return `/api/marketplace/listings`;
@@ -3636,7 +3638,7 @@ export type CreateMarketplaceListingMutationBody = BodyType<CreateListingBody>;
 export type CreateMarketplaceListingMutationError = ErrorType<unknown>;
 
 /**
- * @summary Create a marketplace listing
+ * @summary Create a listing (status=pending)
  */
 export const useCreateMarketplaceListing = <
   TError = ErrorType<unknown>,
@@ -3659,100 +3661,72 @@ export const useCreateMarketplaceListing = <
 };
 
 /**
- * @summary Get featured/recent active listings
+ * @summary Get all listings belonging to the current seller
  */
-export const getGetFeaturedListingsUrl = (
-  params?: GetFeaturedListingsParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/marketplace/listings/featured?${stringifiedParams}`
-    : `/api/marketplace/listings/featured`;
+export const getGetMyListingsUrl = () => {
+  return `/api/marketplace/my-listings`;
 };
 
-export const getFeaturedListings = async (
-  params?: GetFeaturedListingsParams,
+export const getMyListings = async (
   options?: RequestInit,
 ): Promise<MarketplaceListing[]> => {
-  return customFetch<MarketplaceListing[]>(getGetFeaturedListingsUrl(params), {
+  return customFetch<MarketplaceListing[]>(getGetMyListingsUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetFeaturedListingsQueryKey = (
-  params?: GetFeaturedListingsParams,
-) => {
-  return [
-    `/api/marketplace/listings/featured`,
-    ...(params ? [params] : []),
-  ] as const;
+export const getGetMyListingsQueryKey = () => {
+  return [`/api/marketplace/my-listings`] as const;
 };
 
-export const getGetFeaturedListingsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getFeaturedListings>>,
+export const getGetMyListingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyListings>>,
   TError = ErrorType<unknown>,
->(
-  params?: GetFeaturedListingsParams,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getFeaturedListings>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyListings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetFeaturedListingsQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getGetMyListingsQueryKey();
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getFeaturedListings>>
-  > = ({ signal }) =>
-    getFeaturedListings(params, { signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyListings>>> = ({
+    signal,
+  }) => getMyListings({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getFeaturedListings>>,
+    Awaited<ReturnType<typeof getMyListings>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type GetFeaturedListingsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getFeaturedListings>>
+export type GetMyListingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyListings>>
 >;
-export type GetFeaturedListingsQueryError = ErrorType<unknown>;
+export type GetMyListingsQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get featured/recent active listings
+ * @summary Get all listings belonging to the current seller
  */
 
-export function useGetFeaturedListings<
-  TData = Awaited<ReturnType<typeof getFeaturedListings>>,
+export function useGetMyListings<
+  TData = Awaited<ReturnType<typeof getMyListings>>,
   TError = ErrorType<unknown>,
->(
-  params?: GetFeaturedListingsParams,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getFeaturedListings>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetFeaturedListingsQueryOptions(params, options);
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyListings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyListingsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -3762,34 +3736,31 @@ export function useGetFeaturedListings<
 }
 
 /**
- * @summary Get a marketplace listing
+ * @summary Get a listing by slug
  */
-export const getGetMarketplaceListingUrl = (listingId: string) => {
-  return `/api/marketplace/listings/${listingId}`;
+export const getGetMarketplaceListingUrl = (slug: string) => {
+  return `/api/marketplace/listings/${slug}`;
 };
 
 export const getMarketplaceListing = async (
-  listingId: string,
+  slug: string,
   options?: RequestInit,
 ): Promise<MarketplaceListing> => {
-  return customFetch<MarketplaceListing>(
-    getGetMarketplaceListingUrl(listingId),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
+  return customFetch<MarketplaceListing>(getGetMarketplaceListingUrl(slug), {
+    ...options,
+    method: "GET",
+  });
 };
 
-export const getGetMarketplaceListingQueryKey = (listingId: string) => {
-  return [`/api/marketplace/listings/${listingId}`] as const;
+export const getGetMarketplaceListingQueryKey = (slug: string) => {
+  return [`/api/marketplace/listings/${slug}`] as const;
 };
 
 export const getGetMarketplaceListingQueryOptions = <
   TData = Awaited<ReturnType<typeof getMarketplaceListing>>,
   TError = ErrorType<unknown>,
 >(
-  listingId: string,
+  slug: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getMarketplaceListing>>,
@@ -3802,17 +3773,17 @@ export const getGetMarketplaceListingQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetMarketplaceListingQueryKey(listingId);
+    queryOptions?.queryKey ?? getGetMarketplaceListingQueryKey(slug);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getMarketplaceListing>>
   > = ({ signal }) =>
-    getMarketplaceListing(listingId, { signal, ...requestOptions });
+    getMarketplaceListing(slug, { signal, ...requestOptions });
 
   return {
     queryKey,
     queryFn,
-    enabled: !!listingId,
+    enabled: !!slug,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getMarketplaceListing>>,
@@ -3827,14 +3798,14 @@ export type GetMarketplaceListingQueryResult = NonNullable<
 export type GetMarketplaceListingQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get a marketplace listing
+ * @summary Get a listing by slug
  */
 
 export function useGetMarketplaceListing<
   TData = Awaited<ReturnType<typeof getMarketplaceListing>>,
   TError = ErrorType<unknown>,
 >(
-  listingId: string,
+  slug: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getMarketplaceListing>>,
@@ -3844,7 +3815,7 @@ export function useGetMarketplaceListing<
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetMarketplaceListingQueryOptions(listingId, options);
+  const queryOptions = getGetMarketplaceListingQueryOptions(slug, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -3854,26 +3825,23 @@ export function useGetMarketplaceListing<
 }
 
 /**
- * @summary Update a listing (owner or admin)
+ * @summary Update a listing (seller or admin)
  */
-export const getUpdateMarketplaceListingUrl = (listingId: string) => {
-  return `/api/marketplace/listings/${listingId}`;
+export const getUpdateMarketplaceListingUrl = (slug: string) => {
+  return `/api/marketplace/listings/${slug}`;
 };
 
 export const updateMarketplaceListing = async (
-  listingId: string,
+  slug: string,
   updateListingBody: UpdateListingBody,
   options?: RequestInit,
 ): Promise<MarketplaceListing> => {
-  return customFetch<MarketplaceListing>(
-    getUpdateMarketplaceListingUrl(listingId),
-    {
-      ...options,
-      method: "PUT",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(updateListingBody),
-    },
-  );
+  return customFetch<MarketplaceListing>(getUpdateMarketplaceListingUrl(slug), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateListingBody),
+  });
 };
 
 export const getUpdateMarketplaceListingMutationOptions = <
@@ -3883,14 +3851,14 @@ export const getUpdateMarketplaceListingMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateMarketplaceListing>>,
     TError,
-    { listingId: string; data: BodyType<UpdateListingBody> },
+    { slug: string; data: BodyType<UpdateListingBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateMarketplaceListing>>,
   TError,
-  { listingId: string; data: BodyType<UpdateListingBody> },
+  { slug: string; data: BodyType<UpdateListingBody> },
   TContext
 > => {
   const mutationKey = ["updateMarketplaceListing"];
@@ -3904,11 +3872,11 @@ export const getUpdateMarketplaceListingMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateMarketplaceListing>>,
-    { listingId: string; data: BodyType<UpdateListingBody> }
+    { slug: string; data: BodyType<UpdateListingBody> }
   > = (props) => {
-    const { listingId, data } = props ?? {};
+    const { slug, data } = props ?? {};
 
-    return updateMarketplaceListing(listingId, data, requestOptions);
+    return updateMarketplaceListing(slug, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -3921,7 +3889,7 @@ export type UpdateMarketplaceListingMutationBody = BodyType<UpdateListingBody>;
 export type UpdateMarketplaceListingMutationError = ErrorType<unknown>;
 
 /**
- * @summary Update a listing (owner or admin)
+ * @summary Update a listing (seller or admin)
  */
 export const useUpdateMarketplaceListing = <
   TError = ErrorType<unknown>,
@@ -3930,54 +3898,63 @@ export const useUpdateMarketplaceListing = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateMarketplaceListing>>,
     TError,
-    { listingId: string; data: BodyType<UpdateListingBody> },
+    { slug: string; data: BodyType<UpdateListingBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof updateMarketplaceListing>>,
   TError,
-  { listingId: string; data: BodyType<UpdateListingBody> },
+  { slug: string; data: BodyType<UpdateListingBody> },
   TContext
 > => {
   return useMutation(getUpdateMarketplaceListingMutationOptions(options));
 };
 
 /**
- * @summary Delete a listing (owner or admin)
+ * @summary Upload images for a listing (max 6, multipart/form-data)
  */
-export const getDeleteMarketplaceListingUrl = (listingId: string) => {
-  return `/api/marketplace/listings/${listingId}`;
+export const getUploadListingImagesUrl = (slug: string) => {
+  return `/api/marketplace/listings/${slug}/images`;
 };
 
-export const deleteMarketplaceListing = async (
-  listingId: string,
+export const uploadListingImages = async (
+  slug: string,
+  uploadListingImagesBody: UploadListingImagesBody,
   options?: RequestInit,
-): Promise<void> => {
-  return customFetch<void>(getDeleteMarketplaceListingUrl(listingId), {
+): Promise<ListingImage[]> => {
+  const formData = new FormData();
+  if (uploadListingImagesBody.images !== undefined) {
+    uploadListingImagesBody.images.forEach((value) =>
+      formData.append(`images`, value),
+    );
+  }
+
+  return customFetch<ListingImage[]>(getUploadListingImagesUrl(slug), {
     ...options,
-    method: "DELETE",
+    method: "POST",
+    body: formData,
   });
 };
 
-export const getDeleteMarketplaceListingMutationOptions = <
+export const getUploadListingImagesMutationOptions = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteMarketplaceListing>>,
+    Awaited<ReturnType<typeof uploadListingImages>>,
     TError,
-    { listingId: string },
+    { slug: string; data: BodyType<UploadListingImagesBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof deleteMarketplaceListing>>,
+  Awaited<ReturnType<typeof uploadListingImages>>,
   TError,
-  { listingId: string },
+  { slug: string; data: BodyType<UploadListingImagesBody> },
   TContext
 > => {
-  const mutationKey = ["deleteMarketplaceListing"];
+  const mutationKey = ["uploadListingImages"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -3987,72 +3964,424 @@ export const getDeleteMarketplaceListingMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof deleteMarketplaceListing>>,
-    { listingId: string }
+    Awaited<ReturnType<typeof uploadListingImages>>,
+    { slug: string; data: BodyType<UploadListingImagesBody> }
   > = (props) => {
-    const { listingId } = props ?? {};
+    const { slug, data } = props ?? {};
 
-    return deleteMarketplaceListing(listingId, requestOptions);
+    return uploadListingImages(slug, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type DeleteMarketplaceListingMutationResult = NonNullable<
-  Awaited<ReturnType<typeof deleteMarketplaceListing>>
+export type UploadListingImagesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadListingImages>>
 >;
-
-export type DeleteMarketplaceListingMutationError = ErrorType<unknown>;
+export type UploadListingImagesMutationBody = BodyType<UploadListingImagesBody>;
+export type UploadListingImagesMutationError = ErrorType<unknown>;
 
 /**
- * @summary Delete a listing (owner or admin)
+ * @summary Upload images for a listing (max 6, multipart/form-data)
  */
-export const useDeleteMarketplaceListing = <
+export const useUploadListingImages = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteMarketplaceListing>>,
+    Awaited<ReturnType<typeof uploadListingImages>>,
     TError,
-    { listingId: string },
+    { slug: string; data: BodyType<UploadListingImagesBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
-  Awaited<ReturnType<typeof deleteMarketplaceListing>>,
+  Awaited<ReturnType<typeof uploadListingImages>>,
   TError,
-  { listingId: string },
+  { slug: string; data: BodyType<UploadListingImagesBody> },
   TContext
 > => {
-  return useMutation(getDeleteMarketplaceListingMutationOptions(options));
+  return useMutation(getUploadListingImagesMutationOptions(options));
 };
 
 /**
- * @summary List message threads for current user
+ * @summary Mark a listing as sold (seller only)
  */
-export const getListMyMessagesUrl = () => {
-  return `/api/marketplace/messages`;
+export const getMarkListingAsSoldUrl = (slug: string) => {
+  return `/api/marketplace/listings/${slug}/sold`;
 };
 
-export const listMyMessages = async (
+export const markListingAsSold = async (
+  slug: string,
   options?: RequestInit,
-): Promise<MessageThread[]> => {
-  return customFetch<MessageThread[]>(getListMyMessagesUrl(), {
+): Promise<MarketplaceListing> => {
+  return customFetch<MarketplaceListing>(getMarkListingAsSoldUrl(slug), {
     ...options,
-    method: "GET",
+    method: "POST",
   });
 };
 
-export const getListMyMessagesQueryKey = () => {
-  return [`/api/marketplace/messages`] as const;
+export const getMarkListingAsSoldMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markListingAsSold>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof markListingAsSold>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  const mutationKey = ["markListingAsSold"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof markListingAsSold>>,
+    { slug: string }
+  > = (props) => {
+    const { slug } = props ?? {};
+
+    return markListingAsSold(slug, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
 };
 
-export const getListMyMessagesQueryOptions = <
-  TData = Awaited<ReturnType<typeof listMyMessages>>,
+export type MarkListingAsSoldMutationResult = NonNullable<
+  Awaited<ReturnType<typeof markListingAsSold>>
+>;
+
+export type MarkListingAsSoldMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark a listing as sold (seller only)
+ */
+export const useMarkListingAsSold = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markListingAsSold>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof markListingAsSold>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  return useMutation(getMarkListingAsSoldMutationOptions(options));
+};
+
+/**
+ * @summary Send a message about a listing
+ */
+export const getSendListingMessageUrl = (slug: string) => {
+  return `/api/marketplace/listings/${slug}/messages`;
+};
+
+export const sendListingMessage = async (
+  slug: string,
+  sendMessageBody: SendMessageBody,
+  options?: RequestInit,
+): Promise<ListingMessage> => {
+  return customFetch<ListingMessage>(getSendListingMessageUrl(slug), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(sendMessageBody),
+  });
+};
+
+export const getSendListingMessageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendListingMessage>>,
+    TError,
+    { slug: string; data: BodyType<SendMessageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendListingMessage>>,
+  TError,
+  { slug: string; data: BodyType<SendMessageBody> },
+  TContext
+> => {
+  const mutationKey = ["sendListingMessage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendListingMessage>>,
+    { slug: string; data: BodyType<SendMessageBody> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return sendListingMessage(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendListingMessageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendListingMessage>>
+>;
+export type SendListingMessageMutationBody = BodyType<SendMessageBody>;
+export type SendListingMessageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Send a message about a listing
+ */
+export const useSendListingMessage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendListingMessage>>,
+    TError,
+    { slug: string; data: BodyType<SendMessageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendListingMessage>>,
+  TError,
+  { slug: string; data: BodyType<SendMessageBody> },
+  TContext
+> => {
+  return useMutation(getSendListingMessageMutationOptions(options));
+};
+
+/**
+ * @summary Approve a listing (admin)
+ */
+export const getAdminApproveMarketplaceListingUrl = (slug: string) => {
+  return `/api/admin/marketplace/listings/${slug}/approve`;
+};
+
+export const adminApproveMarketplaceListing = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<MarketplaceListing> => {
+  return customFetch<MarketplaceListing>(
+    getAdminApproveMarketplaceListingUrl(slug),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getAdminApproveMarketplaceListingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminApproveMarketplaceListing>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminApproveMarketplaceListing>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  const mutationKey = ["adminApproveMarketplaceListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminApproveMarketplaceListing>>,
+    { slug: string }
+  > = (props) => {
+    const { slug } = props ?? {};
+
+    return adminApproveMarketplaceListing(slug, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminApproveMarketplaceListingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminApproveMarketplaceListing>>
+>;
+
+export type AdminApproveMarketplaceListingMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Approve a listing (admin)
+ */
+export const useAdminApproveMarketplaceListing = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminApproveMarketplaceListing>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminApproveMarketplaceListing>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  return useMutation(getAdminApproveMarketplaceListingMutationOptions(options));
+};
+
+/**
+ * @summary Reject a listing (admin)
+ */
+export const getAdminRejectMarketplaceListingUrl = (slug: string) => {
+  return `/api/admin/marketplace/listings/${slug}/reject`;
+};
+
+export const adminRejectMarketplaceListing = async (
+  slug: string,
+  adminRejectListingBody: AdminRejectListingBody,
+  options?: RequestInit,
+): Promise<MarketplaceListing> => {
+  return customFetch<MarketplaceListing>(
+    getAdminRejectMarketplaceListingUrl(slug),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(adminRejectListingBody),
+    },
+  );
+};
+
+export const getAdminRejectMarketplaceListingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRejectMarketplaceListing>>,
+    TError,
+    { slug: string; data: BodyType<AdminRejectListingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRejectMarketplaceListing>>,
+  TError,
+  { slug: string; data: BodyType<AdminRejectListingBody> },
+  TContext
+> => {
+  const mutationKey = ["adminRejectMarketplaceListing"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRejectMarketplaceListing>>,
+    { slug: string; data: BodyType<AdminRejectListingBody> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return adminRejectMarketplaceListing(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRejectMarketplaceListingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRejectMarketplaceListing>>
+>;
+export type AdminRejectMarketplaceListingMutationBody =
+  BodyType<AdminRejectListingBody>;
+export type AdminRejectMarketplaceListingMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Reject a listing (admin)
+ */
+export const useAdminRejectMarketplaceListing = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRejectMarketplaceListing>>,
+    TError,
+    { slug: string; data: BodyType<AdminRejectListingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRejectMarketplaceListing>>,
+  TError,
+  { slug: string; data: BodyType<AdminRejectListingBody> },
+  TContext
+> => {
+  return useMutation(getAdminRejectMarketplaceListingMutationOptions(options));
+};
+
+/**
+ * @summary List all pending listings (admin)
+ */
+export const getAdminListMarketplaceListingsUrl = () => {
+  return `/api/admin/marketplace/listings`;
+};
+
+export const adminListMarketplaceListings = async (
+  options?: RequestInit,
+): Promise<MarketplaceListing[]> => {
+  return customFetch<MarketplaceListing[]>(
+    getAdminListMarketplaceListingsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminListMarketplaceListingsQueryKey = () => {
+  return [`/api/admin/marketplace/listings`] as const;
+};
+
+export const getAdminListMarketplaceListingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListMarketplaceListings>>,
   TError = ErrorType<unknown>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listMyMessages>>,
+    Awaited<ReturnType<typeof adminListMarketplaceListings>>,
     TError,
     TData
   >;
@@ -4060,40 +4389,42 @@ export const getListMyMessagesQueryOptions = <
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListMyMessagesQueryKey();
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListMarketplaceListingsQueryKey();
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyMessages>>> = ({
-    signal,
-  }) => listMyMessages({ signal, ...requestOptions });
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListMarketplaceListings>>
+  > = ({ signal }) =>
+    adminListMarketplaceListings({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof listMyMessages>>,
+    Awaited<ReturnType<typeof adminListMarketplaceListings>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type ListMyMessagesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listMyMessages>>
+export type AdminListMarketplaceListingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListMarketplaceListings>>
 >;
-export type ListMyMessagesQueryError = ErrorType<unknown>;
+export type AdminListMarketplaceListingsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List message threads for current user
+ * @summary List all pending listings (admin)
  */
 
-export function useListMyMessages<
-  TData = Awaited<ReturnType<typeof listMyMessages>>,
+export function useAdminListMarketplaceListings<
+  TData = Awaited<ReturnType<typeof adminListMarketplaceListings>>,
   TError = ErrorType<unknown>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listMyMessages>>,
+    Awaited<ReturnType<typeof adminListMarketplaceListings>>,
     TError,
     TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListMyMessagesQueryOptions(options);
+  const queryOptions = getAdminListMarketplaceListingsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -4103,24 +4434,109 @@ export function useListMyMessages<
 }
 
 /**
- * @summary Get messages for a listing thread
+ * @summary List all conversation threads for the current user
  */
-export const getGetMessageThreadUrl = (listingId: string) => {
-  return `/api/marketplace/messages/${listingId}`;
+export const getListMessageThreadsUrl = () => {
+  return `/api/messages/threads`;
 };
 
-export const getMessageThread = async (
-  listingId: string,
+export const listMessageThreads = async (
   options?: RequestInit,
-): Promise<MarketplaceMessage[]> => {
-  return customFetch<MarketplaceMessage[]>(getGetMessageThreadUrl(listingId), {
+): Promise<MessageThread[]> => {
+  return customFetch<MessageThread[]>(getListMessageThreadsUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetMessageThreadQueryKey = (listingId: string) => {
-  return [`/api/marketplace/messages/${listingId}`] as const;
+export const getListMessageThreadsQueryKey = () => {
+  return [`/api/messages/threads`] as const;
+};
+
+export const getListMessageThreadsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMessageThreads>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMessageThreads>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMessageThreadsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMessageThreads>>
+  > = ({ signal }) => listMessageThreads({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMessageThreads>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMessageThreadsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMessageThreads>>
+>;
+export type ListMessageThreadsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all conversation threads for the current user
+ */
+
+export function useListMessageThreads<
+  TData = Awaited<ReturnType<typeof listMessageThreads>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMessageThreads>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMessageThreadsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get full message thread; marks messages as read
+ */
+export const getGetMessageThreadUrl = (
+  listingId: string,
+  otherUserId: string,
+) => {
+  return `/api/messages/threads/${listingId}/${otherUserId}`;
+};
+
+export const getMessageThread = async (
+  listingId: string,
+  otherUserId: string,
+  options?: RequestInit,
+): Promise<ListingMessage[]> => {
+  return customFetch<ListingMessage[]>(
+    getGetMessageThreadUrl(listingId, otherUserId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetMessageThreadQueryKey = (
+  listingId: string,
+  otherUserId: string,
+) => {
+  return [`/api/messages/threads/${listingId}/${otherUserId}`] as const;
 };
 
 export const getGetMessageThreadQueryOptions = <
@@ -4128,6 +4544,7 @@ export const getGetMessageThreadQueryOptions = <
   TError = ErrorType<unknown>,
 >(
   listingId: string,
+  otherUserId: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getMessageThread>>,
@@ -4140,17 +4557,18 @@ export const getGetMessageThreadQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetMessageThreadQueryKey(listingId);
+    queryOptions?.queryKey ??
+    getGetMessageThreadQueryKey(listingId, otherUserId);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getMessageThread>>
   > = ({ signal }) =>
-    getMessageThread(listingId, { signal, ...requestOptions });
+    getMessageThread(listingId, otherUserId, { signal, ...requestOptions });
 
   return {
     queryKey,
     queryFn,
-    enabled: !!listingId,
+    enabled: !!(listingId && otherUserId),
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getMessageThread>>,
@@ -4165,7 +4583,7 @@ export type GetMessageThreadQueryResult = NonNullable<
 export type GetMessageThreadQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get messages for a listing thread
+ * @summary Get full message thread; marks messages as read
  */
 
 export function useGetMessageThread<
@@ -4173,6 +4591,7 @@ export function useGetMessageThread<
   TError = ErrorType<unknown>,
 >(
   listingId: string,
+  otherUserId: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getMessageThread>>,
@@ -4182,7 +4601,11 @@ export function useGetMessageThread<
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetMessageThreadQueryOptions(listingId, options);
+  const queryOptions = getGetMessageThreadQueryOptions(
+    listingId,
+    otherUserId,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -4190,93 +4613,6 @@ export function useGetMessageThread<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
-
-/**
- * @summary Send a message about a listing
- */
-export const getSendMessageUrl = (listingId: string) => {
-  return `/api/marketplace/messages/${listingId}`;
-};
-
-export const sendMessage = async (
-  listingId: string,
-  sendMessageBody: SendMessageBody,
-  options?: RequestInit,
-): Promise<MarketplaceMessage> => {
-  return customFetch<MarketplaceMessage>(getSendMessageUrl(listingId), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(sendMessageBody),
-  });
-};
-
-export const getSendMessageMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof sendMessage>>,
-    TError,
-    { listingId: string; data: BodyType<SendMessageBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof sendMessage>>,
-  TError,
-  { listingId: string; data: BodyType<SendMessageBody> },
-  TContext
-> => {
-  const mutationKey = ["sendMessage"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof sendMessage>>,
-    { listingId: string; data: BodyType<SendMessageBody> }
-  > = (props) => {
-    const { listingId, data } = props ?? {};
-
-    return sendMessage(listingId, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type SendMessageMutationResult = NonNullable<
-  Awaited<ReturnType<typeof sendMessage>>
->;
-export type SendMessageMutationBody = BodyType<SendMessageBody>;
-export type SendMessageMutationError = ErrorType<unknown>;
-
-/**
- * @summary Send a message about a listing
- */
-export const useSendMessage = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof sendMessage>>,
-    TError,
-    { listingId: string; data: BodyType<SendMessageBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof sendMessage>>,
-  TError,
-  { listingId: string; data: BodyType<SendMessageBody> },
-  TContext
-> => {
-  return useMutation(getSendMessageMutationOptions(options));
-};
 
 /**
  * @summary List notifications for current user

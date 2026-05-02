@@ -86,6 +86,20 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **Admin tab** (`/admin` → "Recursos" tab): pending queue with Aprobar/Rechazar buttons; side-by-side preview pane shows cover, tags, description, link before publishing; reject dialog requires reason text
 - Legacy `/resources` redirects to `/recursos`; nav link updated to `/recursos`
 
+### `/marketplace` — Marketplace + Private Messaging (full implementation)
+- **DB schema**: `marketplace_listings` (id, seller_id FK, title, slug unique, description, price numeric nullable, currency default 'USD', category, `listing_status` enum draft/pending/active/sold/rejected, created_at, updated_at) + `listing_images` (id, listing_id cascade, url, order_index) + `listing_messages` (id, listing_id cascade, from_id FK, to_id FK, body, read_at nullable, created_at; index on to_id+read_at)
+- **Old tables** (`marketplace_listings` + `marketplace_messages`) dropped and recreated
+- **Backend** (`artifacts/api-server/src/routes/marketplace.ts`): cursor-paginated listing list (q/category/minPrice/maxPrice), seller dashboard, detail by slug, create (status=pending), PATCH (seller/admin), image upload (multer → Object Storage, max 6), mark-as-sold, messages endpoint, thread list, thread detail (marks read on fetch), admin list/approve/reject with pushNotification
+- **Admin block**: `GET /messages/threads/:listingId/:otherUserId` explicitly returns 403 for admins who are not a thread participant
+- **Frontend pages**:
+  - `/marketplace`: filter sidebar (category select, price range min/max, search) + listing grid with cover image, price, category badge, seller name
+  - `/marketplace/:slug`: shadcn Carousel image carousel, react-markdown description, price, category, seller card + link to `/miembros/:username`, "Contactar al vendedor" → navigates to `/mensajes/:listingId/:sellerId`; seller sees Edit + "Marcar vendido" actions
+  - `/marketplace/mis-anuncios`: seller dashboard with status tabs (Todos/Borradores/En revisión/Activos/Vendidos/Rechazados), create listing dialog (RHF+Zod), edit dialog, image upload per-listing, mark-as-sold button
+  - `/mensajes`: thread list with unread badges, live-updated via SSE `message_received` events, links to thread view
+  - `/mensajes/:listingId/:otherUserId`: chat-style bubbles, auto-scroll to bottom, Enter-to-send, read receipts
+- **Admin tab** (`/admin` → "Marketplace" tab): pending queue with thumbnail, approve/reject buttons, side-by-side preview pane; reject dialog requires reason
+- Nav updated: `/messages` → `/mensajes`, `/marketplace/mis-anuncios` linked from marketplace header
+
 ### Schema Migration Notes
 - **Never run `pnpm --filter @workspace/db run push`** — it hangs; always use `psql "$DATABASE_URL"` directly
 - Forum schema renamed: `forum_posts` → `forum_threads` (threads), new `forum_posts` (replies), new `forum_reactions`

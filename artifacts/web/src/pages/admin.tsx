@@ -18,12 +18,16 @@ import {
   useAdminListResources,
   useAdminPublishResource,
   useAdminRejectResource,
+  useAdminListMarketplaceListings,
+  useAdminApproveMarketplaceListing,
+  useAdminRejectMarketplaceListing,
   getGetAdminStatsQueryKey,
   getAdminListUsersQueryKey,
   getGetModerationQueueQueryKey,
   getGetLandingContentQueryKey,
   getAdminListEventsQueryKey,
   getAdminListResourcesQueryKey,
+  getAdminListMarketplaceListingsQueryKey,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +50,7 @@ import { toast } from "sonner";
 import {
   Shield, Users, AlertTriangle, BarChart3, Edit3, Check, X,
   Calendar, Plus, Trash2, Upload, BookOpen, Link2, FileDown,
-  GraduationCap, ExternalLink, Eye,
+  GraduationCap, ExternalLink, Eye, ShoppingBag,
 } from "lucide-react";
 
 // ── Admin Stats ───────────────────────────────────────────────────────────────
@@ -688,6 +692,200 @@ function ResourcesAdmin() {
   );
 }
 
+// ── Marketplace Admin ─────────────────────────────────────────────────────────
+
+function MarketplaceAdmin() {
+  const qc = useQueryClient();
+  const { data: pendingRaw, isLoading } = useAdminListMarketplaceListings({
+    query: { queryKey: getAdminListMarketplaceListingsQueryKey() },
+  });
+  const pending = (pendingRaw as any[]) ?? [];
+
+  const approveMutation = useAdminApproveMarketplaceListing();
+  const rejectMutation = useAdminRejectMarketplaceListing();
+
+  const [preview, setPreview] = useState<any>(null);
+  const [rejectSlug, setRejectSlug] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectOpen, setRejectOpen] = useState(false);
+
+  const handleApprove = async (slug: string) => {
+    try {
+      await approveMutation.mutateAsync({ slug });
+      qc.invalidateQueries({ queryKey: getAdminListMarketplaceListingsQueryKey() });
+      toast.success("Anuncio aprobado");
+      if (preview?.slug === slug) setPreview(null);
+    } catch { toast.error("Error al aprobar"); }
+  };
+
+  const openReject = (slug: string) => {
+    setRejectSlug(slug);
+    setRejectReason("");
+    setRejectOpen(true);
+  };
+
+  const handleReject = async () => {
+    if (!rejectSlug || !rejectReason.trim()) return;
+    try {
+      await rejectMutation.mutateAsync({ slug: rejectSlug, data: { reason: rejectReason } });
+      qc.invalidateQueries({ queryKey: getAdminListMarketplaceListingsQueryKey() });
+      toast.success("Anuncio rechazado");
+      setRejectOpen(false);
+      if (preview?.slug === rejectSlug) setPreview(null);
+    } catch { toast.error("Error al rechazar"); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        {pending.length} anuncio{pending.length !== 1 ? "s" : ""} pendiente{pending.length !== 1 ? "s" : ""}
+      </p>
+
+      {isLoading ? (
+        <Skeleton className="h-32 rounded-xl" />
+      ) : pending.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <ShoppingBag className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No hay anuncios pendientes.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Queue */}
+          <div className="space-y-2">
+            {pending.map((l: any) => {
+              const firstImage = l.images?.[0]?.url;
+              return (
+                <Card
+                  key={l.id}
+                  className={`cursor-pointer transition-colors ${preview?.id === l.id ? "border-primary/50 bg-primary/5" : "hover:border-border/80"}`}
+                  onClick={() => setPreview(preview?.id === l.id ? null : l)}
+                >
+                  <CardContent className="p-3 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                      {firstImage
+                        ? <img src={firstImage} alt={l.title} className="w-full h-full object-cover rounded-md" />
+                        : <ShoppingBag className="h-4 w-4 text-muted-foreground/40" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{l.title}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        <span>{l.category}</span>
+                        <span>·</span>
+                        <span>{l.sellerName}</span>
+                        {l.price != null && (
+                          <><span>·</span><span className="text-primary">{l.currency} {Number(l.price).toLocaleString("es")}</span></>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        size="sm" variant="ghost"
+                        className="h-7 px-2 text-green-400 hover:text-green-300 hover:bg-green-500/10 text-xs"
+                        disabled={approveMutation.isPending}
+                        onClick={(e) => { e.stopPropagation(); handleApprove(l.slug); }}
+                      >
+                        <Check className="h-3 w-3 mr-1" />Aprobar
+                      </Button>
+                      <Button
+                        size="sm" variant="ghost"
+                        className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10 text-xs"
+                        onClick={(e) => { e.stopPropagation(); openReject(l.slug); }}
+                      >
+                        <X className="h-3 w-3 mr-1" />Rechazar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Preview pane */}
+          {preview && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-primary" />
+                  Vista previa — {preview.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {preview.images?.length > 0 && (
+                  <img
+                    src={preview.images[0].url}
+                    alt={preview.title}
+                    className="w-full h-40 object-cover rounded-lg"
+                  />
+                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="secondary" className="text-xs">{preview.category}</Badge>
+                  {preview.price != null && (
+                    <span className="text-sm font-semibold text-primary">
+                      {preview.currency} {Number(preview.price).toLocaleString("es")}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground line-clamp-6 whitespace-pre-wrap">
+                  {preview.description}
+                </p>
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-medium">Vendedor:</span> {preview.sellerName}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    size="sm" variant="default"
+                    className="gap-1 bg-green-600 hover:bg-green-500 text-white"
+                    disabled={approveMutation.isPending}
+                    onClick={() => handleApprove(preview.slug)}
+                  >
+                    <Check className="h-3 w-3" />Aprobar
+                  </Button>
+                  <Button
+                    size="sm" variant="destructive"
+                    className="gap-1"
+                    onClick={() => openReject(preview.slug)}
+                  >
+                    <X className="h-3 w-3" />Rechazar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rechazar anuncio</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              El vendedor recibirá una notificación con el motivo.
+            </p>
+            <Textarea
+              placeholder="Motivo del rechazo..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectOpen(false)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              disabled={!rejectReason.trim() || rejectMutation.isPending}
+              onClick={handleReject}
+            >
+              {rejectMutation.isPending ? "Rechazando..." : "Rechazar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // ── Admin Page ────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
@@ -715,6 +913,7 @@ export default function AdminPage() {
             <TabsTrigger value="landing" data-testid="tab-admin-landing"><Edit3 className="h-4 w-4 mr-1.5" />Landing</TabsTrigger>
             <TabsTrigger value="eventos" data-testid="tab-admin-eventos"><Calendar className="h-4 w-4 mr-1.5" />Eventos</TabsTrigger>
             <TabsTrigger value="recursos" data-testid="tab-admin-recursos"><BookOpen className="h-4 w-4 mr-1.5" />Recursos</TabsTrigger>
+            <TabsTrigger value="marketplace" data-testid="tab-admin-marketplace"><ShoppingBag className="h-4 w-4 mr-1.5" />Marketplace</TabsTrigger>
           </TabsList>
           <TabsContent value="stats" className="mt-6"><AdminStats /></TabsContent>
           <TabsContent value="users" className="mt-6"><UserManagement /></TabsContent>
@@ -722,6 +921,7 @@ export default function AdminPage() {
           <TabsContent value="landing" className="mt-6"><LandingEditor /></TabsContent>
           <TabsContent value="eventos" className="mt-6"><EventosAdmin /></TabsContent>
           <TabsContent value="recursos" className="mt-6"><ResourcesAdmin /></TabsContent>
+          <TabsContent value="marketplace" className="mt-6"><MarketplaceAdmin /></TabsContent>
         </Tabs>
       </div>
     </Layout>

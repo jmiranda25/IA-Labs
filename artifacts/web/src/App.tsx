@@ -33,7 +33,9 @@ import RecursoDetallePage from "@/pages/recurso-detalle";
 import RecursoNuevoPage from "@/pages/recurso-nuevo";
 import MarketplacePage from "@/pages/marketplace";
 import MarketplaceListingPage from "@/pages/marketplace-listing";
+import MisAnunciosPage from "@/pages/marketplace-mis-listings";
 import MessagesPage from "@/pages/messages";
+import MensajesThreadPage from "@/pages/mensajes-thread";
 import SettingsPage from "@/pages/settings";
 import PerfilPage from "@/pages/perfil";
 import AdminPage from "@/pages/admin";
@@ -332,18 +334,34 @@ function ClerkProviderWithRoutes() {
             <Route path="/recursos">
               <ProtectedRoute><RecursosPage /></ProtectedRoute>
             </Route>
-            <Route path="/marketplace">
-              <ProtectedRoute><MarketplacePage /></ProtectedRoute>
+            <Route path="/marketplace/mis-anuncios">
+              <ProtectedRoute><MisAnunciosPage /></ProtectedRoute>
             </Route>
-            <Route path="/marketplace/:listingId">
+            <Route path="/marketplace/:slug">
               {(params) => (
                 <ProtectedRoute>
-                  <MarketplaceListingPage listingId={params.listingId as string} />
+                  <MarketplaceListingPage slug={params.slug as string} />
                 </ProtectedRoute>
               )}
             </Route>
-            <Route path="/messages">
+            <Route path="/marketplace">
+              <ProtectedRoute><MarketplacePage /></ProtectedRoute>
+            </Route>
+            <Route path="/mensajes/:listingId/:otherUserId">
+              {(params) => (
+                <ProtectedRoute>
+                  <MensajesThreadPage
+                    listingId={params.listingId as string}
+                    otherUserId={params.otherUserId as string}
+                  />
+                </ProtectedRoute>
+              )}
+            </Route>
+            <Route path="/mensajes">
               <ProtectedRoute><MessagesPage /></ProtectedRoute>
+            </Route>
+            <Route path="/messages">
+              <ProtectedRoute><Redirect to="/mensajes" /></ProtectedRoute>
             </Route>
             <Route path="/settings">
               <ProtectedRoute><SettingsPage /></ProtectedRoute>

@@ -853,33 +853,33 @@ paths:
     get:
       operationId: listMarketplaceListings
       tags: [marketplace]
-      summary: List marketplace listings
+      summary: List marketplace listings (active; sellers see own too)
       parameters:
-        - name: search
+        - name: q
           in: query
           schema:
             type: string
-        - name: type
+        - name: category
           in: query
           schema:
             type: string
-            enum: [offering, seeking]
-        - name: status
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: cursor
           in: query
           schema:
             type: string
-            enum: [active, closed, all]
-            default: active
         - name: limit
           in: query
           schema:
             type: integer
             default: 20
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
       responses:
         "200":
           description: Paginated listings
@@ -890,7 +890,7 @@ paths:
     post:
       operationId: createMarketplaceListing
       tags: [marketplace]
-      summary: Create a marketplace listing
+      summary: Create a listing (status=pending)
       requestBody:
         required: true
         content:
@@ -905,20 +905,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/MarketplaceListing"
 
-  /marketplace/listings/featured:
+  /marketplace/my-listings:
     get:
-      operationId: getFeaturedListings
+      operationId: getMyListings
       tags: [marketplace]
-      summary: Get featured/recent active listings
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 6
+      summary: Get all listings belonging to the current seller
       responses:
         "200":
-          description: Featured listings
+          description: Seller listings
           content:
             application/json:
               schema:
@@ -926,13 +920,13 @@ paths:
                 items:
                   $ref: "#/components/schemas/MarketplaceListing"
 
-  /marketplace/listings/{listingId}:
+  /marketplace/listings/{slug}:
     get:
       operationId: getMarketplaceListing
       tags: [marketplace]
-      summary: Get a marketplace listing
+      summary: Get a listing by slug
       parameters:
-        - name: listingId
+        - name: slug
           in: path
           required: true
           schema:
@@ -944,12 +938,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MarketplaceListing"
-    put:
+    patch:
       operationId: updateMarketplaceListing
       tags: [marketplace]
-      summary: Update a listing (owner or admin)
+      summary: Update a listing (seller or admin)
       parameters:
-        - name: listingId
+        - name: slug
           in: path
           required: true
           schema:
@@ -967,61 +961,66 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MarketplaceListing"
-    delete:
-      operationId: deleteMarketplaceListing
-      tags: [marketplace]
-      summary: Delete a listing (owner or admin)
-      parameters:
-        - name: listingId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "204":
-          description: Deleted
 
-  /marketplace/messages:
-    get:
-      operationId: listMyMessages
-      tags: [marketplace]
-      summary: List message threads for current user
-      responses:
-        "200":
-          description: Message threads
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/MessageThread"
-
-  /marketplace/messages/{listingId}:
-    get:
-      operationId: getMessageThread
-      tags: [marketplace]
-      summary: Get messages for a listing thread
-      parameters:
-        - name: listingId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Messages in thread
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/MarketplaceMessage"
+  /marketplace/listings/{slug}/images:
     post:
-      operationId: sendMessage
+      operationId: uploadListingImages
+      tags: [marketplace]
+      summary: Upload images for a listing (max 6, multipart/form-data)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "200":
+          description: Uploaded images
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ListingImage"
+
+  /marketplace/listings/{slug}/sold:
+    post:
+      operationId: markListingAsSold
+      tags: [marketplace]
+      summary: Mark a listing as sold (seller only)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceListing"
+
+  /marketplace/listings/{slug}/messages:
+    post:
+      operationId: sendListingMessage
       tags: [marketplace]
       summary: Send a message about a listing
       parameters:
-        - name: listingId
+        - name: slug
           in: path
           required: true
           schema:
@@ -1038,7 +1037,107 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MarketplaceMessage"
+                $ref: "#/components/schemas/ListingMessage"
+
+  /admin/marketplace/listings/{slug}/approve:
+    post:
+      operationId: adminApproveMarketplaceListing
+      tags: [marketplace]
+      summary: Approve a listing (admin)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Approved listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceListing"
+
+  /admin/marketplace/listings/{slug}/reject:
+    post:
+      operationId: adminRejectMarketplaceListing
+      tags: [marketplace]
+      summary: Reject a listing (admin)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRejectListingBody"
+      responses:
+        "200":
+          description: Rejected listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceListing"
+
+  /admin/marketplace/listings:
+    get:
+      operationId: adminListMarketplaceListings
+      tags: [marketplace]
+      summary: List all pending listings (admin)
+      responses:
+        "200":
+          description: Pending listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MarketplaceListing"
+
+  /messages/threads:
+    get:
+      operationId: listMessageThreads
+      tags: [marketplace]
+      summary: List all conversation threads for the current user
+      responses:
+        "200":
+          description: Message threads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MessageThread"
+
+  /messages/threads/{listingId}/{otherUserId}:
+    get:
+      operationId: getMessageThread
+      tags: [marketplace]
+      summary: Get full message thread; marks messages as read
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: otherUserId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Messages in thread
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ListingMessage"
 
   # ── Notifications ────────────────────────────────────────────────────────────
   /notifications:
@@ -1880,39 +1979,83 @@ components:
       properties:
         id:
           type: string
+        sellerId:
+          type: string
+        sellerName:
+          type: string
+        sellerAvatar:
+          type: string
+          nullable: true
+        sellerUsername:
+          type: string
+          nullable: true
         title:
+          type: string
+        slug:
           type: string
         description:
           type: string
-        type:
+        price:
+          type: number
+          nullable: true
+        currency:
           type: string
-          enum: [offering, seeking]
+        category:
+          type: string
         status:
           type: string
-          enum: [active, closed]
-        tags:
+          enum: [draft, pending, active, sold, rejected]
+        images:
           type: array
           items:
-            type: string
-        imageUrl:
-          type: string
-          nullable: true
-        authorId:
-          type: string
-        authorName:
-          type: string
-        authorAvatar:
-          type: string
-          nullable: true
-        messageCount:
-          type: integer
+            $ref: "#/components/schemas/ListingImage"
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
-      required: [id, title, description, type, status, tags, authorId, authorName, messageCount, createdAt, updatedAt]
+      required: [id, sellerId, sellerName, title, slug, description, currency, category, status, images, createdAt, updatedAt]
+
+    ListingImage:
+      type: object
+      properties:
+        id:
+          type: string
+        listingId:
+          type: string
+        url:
+          type: string
+        orderIndex:
+          type: integer
+      required: [id, listingId, url, orderIndex]
+
+    ListingMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        listingId:
+          type: string
+        fromId:
+          type: string
+        fromName:
+          type: string
+        fromAvatar:
+          type: string
+          nullable: true
+        toId:
+          type: string
+        body:
+          type: string
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, listingId, fromId, fromName, toId, body, createdAt]
 
     ListingListResponse:
       type: object
@@ -1921,9 +2064,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MarketplaceListing"
-        total:
-          type: integer
-      required: [listings, total]
+        nextCursor:
+          type: string
+          nullable: true
+      required: [listings]
 
     CreateListingBody:
       type: object
@@ -1932,17 +2076,14 @@ components:
           type: string
         description:
           type: string
-        type:
-          type: string
-          enum: [offering, seeking]
-        tags:
-          type: array
-          items:
-            type: string
-        imageUrl:
-          type: string
+        price:
+          type: number
           nullable: true
-      required: [title, description, type, tags]
+        currency:
+          type: string
+        category:
+          type: string
+      required: [title, description, category]
 
     UpdateListingBody:
       type: object
@@ -1951,49 +2092,27 @@ components:
           type: string
         description:
           type: string
-        type:
-          type: string
-          enum: [offering, seeking]
-        status:
-          type: string
-          enum: [active, closed]
-        tags:
-          type: array
-          items:
-            type: string
-        imageUrl:
-          type: string
+        price:
+          type: number
           nullable: true
+        currency:
+          type: string
+        category:
+          type: string
 
-    MarketplaceMessage:
+    AdminRejectListingBody:
       type: object
       properties:
-        id:
+        reason:
           type: string
-        listingId:
-          type: string
-        senderId:
-          type: string
-        senderName:
-          type: string
-        senderAvatar:
-          type: string
-          nullable: true
-        receiverId:
-          type: string
-        body:
-          type: string
-        isRead:
-          type: boolean
-        createdAt:
-          type: string
-          format: date-time
-      required: [id, listingId, senderId, senderName, receiverId, body, isRead, createdAt]
+      required: [reason]
 
     MessageThread:
       type: object
       properties:
         listingId:
+          type: string
+        listingSlug:
           type: string
         listingTitle:
           type: string
@@ -2004,6 +2123,9 @@ components:
         otherUserAvatar:
           type: string
           nullable: true
+        otherUserUsername:
+          type: string
+          nullable: true
         lastMessage:
           type: string
         unreadCount:
@@ -2011,16 +2133,16 @@ components:
         updatedAt:
           type: string
           format: date-time
-      required: [listingId, listingTitle, otherUserId, otherUserName, lastMessage, unreadCount, updatedAt]
+      required: [listingId, listingSlug, listingTitle, otherUserId, otherUserName, lastMessage, unreadCount, updatedAt]
 
     SendMessageBody:
       type: object
       properties:
-        receiverId:
-          type: string
         body:
           type: string
-      required: [receiverId, body]
+        toId:
+          type: string
+      required: [body, toId]
 
     # ── Notifications ──────────────────────────────────────────────────────────
     Notification:

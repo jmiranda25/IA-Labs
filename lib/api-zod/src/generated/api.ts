@@ -876,192 +876,364 @@ export const AdminRejectResourceBody = zod.object({
 });
 
 /**
- * @summary List marketplace listings
+ * @summary List marketplace listings (active; sellers see own too)
  */
-export const listMarketplaceListingsQueryStatusDefault = `active`;
 export const listMarketplaceListingsQueryLimitDefault = 20;
-export const listMarketplaceListingsQueryOffsetDefault = 0;
 
 export const ListMarketplaceListingsQueryParams = zod.object({
-  search: zod.coerce.string().optional(),
-  type: zod.enum(["offering", "seeking"]).optional(),
-  status: zod
-    .enum(["active", "closed", "all"])
-    .default(listMarketplaceListingsQueryStatusDefault),
+  q: zod.coerce.string().optional(),
+  category: zod.coerce.string().optional(),
+  minPrice: zod.coerce.number().optional(),
+  maxPrice: zod.coerce.number().optional(),
+  cursor: zod.coerce.string().optional(),
   limit: zod.coerce.number().default(listMarketplaceListingsQueryLimitDefault),
-  offset: zod.coerce
-    .number()
-    .default(listMarketplaceListingsQueryOffsetDefault),
 });
 
 export const ListMarketplaceListingsResponse = zod.object({
   listings: zod.array(
     zod.object({
       id: zod.string(),
+      sellerId: zod.string(),
+      sellerName: zod.string(),
+      sellerAvatar: zod.string().nullish(),
+      sellerUsername: zod.string().nullish(),
       title: zod.string(),
+      slug: zod.string(),
       description: zod.string(),
-      type: zod.enum(["offering", "seeking"]),
-      status: zod.enum(["active", "closed"]),
-      tags: zod.array(zod.string()),
-      imageUrl: zod.string().nullish(),
-      authorId: zod.string(),
-      authorName: zod.string(),
-      authorAvatar: zod.string().nullish(),
-      messageCount: zod.number(),
+      price: zod.number().nullish(),
+      currency: zod.string(),
+      category: zod.string(),
+      status: zod.enum(["draft", "pending", "active", "sold", "rejected"]),
+      images: zod.array(
+        zod.object({
+          id: zod.string(),
+          listingId: zod.string(),
+          url: zod.string(),
+          orderIndex: zod.number(),
+        }),
+      ),
       createdAt: zod.coerce.date(),
       updatedAt: zod.coerce.date(),
     }),
   ),
-  total: zod.number(),
+  nextCursor: zod.string().nullish(),
 });
 
 /**
- * @summary Create a marketplace listing
+ * @summary Create a listing (status=pending)
  */
 export const CreateMarketplaceListingBody = zod.object({
   title: zod.string(),
   description: zod.string(),
-  type: zod.enum(["offering", "seeking"]),
-  tags: zod.array(zod.string()),
-  imageUrl: zod.string().nullish(),
+  price: zod.number().nullish(),
+  currency: zod.string().optional(),
+  category: zod.string(),
 });
 
 /**
- * @summary Get featured/recent active listings
+ * @summary Get all listings belonging to the current seller
  */
-export const getFeaturedListingsQueryLimitDefault = 6;
-
-export const GetFeaturedListingsQueryParams = zod.object({
-  limit: zod.coerce.number().default(getFeaturedListingsQueryLimitDefault),
-});
-
-export const GetFeaturedListingsResponseItem = zod.object({
+export const GetMyListingsResponseItem = zod.object({
   id: zod.string(),
+  sellerId: zod.string(),
+  sellerName: zod.string(),
+  sellerAvatar: zod.string().nullish(),
+  sellerUsername: zod.string().nullish(),
   title: zod.string(),
+  slug: zod.string(),
   description: zod.string(),
-  type: zod.enum(["offering", "seeking"]),
-  status: zod.enum(["active", "closed"]),
-  tags: zod.array(zod.string()),
-  imageUrl: zod.string().nullish(),
-  authorId: zod.string(),
-  authorName: zod.string(),
-  authorAvatar: zod.string().nullish(),
-  messageCount: zod.number(),
+  price: zod.number().nullish(),
+  currency: zod.string(),
+  category: zod.string(),
+  status: zod.enum(["draft", "pending", "active", "sold", "rejected"]),
+  images: zod.array(
+    zod.object({
+      id: zod.string(),
+      listingId: zod.string(),
+      url: zod.string(),
+      orderIndex: zod.number(),
+    }),
+  ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
-export const GetFeaturedListingsResponse = zod.array(
-  GetFeaturedListingsResponseItem,
-);
+export const GetMyListingsResponse = zod.array(GetMyListingsResponseItem);
 
 /**
- * @summary Get a marketplace listing
+ * @summary Get a listing by slug
  */
 export const GetMarketplaceListingParams = zod.object({
-  listingId: zod.coerce.string(),
+  slug: zod.coerce.string(),
 });
 
 export const GetMarketplaceListingResponse = zod.object({
   id: zod.string(),
+  sellerId: zod.string(),
+  sellerName: zod.string(),
+  sellerAvatar: zod.string().nullish(),
+  sellerUsername: zod.string().nullish(),
   title: zod.string(),
+  slug: zod.string(),
   description: zod.string(),
-  type: zod.enum(["offering", "seeking"]),
-  status: zod.enum(["active", "closed"]),
-  tags: zod.array(zod.string()),
-  imageUrl: zod.string().nullish(),
-  authorId: zod.string(),
-  authorName: zod.string(),
-  authorAvatar: zod.string().nullish(),
-  messageCount: zod.number(),
+  price: zod.number().nullish(),
+  currency: zod.string(),
+  category: zod.string(),
+  status: zod.enum(["draft", "pending", "active", "sold", "rejected"]),
+  images: zod.array(
+    zod.object({
+      id: zod.string(),
+      listingId: zod.string(),
+      url: zod.string(),
+      orderIndex: zod.number(),
+    }),
+  ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
 
 /**
- * @summary Update a listing (owner or admin)
+ * @summary Update a listing (seller or admin)
  */
 export const UpdateMarketplaceListingParams = zod.object({
-  listingId: zod.coerce.string(),
+  slug: zod.coerce.string(),
 });
 
 export const UpdateMarketplaceListingBody = zod.object({
   title: zod.string().optional(),
   description: zod.string().optional(),
-  type: zod.enum(["offering", "seeking"]).optional(),
-  status: zod.enum(["active", "closed"]).optional(),
-  tags: zod.array(zod.string()).optional(),
-  imageUrl: zod.string().nullish(),
+  price: zod.number().nullish(),
+  currency: zod.string().optional(),
+  category: zod.string().optional(),
 });
 
 export const UpdateMarketplaceListingResponse = zod.object({
   id: zod.string(),
+  sellerId: zod.string(),
+  sellerName: zod.string(),
+  sellerAvatar: zod.string().nullish(),
+  sellerUsername: zod.string().nullish(),
   title: zod.string(),
+  slug: zod.string(),
   description: zod.string(),
-  type: zod.enum(["offering", "seeking"]),
-  status: zod.enum(["active", "closed"]),
-  tags: zod.array(zod.string()),
-  imageUrl: zod.string().nullish(),
-  authorId: zod.string(),
-  authorName: zod.string(),
-  authorAvatar: zod.string().nullish(),
-  messageCount: zod.number(),
+  price: zod.number().nullish(),
+  currency: zod.string(),
+  category: zod.string(),
+  status: zod.enum(["draft", "pending", "active", "sold", "rejected"]),
+  images: zod.array(
+    zod.object({
+      id: zod.string(),
+      listingId: zod.string(),
+      url: zod.string(),
+      orderIndex: zod.number(),
+    }),
+  ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
 
 /**
- * @summary Delete a listing (owner or admin)
+ * @summary Upload images for a listing (max 6, multipart/form-data)
  */
-export const DeleteMarketplaceListingParams = zod.object({
-  listingId: zod.coerce.string(),
+export const UploadListingImagesParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const UploadListingImagesBody = zod.object({
+  images: zod.array(zod.instanceof(File)).optional(),
+});
+
+export const UploadListingImagesResponseItem = zod.object({
+  id: zod.string(),
+  listingId: zod.string(),
+  url: zod.string(),
+  orderIndex: zod.number(),
+});
+export const UploadListingImagesResponse = zod.array(
+  UploadListingImagesResponseItem,
+);
+
+/**
+ * @summary Mark a listing as sold (seller only)
+ */
+export const MarkListingAsSoldParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const MarkListingAsSoldResponse = zod.object({
+  id: zod.string(),
+  sellerId: zod.string(),
+  sellerName: zod.string(),
+  sellerAvatar: zod.string().nullish(),
+  sellerUsername: zod.string().nullish(),
+  title: zod.string(),
+  slug: zod.string(),
+  description: zod.string(),
+  price: zod.number().nullish(),
+  currency: zod.string(),
+  category: zod.string(),
+  status: zod.enum(["draft", "pending", "active", "sold", "rejected"]),
+  images: zod.array(
+    zod.object({
+      id: zod.string(),
+      listingId: zod.string(),
+      url: zod.string(),
+      orderIndex: zod.number(),
+    }),
+  ),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
 });
 
 /**
- * @summary List message threads for current user
+ * @summary Send a message about a listing
  */
-export const ListMyMessagesResponseItem = zod.object({
+export const SendListingMessageParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const SendListingMessageBody = zod.object({
+  body: zod.string(),
+  toId: zod.string(),
+});
+
+/**
+ * @summary Approve a listing (admin)
+ */
+export const AdminApproveMarketplaceListingParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const AdminApproveMarketplaceListingResponse = zod.object({
+  id: zod.string(),
+  sellerId: zod.string(),
+  sellerName: zod.string(),
+  sellerAvatar: zod.string().nullish(),
+  sellerUsername: zod.string().nullish(),
+  title: zod.string(),
+  slug: zod.string(),
+  description: zod.string(),
+  price: zod.number().nullish(),
+  currency: zod.string(),
+  category: zod.string(),
+  status: zod.enum(["draft", "pending", "active", "sold", "rejected"]),
+  images: zod.array(
+    zod.object({
+      id: zod.string(),
+      listingId: zod.string(),
+      url: zod.string(),
+      orderIndex: zod.number(),
+    }),
+  ),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Reject a listing (admin)
+ */
+export const AdminRejectMarketplaceListingParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const AdminRejectMarketplaceListingBody = zod.object({
+  reason: zod.string(),
+});
+
+export const AdminRejectMarketplaceListingResponse = zod.object({
+  id: zod.string(),
+  sellerId: zod.string(),
+  sellerName: zod.string(),
+  sellerAvatar: zod.string().nullish(),
+  sellerUsername: zod.string().nullish(),
+  title: zod.string(),
+  slug: zod.string(),
+  description: zod.string(),
+  price: zod.number().nullish(),
+  currency: zod.string(),
+  category: zod.string(),
+  status: zod.enum(["draft", "pending", "active", "sold", "rejected"]),
+  images: zod.array(
+    zod.object({
+      id: zod.string(),
+      listingId: zod.string(),
+      url: zod.string(),
+      orderIndex: zod.number(),
+    }),
+  ),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List all pending listings (admin)
+ */
+export const AdminListMarketplaceListingsResponseItem = zod.object({
+  id: zod.string(),
+  sellerId: zod.string(),
+  sellerName: zod.string(),
+  sellerAvatar: zod.string().nullish(),
+  sellerUsername: zod.string().nullish(),
+  title: zod.string(),
+  slug: zod.string(),
+  description: zod.string(),
+  price: zod.number().nullish(),
+  currency: zod.string(),
+  category: zod.string(),
+  status: zod.enum(["draft", "pending", "active", "sold", "rejected"]),
+  images: zod.array(
+    zod.object({
+      id: zod.string(),
+      listingId: zod.string(),
+      url: zod.string(),
+      orderIndex: zod.number(),
+    }),
+  ),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const AdminListMarketplaceListingsResponse = zod.array(
+  AdminListMarketplaceListingsResponseItem,
+);
+
+/**
+ * @summary List all conversation threads for the current user
+ */
+export const ListMessageThreadsResponseItem = zod.object({
   listingId: zod.string(),
+  listingSlug: zod.string(),
   listingTitle: zod.string(),
   otherUserId: zod.string(),
   otherUserName: zod.string(),
   otherUserAvatar: zod.string().nullish(),
+  otherUserUsername: zod.string().nullish(),
   lastMessage: zod.string(),
   unreadCount: zod.number(),
   updatedAt: zod.coerce.date(),
 });
-export const ListMyMessagesResponse = zod.array(ListMyMessagesResponseItem);
+export const ListMessageThreadsResponse = zod.array(
+  ListMessageThreadsResponseItem,
+);
 
 /**
- * @summary Get messages for a listing thread
+ * @summary Get full message thread; marks messages as read
  */
 export const GetMessageThreadParams = zod.object({
   listingId: zod.coerce.string(),
+  otherUserId: zod.coerce.string(),
 });
 
 export const GetMessageThreadResponseItem = zod.object({
   id: zod.string(),
   listingId: zod.string(),
-  senderId: zod.string(),
-  senderName: zod.string(),
-  senderAvatar: zod.string().nullish(),
-  receiverId: zod.string(),
+  fromId: zod.string(),
+  fromName: zod.string(),
+  fromAvatar: zod.string().nullish(),
+  toId: zod.string(),
   body: zod.string(),
-  isRead: zod.boolean(),
+  readAt: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date(),
 });
 export const GetMessageThreadResponse = zod.array(GetMessageThreadResponseItem);
-
-/**
- * @summary Send a message about a listing
- */
-export const SendMessageParams = zod.object({
-  listingId: zod.coerce.string(),
-});
-
-export const SendMessageBody = zod.object({
-  receiverId: zod.string(),
-  body: zod.string(),
-});
 
 /**
  * @summary List notifications for current user

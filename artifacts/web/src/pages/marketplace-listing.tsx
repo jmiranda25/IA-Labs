@@ -1,126 +1,218 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout";
-import { useGetMarketplaceListing, useSendMessage, useGetMessageThread, useGetMe, getGetMarketplaceListingQueryKey, getGetMessageThreadQueryKey } from "@workspace/api-client-react";
+import {
+  useGetMarketplaceListing,
+  useMarkListingAsSold,
+  useSendListingMessage,
+  useGetMe,
+  getGetMarketplaceListingQueryKey,
+} from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { MessageCircle, Send, ShoppingBag } from "lucide-react";
+import { es } from "date-fns/locale";
+import ReactMarkdown from "react-markdown";
+import {
+  ShoppingBag, Tag, DollarSign, MessageCircle,
+  CheckCircle, Edit, ExternalLink, ChevronLeft,
+} from "lucide-react";
+import { toast } from "sonner";
 
-export default function MarketplaceListingPage({ listingId }: { listingId: string }) {
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Borrador", pending: "En revisión",
+  active: "Activo", sold: "Vendido", rejected: "Rechazado",
+};
+const STATUS_CLASS: Record<string, string> = {
+  pending:  "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  draft:    "bg-muted text-muted-foreground border-border",
+  active:   "bg-green-500/10 text-green-400 border-green-500/20",
+  sold:     "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  rejected: "bg-destructive/10 text-destructive border-destructive/20",
+};
+
+export default function MarketplaceListingPage({ slug }: { slug: string }) {
   const qc = useQueryClient();
-  const { data: listing, isLoading } = useGetMarketplaceListing(listingId, { query: { queryKey: getGetMarketplaceListingQueryKey(listingId) } });
+  const [, setLocation] = useLocation();
+  const { data: listing, isLoading } = useGetMarketplaceListing(slug, {
+    query: { queryKey: getGetMarketplaceListingQueryKey(slug) },
+  });
   const { data: me } = useGetMe();
-  const { data: thread } = useGetMessageThread(listingId, { query: { queryKey: getGetMessageThreadQueryKey(listingId) } });
-  const sendMsg = useSendMessage();
-  const [message, setMessage] = useState("");
+  const markSold = useMarkListingAsSold();
 
   const l = listing as any;
-  const msgs = (thread as any[]) ?? [];
-  const isOwner = me?.id === l?.authorId;
+  const isSeller = me?.id === l?.sellerId;
 
-  const handleSend = () => {
-    if (!message.trim()) return;
-    sendMsg.mutate({ listingId, data: { receiverId: l.authorId, body: message } }, {
-      onSuccess: () => {
-        setMessage("");
-        qc.invalidateQueries({ queryKey: getGetMessageThreadQueryKey(listingId) });
-      },
-    });
+  const handleMarkSold = async () => {
+    try {
+      await markSold.mutateAsync({ slug });
+      qc.invalidateQueries({ queryKey: getGetMarketplaceListingQueryKey(slug) });
+      toast.success("Anuncio marcado como vendido");
+    } catch {
+      toast.error("Error al actualizar");
+    }
   };
 
-  if (isLoading) return <Layout><div className="max-w-3xl mx-auto p-6"><Skeleton className="h-96 rounded-xl" /></div></Layout>;
-  if (!l) return <Layout><div className="p-6 text-center text-muted-foreground">Listing not found.</div></Layout>;
+  const handleContact = () => {
+    if (!l) return;
+    setLocation(`/mensajes/${l.id}/${l.sellerId}`);
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="max-w-3xl mx-auto p-6 space-y-4">
+          <Skeleton className="h-64 rounded-xl" />
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-24 rounded-xl" />
+        </div>
+      </Layout>
+    );
+  }
+  if (!l) {
+    return (
+      <Layout>
+        <div className="max-w-3xl mx-auto p-6 text-center text-muted-foreground py-20">
+          <ShoppingBag className="h-12 w-12 mx-auto mb-4 opacity-20" />
+          <p>Anuncio no encontrado.</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  const images: any[] = l.images ?? [];
 
   return (
     <Layout>
       <div className="max-w-3xl mx-auto p-6 space-y-6">
-        <Card>
-          {l.imageUrl && (
-            <div className="h-56 rounded-t-xl overflow-hidden">
-              <img src={l.imageUrl} alt={l.title} className="w-full h-full object-cover" />
-            </div>
-          )}
-          <CardContent className="p-8">
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <h1 className="text-2xl font-bold" data-testid="text-listing-title">{l.title}</h1>
-              <div className="flex items-center gap-2 shrink-0">
-                <Badge variant={l.type === "offering" ? "default" : "secondary"}>{l.type === "offering" ? "Offering" : "Seeking"}</Badge>
-                {l.status !== "active" && <Badge variant="destructive">{l.status}</Badge>}
-              </div>
-            </div>
+        <Link href="/marketplace">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2">
+            <ChevronLeft className="h-4 w-4" />Volver al marketplace
+          </Button>
+        </Link>
 
-            <p className="text-muted-foreground text-sm leading-relaxed mb-6">{l.description}</p>
-
-            {(l.tags as string[])?.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-6">
-                {(l.tags as string[]).map((t: string) => (
-                  <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>
+        {/* Image carousel */}
+        {images.length > 0 ? (
+          <div className="relative rounded-xl overflow-hidden bg-muted">
+            <Carousel>
+              <CarouselContent>
+                {images.map((img: any) => (
+                  <CarouselItem key={img.id}>
+                    <div className="h-72 w-full overflow-hidden">
+                      <img src={img.url} alt={l.title} className="w-full h-full object-cover" />
+                    </div>
+                  </CarouselItem>
                 ))}
-              </div>
-            )}
+              </CarouselContent>
+              {images.length > 1 && (
+                <>
+                  <CarouselPrevious className="left-3" />
+                  <CarouselNext className="right-3" />
+                </>
+              )}
+            </Carousel>
+          </div>
+        ) : (
+          <div className="h-48 rounded-xl bg-muted flex items-center justify-center">
+            <ShoppingBag className="h-14 w-14 text-muted-foreground/20" />
+          </div>
+        )}
 
-            <div className="flex items-center gap-3">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={l.authorAvatar} />
-                <AvatarFallback className="text-xs">{l.authorName?.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium">{l.authorName}</p>
-                <p className="text-xs text-muted-foreground">Posted {formatDistanceToNow(new Date(l.createdAt), { addSuffix: true })}</p>
-              </div>
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            {/* Title + status */}
+            <div className="flex items-start gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold flex-1">{l.title}</h1>
+              <Badge variant="outline" className={STATUS_CLASS[l.status] ?? ""}>
+                {STATUS_LABEL[l.status] ?? l.status}
+              </Badge>
             </div>
+
+            {/* Price */}
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              {l.price != null ? (
+                <span className="text-2xl font-bold text-primary">
+                  {l.currency} {Number(l.price).toLocaleString("es")}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">Precio a convenir</span>
+              )}
+            </div>
+
+            {/* Category */}
+            <Badge variant="secondary" className="gap-1">
+              <Tag className="h-3 w-3" />{l.category}
+            </Badge>
+
+            {/* Description */}
+            <div className="prose prose-sm prose-invert max-w-none text-foreground/90 border-t border-border/40 pt-4">
+              <ReactMarkdown>{l.description}</ReactMarkdown>
+            </div>
+
+            {/* Seller card */}
+            <div className="border-t border-border/40 pt-4 flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={l.sellerAvatar} />
+                  <AvatarFallback>{l.sellerName?.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-semibold">{l.sellerName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Publicado {formatDistanceToNow(new Date(l.createdAt), { addSuffix: true, locale: es })}
+                  </p>
+                </div>
+              </div>
+              {l.sellerUsername && (
+                <Link href={`/miembros/${l.sellerUsername}`}>
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
+                    <ExternalLink className="h-3.5 w-3.5" />Ver perfil
+                  </Button>
+                </Link>
+              )}
+            </div>
+
+            {/* Actions */}
+            {isSeller ? (
+              <div className="flex gap-2 flex-wrap pt-1">
+                <Link href={`/marketplace/mis-anuncios`}>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <Edit className="h-3.5 w-3.5" />Editar
+                  </Button>
+                </Link>
+                {l.status === "active" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
+                    disabled={markSold.isPending}
+                    onClick={handleMarkSold}
+                  >
+                    <CheckCircle className="h-3.5 w-3.5" />Marcar vendido
+                  </Button>
+                )}
+              </div>
+            ) : (
+              l.status === "active" && (
+                <Button className="w-full gap-2 mt-1" onClick={handleContact}>
+                  <MessageCircle className="h-4 w-4" />Contactar al vendedor
+                </Button>
+              )
+            )}
           </CardContent>
         </Card>
-
-        {/* Messages */}
-        {!isOwner && (
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="text-base font-semibold flex items-center gap-2 mb-4">
-                <MessageCircle className="h-4 w-4 text-primary" />
-                Message Seller
-              </h2>
-
-              {msgs.length > 0 && (
-                <div className="space-y-3 mb-4 max-h-72 overflow-y-auto pr-1">
-                  {msgs.map((msg: any) => {
-                    const isMine = msg.senderId === me?.id;
-                    return (
-                      <div key={msg.id} className={`flex gap-2 ${isMine ? "flex-row-reverse" : ""}`} data-testid={`msg-${msg.id}`}>
-                        <Avatar className="h-6 w-6 shrink-0">
-                          <AvatarImage src={msg.senderAvatar} />
-                          <AvatarFallback className="text-[10px]">{msg.senderName?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className={`max-w-[75%] rounded-xl px-3 py-2 text-sm ${isMine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
-                          {msg.body}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Type a message..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                  data-testid="input-message"
-                />
-                <Button onClick={handleSend} disabled={sendMsg.isPending || !message.trim()} size="icon" data-testid="button-send-message">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </Layout>
   );

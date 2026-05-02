@@ -1,0 +1,54 @@
+Context: Stack from step 1. Auth = Clerk. Storage for images = Replit
+Object Storage. SSE from step 13 used for unread badges. Everything
+inside Replit + Agent 4.
+
+Goals:
+
+DB (Drizzle):
+- listings: id, seller_id (text fk → users.id), title, slug (unique),
+  description (markdown), price (numeric nullable),
+  currency (text default 'USD'), category (text),
+  status (enum: 'draft' | 'pending' | 'active' | 'sold' | 'rejected'),
+  created_at, updated_at
+- listing_images: id, listing_id (fk on delete cascade), url, order_index
+- listing_messages: id, listing_id (fk), from_id (fk → users.id),
+  to_id (fk → users.id), body (text), read_at (timestamptz nullable),
+  created_at. Indexed on (to_id, read_at).
+
+Backend (Express + Orval):
+- GET   /api/marketplace/listings?q=&category=&minPrice=&maxPrice=&cursor=
+        (only status='active' for non-owners; sellers always see their own)
+- GET   /api/marketplace/listings/:slug
+- POST  /api/marketplace/listings  (seller_id = current user; status='pending')
+- PATCH /api/marketplace/listings/:slug  (seller only; admin can also)
+- POST  /api/marketplace/listings/:slug/images  (multipart, max 6,
+        Replit Object Storage `marketplace` bucket)
+- POST  /api/marketplace/listings/:slug/sold  (seller; sets status='sold')
+- POST  /api/admin/marketplace/listings/:slug/approve  → status='active',
+        notify() the seller
+- POST  /api/admin/marketplace/listings/:slug/reject   → status='rejected',
+        notify() the seller with reason
+- POST  /api/marketplace/listings/:slug/messages { body }  → creates a
+        message; notify() the recipient via SSE
+- GET   /api/messages/threads → user's conversation list with unread counts
+- GET   /api/messages/threads/:listingId/:otherUserId → full thread;
+        marks as read on fetch
+- All message endpoints require sender or recipient match. Admins do
+  NOT have read access to private messages — explicitly assert this in
+  the route handler and add a test.
+
+Frontend (artifacts/react-vite):
+- /marketplace: filter sidebar (category, price range, search) + grid.
+- /marketplace/[slug]: image carousel (shadcn), description, price,
+  seller card with avatar + link to /miembros/[username],
+  "Contactar al vendedor" button → opens /mensajes thread.
+- /marketplace/mis-listings: seller dashboard. Tabs: Borradores /
+  En revisión / Activos / Vendidos / Rechazados. Create / edit /
+  mark-as-sold actions.
+- /admin/marketplace: pending queue; admin previews exactly as the
+  public would see it before approve/reject.
+- /mensajes: conversation list with unread badges (live-updated via SSE).
+- /mensajes/[listingId]/[otherUserId]: chat-style view, send via Enter,
+  shadcn message bubbles, auto-scroll to bottom.
+
+Deliverables: marketplace + private messaging working end-to-end.

@@ -339,110 +339,95 @@ export interface AdminRejectResourceBody {
   reason: string;
 }
 
-export type MarketplaceListingType =
-  (typeof MarketplaceListingType)[keyof typeof MarketplaceListingType];
-
-export const MarketplaceListingType = {
-  offering: "offering",
-  seeking: "seeking",
-} as const;
-
 export type MarketplaceListingStatus =
   (typeof MarketplaceListingStatus)[keyof typeof MarketplaceListingStatus];
 
 export const MarketplaceListingStatus = {
+  draft: "draft",
+  pending: "pending",
   active: "active",
-  closed: "closed",
+  sold: "sold",
+  rejected: "rejected",
 } as const;
+
+export interface ListingImage {
+  id: string;
+  listingId: string;
+  url: string;
+  orderIndex: number;
+}
 
 export interface MarketplaceListing {
   id: string;
+  sellerId: string;
+  sellerName: string;
+  sellerAvatar?: string | null;
+  sellerUsername?: string | null;
   title: string;
+  slug: string;
   description: string;
-  type: MarketplaceListingType;
+  price?: number | null;
+  currency: string;
+  category: string;
   status: MarketplaceListingStatus;
-  tags: string[];
-  imageUrl?: string | null;
-  authorId: string;
-  authorName: string;
-  authorAvatar?: string | null;
-  messageCount: number;
+  images: ListingImage[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface ListingListResponse {
-  listings: MarketplaceListing[];
-  total: number;
+export interface ListingMessage {
+  id: string;
+  listingId: string;
+  fromId: string;
+  fromName: string;
+  fromAvatar?: string | null;
+  toId: string;
+  body: string;
+  readAt?: string | null;
+  createdAt: string;
 }
 
-export type CreateListingBodyType =
-  (typeof CreateListingBodyType)[keyof typeof CreateListingBodyType];
-
-export const CreateListingBodyType = {
-  offering: "offering",
-  seeking: "seeking",
-} as const;
+export interface ListingListResponse {
+  listings: MarketplaceListing[];
+  nextCursor?: string | null;
+}
 
 export interface CreateListingBody {
   title: string;
   description: string;
-  type: CreateListingBodyType;
-  tags: string[];
-  imageUrl?: string | null;
+  price?: number | null;
+  currency?: string;
+  category: string;
 }
-
-export type UpdateListingBodyType =
-  (typeof UpdateListingBodyType)[keyof typeof UpdateListingBodyType];
-
-export const UpdateListingBodyType = {
-  offering: "offering",
-  seeking: "seeking",
-} as const;
-
-export type UpdateListingBodyStatus =
-  (typeof UpdateListingBodyStatus)[keyof typeof UpdateListingBodyStatus];
-
-export const UpdateListingBodyStatus = {
-  active: "active",
-  closed: "closed",
-} as const;
 
 export interface UpdateListingBody {
   title?: string;
   description?: string;
-  type?: UpdateListingBodyType;
-  status?: UpdateListingBodyStatus;
-  tags?: string[];
-  imageUrl?: string | null;
+  price?: number | null;
+  currency?: string;
+  category?: string;
 }
 
-export interface MarketplaceMessage {
-  id: string;
-  listingId: string;
-  senderId: string;
-  senderName: string;
-  senderAvatar?: string | null;
-  receiverId: string;
-  body: string;
-  isRead: boolean;
-  createdAt: string;
+export interface AdminRejectListingBody {
+  reason: string;
 }
 
 export interface MessageThread {
   listingId: string;
+  listingSlug: string;
   listingTitle: string;
   otherUserId: string;
   otherUserName: string;
   otherUserAvatar?: string | null;
+  otherUserUsername?: string | null;
   lastMessage: string;
   unreadCount: number;
   updatedAt: string;
 }
 
 export interface SendMessageBody {
-  receiverId: string;
   body: string;
+  toId: string;
 }
 
 export type NotificationType =
@@ -666,32 +651,16 @@ export type UploadResourceFileBody = {
 };
 
 export type ListMarketplaceListingsParams = {
-  search?: string;
-  type?: ListMarketplaceListingsType;
-  status?: ListMarketplaceListingsStatus;
+  q?: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  cursor?: string;
   limit?: number;
-  offset?: number;
 };
 
-export type ListMarketplaceListingsType =
-  (typeof ListMarketplaceListingsType)[keyof typeof ListMarketplaceListingsType];
-
-export const ListMarketplaceListingsType = {
-  offering: "offering",
-  seeking: "seeking",
-} as const;
-
-export type ListMarketplaceListingsStatus =
-  (typeof ListMarketplaceListingsStatus)[keyof typeof ListMarketplaceListingsStatus];
-
-export const ListMarketplaceListingsStatus = {
-  active: "active",
-  closed: "closed",
-  all: "all",
-} as const;
-
-export type GetFeaturedListingsParams = {
-  limit?: number;
+export type UploadListingImagesBody = {
+  images?: Blob[];
 };
 
 export type ListNotificationsParams = {
