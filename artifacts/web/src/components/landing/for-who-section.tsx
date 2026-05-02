@@ -1,11 +1,14 @@
 import { motion } from "framer-motion";
 import { useInView } from "./use-in-view";
+import type { LandingSection } from "@workspace/api-client-react";
 
 const REDUCED =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const profiles = [
+const DEFAULT_TITLE = "¿Para quién es?";
+const DEFAULT_SUBTITLE = "Si estás construyendo con IA o quieres empezar, este es tu lugar.";
+const DEFAULT_PROFILES = [
   {
     emoji: "🛠️",
     label: "Builders de IA",
@@ -23,8 +26,22 @@ const profiles = [
   },
 ];
 
-export function ForWhoSection() {
+interface Profile {
+  emoji: string;
+  label: string;
+  body: string;
+}
+
+interface ForWhoSectionProps {
+  data?: LandingSection | null;
+}
+
+export function ForWhoSection({ data }: ForWhoSectionProps) {
   const { ref, inView } = useInView();
+  const c = (data?.content ?? {}) as Record<string, unknown>;
+  const title = data?.title ?? DEFAULT_TITLE;
+  const subtitle = data?.subtitle ?? DEFAULT_SUBTITLE;
+  const profiles = (c.profiles as Profile[]) ?? DEFAULT_PROFILES;
 
   return (
     <section
@@ -38,11 +55,9 @@ export function ForWhoSection() {
             id="forwho-heading"
             className="text-3xl sm:text-4xl font-bold text-foreground mb-4"
           >
-            ¿Para quién es?
+            {title}
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Si estás construyendo con IA o quieres empezar, este es tu lugar.
-          </p>
+          <p className="text-muted-foreground max-w-xl mx-auto">{subtitle}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

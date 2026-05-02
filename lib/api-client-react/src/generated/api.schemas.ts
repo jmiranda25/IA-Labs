@@ -615,14 +615,49 @@ export type LandingSectionContent = { [key: string]: unknown };
 export interface LandingSection {
   id: string;
   section: string;
+  title?: string | null;
+  subtitle?: string | null;
+  body?: string | null;
+  imageUrl?: string | null;
+  orderIndex: number;
+  enabled: boolean;
   content: LandingSectionContent;
   updatedAt: string;
+}
+
+export interface LandingFaq {
+  id: string;
+  question: string;
+  answer: string;
+  orderIndex: number;
+  enabled: boolean;
+  updatedAt: string;
+}
+
+export interface LandingContent {
+  sections: LandingSection[];
+  faqs: LandingFaq[];
 }
 
 export type UpdateLandingSectionBodyContent = { [key: string]: unknown };
 
 export interface UpdateLandingSectionBody {
-  content: UpdateLandingSectionBodyContent;
+  title?: string | null;
+  subtitle?: string | null;
+  body?: string | null;
+  imageUrl?: string | null;
+  enabled?: boolean;
+  content?: UpdateLandingSectionBodyContent;
+}
+
+export interface UpdateLandingFaqBody {
+  question?: string;
+  answer?: string;
+  enabled?: boolean;
+}
+
+export interface ReorderBody {
+  ids: string[];
 }
 
 export interface RequestUploadUrlBody {
@@ -770,4 +805,8 @@ export type AdminListUsersParams = {
 
 export type AdminResolveReport200 = {
   status: string;
+};
+
+export type GetLandingContentParams = {
+  preview?: string;
 };

@@ -12,7 +12,8 @@
     "migrate": "drizzle-kit migrate --config ./drizzle.config.ts",
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
-    "studio": "drizzle-kit studio --config ./drizzle.config.ts"
+    "studio": "drizzle-kit studio --config ./drizzle.config.ts",
+    "seed:landing": "tsx scripts/seed-landing.ts"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/pg": "^8.18.0",
-    "drizzle-kit": "^0.31.9"
+    "drizzle-kit": "^0.31.9",
+    "tsx": "catalog:"
   }
 }

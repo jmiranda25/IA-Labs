@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useLocation } from "wouter";
 import { LandingHeader } from "@/components/landing/landing-header";
 import { HeroSection } from "@/components/landing/hero-section";
 import { AboutSection } from "@/components/landing/about-section";
@@ -9,6 +10,12 @@ import { TestimonialsSection } from "@/components/landing/testimonials-section";
 import { FaqSection } from "@/components/landing/faq-section";
 import { CtaSection } from "@/components/landing/cta-section";
 import { LandingFooter } from "@/components/landing/landing-footer";
+import {
+  useGetLandingContent,
+  getGetLandingContentQueryKey,
+  type LandingSection,
+  type LandingFaq,
+} from "@workspace/api-client-react";
 
 const JSON_LD = JSON.stringify({
   "@context": "https://schema.org",
@@ -93,7 +100,28 @@ const JSON_LD = JSON.stringify({
   ],
 });
 
+function findSection(sections: LandingSection[], key: string): LandingSection | null {
+  return sections.find((s) => s.section === key && s.enabled) ?? null;
+}
+
 export default function LandingPage() {
+  const [location] = useLocation();
+  const isPreview = typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("preview") === "1";
+
+  const { data } = useGetLandingContent(
+    isPreview ? { preview: "1" } : undefined,
+    {
+      query: {
+        queryKey: getGetLandingContentQueryKey(isPreview ? { preview: "1" } : undefined),
+        staleTime: isPreview ? 0 : 60_000,
+      },
+    },
+  );
+
+  const sections = (data as any)?.sections as LandingSection[] | undefined;
+  const faqs = (data as any)?.faqs as LandingFaq[] | undefined;
+
   useEffect(() => {
     document.title =
       "Comunidad de IA en español — Aprende, conecta y construye";
@@ -123,7 +151,6 @@ export default function LandingPage() {
       "Únete a la comunidad hispanohablante de IA. Eventos, recursos, foro y marketplace para builders, founders y profesionales."
     );
 
-    // JSON-LD
     const script = document.createElement("script");
     script.type = "application/ld+json";
     script.id = "json-ld-landing";
@@ -150,14 +177,14 @@ export default function LandingPage() {
       <LandingHeader />
 
       <main id="main-content" tabIndex={-1}>
-        <HeroSection />
-        <AboutSection />
-        <BenefitsSection />
-        <ForWhoSection />
-        <HowItWorksSection />
-        <TestimonialsSection />
-        <FaqSection />
-        <CtaSection />
+        <HeroSection data={sections ? findSection(sections, "hero") : null} />
+        <AboutSection data={sections ? findSection(sections, "about") : null} />
+        <BenefitsSection data={sections ? findSection(sections, "benefits") : null} />
+        <ForWhoSection data={sections ? findSection(sections, "who_is_for") : null} />
+        <HowItWorksSection data={sections ? findSection(sections, "how_it_works") : null} />
+        <TestimonialsSection data={sections ? findSection(sections, "testimonials") : null} />
+        <FaqSection faqs={faqs} />
+        <CtaSection data={sections ? findSection(sections, "cta_final") : null} />
       </main>
 
       <LandingFooter />

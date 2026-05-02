@@ -43,9 +43,12 @@ import type {
   ForumThread,
   ForumThreadDetail,
   GetActivityFeedParams,
+  GetLandingContentParams,
   GetNotificationsUnreadCount200,
   GetUpcomingEventsParams,
   HealthStatus,
+  LandingContent,
+  LandingFaq,
   LandingSection,
   ListEventsParams,
   ListForumThreadsParams,
@@ -64,6 +67,7 @@ import type {
   PublicUser,
   ReactBody,
   ReactionSummary,
+  ReorderBody,
   Report,
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
@@ -76,6 +80,7 @@ import type {
   ThreadListPageResponse,
   UnifiedModerationQueue,
   UpdateEventBody,
+  UpdateLandingFaqBody,
   UpdateLandingSectionBody,
   UpdateListingBody,
   UpdatePostBody,
@@ -5976,43 +5981,62 @@ export function useGetAdminStats<
 }
 
 /**
- * @summary Get all landing page content sections
+ * @summary Get all landing page sections and FAQs (60s cache; ?preview=1 bypasses)
  */
-export const getGetLandingContentUrl = () => {
-  return `/api/landing/content`;
+export const getGetLandingContentUrl = (params?: GetLandingContentParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/landing/content?${stringifiedParams}`
+    : `/api/landing/content`;
 };
 
 export const getLandingContent = async (
+  params?: GetLandingContentParams,
   options?: RequestInit,
-): Promise<LandingSection[]> => {
-  return customFetch<LandingSection[]>(getGetLandingContentUrl(), {
+): Promise<LandingContent> => {
+  return customFetch<LandingContent>(getGetLandingContentUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetLandingContentQueryKey = () => {
-  return [`/api/landing/content`] as const;
+export const getGetLandingContentQueryKey = (
+  params?: GetLandingContentParams,
+) => {
+  return [`/api/landing/content`, ...(params ? [params] : [])] as const;
 };
 
 export const getGetLandingContentQueryOptions = <
   TData = Awaited<ReturnType<typeof getLandingContent>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getLandingContent>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: GetLandingContentParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandingContent>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetLandingContentQueryKey();
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLandingContentQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getLandingContent>>
-  > = ({ signal }) => getLandingContent({ signal, ...requestOptions });
+  > = ({ signal }) => getLandingContent(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getLandingContent>>,
@@ -6027,21 +6051,24 @@ export type GetLandingContentQueryResult = NonNullable<
 export type GetLandingContentQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get all landing page content sections
+ * @summary Get all landing page sections and FAQs (60s cache; ?preview=1 bypasses)
  */
 
 export function useGetLandingContent<
   TData = Awaited<ReturnType<typeof getLandingContent>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getLandingContent>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetLandingContentQueryOptions(options);
+>(
+  params?: GetLandingContentParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLandingContent>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLandingContentQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -6051,43 +6078,43 @@ export function useGetLandingContent<
 }
 
 /**
- * @summary Update a landing page section (admin only)
+ * @summary Update a landing section (admin)
  */
-export const getUpdateLandingSectionUrl = (section: string) => {
-  return `/api/landing/content/${section}`;
+export const getAdminUpdateLandingSectionUrl = (id: string) => {
+  return `/api/admin/landing/sections/${id}`;
 };
 
-export const updateLandingSection = async (
-  section: string,
+export const adminUpdateLandingSection = async (
+  id: string,
   updateLandingSectionBody: UpdateLandingSectionBody,
   options?: RequestInit,
 ): Promise<LandingSection> => {
-  return customFetch<LandingSection>(getUpdateLandingSectionUrl(section), {
+  return customFetch<LandingSection>(getAdminUpdateLandingSectionUrl(id), {
     ...options,
-    method: "PUT",
+    method: "PATCH",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(updateLandingSectionBody),
   });
 };
 
-export const getUpdateLandingSectionMutationOptions = <
+export const getAdminUpdateLandingSectionMutationOptions = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateLandingSection>>,
+    Awaited<ReturnType<typeof adminUpdateLandingSection>>,
     TError,
-    { section: string; data: BodyType<UpdateLandingSectionBody> },
+    { id: string; data: BodyType<UpdateLandingSectionBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof updateLandingSection>>,
+  Awaited<ReturnType<typeof adminUpdateLandingSection>>,
   TError,
-  { section: string; data: BodyType<UpdateLandingSectionBody> },
+  { id: string; data: BodyType<UpdateLandingSectionBody> },
   TContext
 > => {
-  const mutationKey = ["updateLandingSection"];
+  const mutationKey = ["adminUpdateLandingSection"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -6097,45 +6124,388 @@ export const getUpdateLandingSectionMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updateLandingSection>>,
-    { section: string; data: BodyType<UpdateLandingSectionBody> }
+    Awaited<ReturnType<typeof adminUpdateLandingSection>>,
+    { id: string; data: BodyType<UpdateLandingSectionBody> }
   > = (props) => {
-    const { section, data } = props ?? {};
+    const { id, data } = props ?? {};
 
-    return updateLandingSection(section, data, requestOptions);
+    return adminUpdateLandingSection(id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type UpdateLandingSectionMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updateLandingSection>>
+export type AdminUpdateLandingSectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateLandingSection>>
 >;
-export type UpdateLandingSectionMutationBody =
+export type AdminUpdateLandingSectionMutationBody =
   BodyType<UpdateLandingSectionBody>;
-export type UpdateLandingSectionMutationError = ErrorType<unknown>;
+export type AdminUpdateLandingSectionMutationError = ErrorType<unknown>;
 
 /**
- * @summary Update a landing page section (admin only)
+ * @summary Update a landing section (admin)
  */
-export const useUpdateLandingSection = <
+export const useAdminUpdateLandingSection = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateLandingSection>>,
+    Awaited<ReturnType<typeof adminUpdateLandingSection>>,
     TError,
-    { section: string; data: BodyType<UpdateLandingSectionBody> },
+    { id: string; data: BodyType<UpdateLandingSectionBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
-  Awaited<ReturnType<typeof updateLandingSection>>,
+  Awaited<ReturnType<typeof adminUpdateLandingSection>>,
   TError,
-  { section: string; data: BodyType<UpdateLandingSectionBody> },
+  { id: string; data: BodyType<UpdateLandingSectionBody> },
   TContext
 > => {
-  return useMutation(getUpdateLandingSectionMutationOptions(options));
+  return useMutation(getAdminUpdateLandingSectionMutationOptions(options));
+};
+
+/**
+ * @summary Reorder landing sections (admin)
+ */
+export const getAdminReorderLandingSectionsUrl = () => {
+  return `/api/admin/landing/sections/reorder`;
+};
+
+export const adminReorderLandingSections = async (
+  reorderBody: ReorderBody,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminReorderLandingSectionsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reorderBody),
+  });
+};
+
+export const getAdminReorderLandingSectionsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminReorderLandingSections>>,
+    TError,
+    { data: BodyType<ReorderBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminReorderLandingSections>>,
+  TError,
+  { data: BodyType<ReorderBody> },
+  TContext
+> => {
+  const mutationKey = ["adminReorderLandingSections"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminReorderLandingSections>>,
+    { data: BodyType<ReorderBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminReorderLandingSections(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminReorderLandingSectionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminReorderLandingSections>>
+>;
+export type AdminReorderLandingSectionsMutationBody = BodyType<ReorderBody>;
+export type AdminReorderLandingSectionsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Reorder landing sections (admin)
+ */
+export const useAdminReorderLandingSections = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminReorderLandingSections>>,
+    TError,
+    { data: BodyType<ReorderBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminReorderLandingSections>>,
+  TError,
+  { data: BodyType<ReorderBody> },
+  TContext
+> => {
+  return useMutation(getAdminReorderLandingSectionsMutationOptions(options));
+};
+
+/**
+ * @summary Reset a landing section to its seed default (admin)
+ */
+export const getAdminResetLandingSectionUrl = (id: string) => {
+  return `/api/admin/landing/sections/${id}/reset`;
+};
+
+export const adminResetLandingSection = async (
+  id: string,
+  options?: RequestInit,
+): Promise<LandingSection> => {
+  return customFetch<LandingSection>(getAdminResetLandingSectionUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminResetLandingSectionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminResetLandingSection>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminResetLandingSection>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["adminResetLandingSection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminResetLandingSection>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminResetLandingSection(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminResetLandingSectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminResetLandingSection>>
+>;
+
+export type AdminResetLandingSectionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Reset a landing section to its seed default (admin)
+ */
+export const useAdminResetLandingSection = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminResetLandingSection>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminResetLandingSection>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getAdminResetLandingSectionMutationOptions(options));
+};
+
+/**
+ * @summary Update a landing FAQ (admin)
+ */
+export const getAdminUpdateLandingFaqUrl = (id: string) => {
+  return `/api/admin/landing/faqs/${id}`;
+};
+
+export const adminUpdateLandingFaq = async (
+  id: string,
+  updateLandingFaqBody: UpdateLandingFaqBody,
+  options?: RequestInit,
+): Promise<LandingFaq> => {
+  return customFetch<LandingFaq>(getAdminUpdateLandingFaqUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateLandingFaqBody),
+  });
+};
+
+export const getAdminUpdateLandingFaqMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateLandingFaq>>,
+    TError,
+    { id: string; data: BodyType<UpdateLandingFaqBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateLandingFaq>>,
+  TError,
+  { id: string; data: BodyType<UpdateLandingFaqBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateLandingFaq"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateLandingFaq>>,
+    { id: string; data: BodyType<UpdateLandingFaqBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateLandingFaq(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateLandingFaqMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateLandingFaq>>
+>;
+export type AdminUpdateLandingFaqMutationBody = BodyType<UpdateLandingFaqBody>;
+export type AdminUpdateLandingFaqMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a landing FAQ (admin)
+ */
+export const useAdminUpdateLandingFaq = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateLandingFaq>>,
+    TError,
+    { id: string; data: BodyType<UpdateLandingFaqBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateLandingFaq>>,
+  TError,
+  { id: string; data: BodyType<UpdateLandingFaqBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateLandingFaqMutationOptions(options));
+};
+
+/**
+ * @summary Reorder landing FAQs (admin)
+ */
+export const getAdminReorderLandingFaqsUrl = () => {
+  return `/api/admin/landing/faqs/reorder`;
+};
+
+export const adminReorderLandingFaqs = async (
+  reorderBody: ReorderBody,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminReorderLandingFaqsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reorderBody),
+  });
+};
+
+export const getAdminReorderLandingFaqsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminReorderLandingFaqs>>,
+    TError,
+    { data: BodyType<ReorderBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminReorderLandingFaqs>>,
+  TError,
+  { data: BodyType<ReorderBody> },
+  TContext
+> => {
+  const mutationKey = ["adminReorderLandingFaqs"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminReorderLandingFaqs>>,
+    { data: BodyType<ReorderBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminReorderLandingFaqs(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminReorderLandingFaqsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminReorderLandingFaqs>>
+>;
+export type AdminReorderLandingFaqsMutationBody = BodyType<ReorderBody>;
+export type AdminReorderLandingFaqsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Reorder landing FAQs (admin)
+ */
+export const useAdminReorderLandingFaqs = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminReorderLandingFaqs>>,
+    TError,
+    { data: BodyType<ReorderBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminReorderLandingFaqs>>,
+  TError,
+  { data: BodyType<ReorderBody> },
+  TContext
+> => {
+  return useMutation(getAdminReorderLandingFaqsMutationOptions(options));
 };
 
 /**

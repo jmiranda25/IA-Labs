@@ -1500,34 +1500,122 @@ export const GetAdminStatsResponse = zod.object({
 });
 
 /**
- * @summary Get all landing page content sections
+ * @summary Get all landing page sections and FAQs (60s cache; ?preview=1 bypasses)
  */
-export const GetLandingContentResponseItem = zod.object({
-  id: zod.string(),
-  section: zod.string(),
-  content: zod.record(zod.string(), zod.unknown()),
-  updatedAt: zod.coerce.date(),
+export const GetLandingContentQueryParams = zod.object({
+  preview: zod.coerce.string().optional(),
 });
-export const GetLandingContentResponse = zod.array(
-  GetLandingContentResponseItem,
-);
+
+export const GetLandingContentResponse = zod.object({
+  sections: zod.array(
+    zod.object({
+      id: zod.string(),
+      section: zod.string(),
+      title: zod.string().nullish(),
+      subtitle: zod.string().nullish(),
+      body: zod.string().nullish(),
+      imageUrl: zod.string().nullish(),
+      orderIndex: zod.number(),
+      enabled: zod.boolean(),
+      content: zod.record(zod.string(), zod.unknown()),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  faqs: zod.array(
+    zod.object({
+      id: zod.string(),
+      question: zod.string(),
+      answer: zod.string(),
+      orderIndex: zod.number(),
+      enabled: zod.boolean(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
 
 /**
- * @summary Update a landing page section (admin only)
+ * @summary Update a landing section (admin)
  */
-export const UpdateLandingSectionParams = zod.object({
-  section: zod.coerce.string(),
+export const AdminUpdateLandingSectionParams = zod.object({
+  id: zod.coerce.string(),
 });
 
-export const UpdateLandingSectionBody = zod.object({
-  content: zod.record(zod.string(), zod.unknown()),
+export const AdminUpdateLandingSectionBody = zod.object({
+  title: zod.string().nullish(),
+  subtitle: zod.string().nullish(),
+  body: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  enabled: zod.boolean().optional(),
+  content: zod.record(zod.string(), zod.unknown()).optional(),
 });
 
-export const UpdateLandingSectionResponse = zod.object({
+export const AdminUpdateLandingSectionResponse = zod.object({
   id: zod.string(),
   section: zod.string(),
+  title: zod.string().nullish(),
+  subtitle: zod.string().nullish(),
+  body: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  orderIndex: zod.number(),
+  enabled: zod.boolean(),
   content: zod.record(zod.string(), zod.unknown()),
   updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Reorder landing sections (admin)
+ */
+export const AdminReorderLandingSectionsBody = zod.object({
+  ids: zod.array(zod.string()),
+});
+
+/**
+ * @summary Reset a landing section to its seed default (admin)
+ */
+export const AdminResetLandingSectionParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const AdminResetLandingSectionResponse = zod.object({
+  id: zod.string(),
+  section: zod.string(),
+  title: zod.string().nullish(),
+  subtitle: zod.string().nullish(),
+  body: zod.string().nullish(),
+  imageUrl: zod.string().nullish(),
+  orderIndex: zod.number(),
+  enabled: zod.boolean(),
+  content: zod.record(zod.string(), zod.unknown()),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a landing FAQ (admin)
+ */
+export const AdminUpdateLandingFaqParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const AdminUpdateLandingFaqBody = zod.object({
+  question: zod.string().optional(),
+  answer: zod.string().optional(),
+  enabled: zod.boolean().optional(),
+});
+
+export const AdminUpdateLandingFaqResponse = zod.object({
+  id: zod.string(),
+  question: zod.string(),
+  answer: zod.string(),
+  orderIndex: zod.number(),
+  enabled: zod.boolean(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Reorder landing FAQs (admin)
+ */
+export const AdminReorderLandingFaqsBody = zod.object({
+  ids: zod.array(zod.string()),
 });
 
 /**

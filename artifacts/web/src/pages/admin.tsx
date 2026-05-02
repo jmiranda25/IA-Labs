@@ -11,12 +11,9 @@ import {
   useAdminResolveReport,
   getAdminListUsersQueryKey,
   getGetModerationQueueQueryKey,
-  getGetLandingContentQueryKey,
   getAdminListEventsQueryKey,
   getAdminListResourcesQueryKey,
   getAdminListMarketplaceListingsQueryKey,
-  useGetLandingContent,
-  useUpdateLandingSection,
   useAdminListEvents,
   useAdminCreateEvent,
   useAdminUpdateEvent,
@@ -82,6 +79,7 @@ import {
   GraduationCap, ExternalLink, Eye, ShoppingBag, TrendingUp,
   TrendingDown, Minus, Flag, MessageSquare, UserX,
 } from "lucide-react";
+import { LandingEditor } from "@/components/admin/landing-editor";
 
 // ── KPI Dashboard ─────────────────────────────────────────────────────────────
 
@@ -696,45 +694,6 @@ function ModerationQueue() {
   );
 }
 
-// ── Landing Editor ────────────────────────────────────────────────────────────
-
-function LandingEditor() {
-  const qc = useQueryClient();
-  const { data: sections } = useGetLandingContent({ query: { queryKey: getGetLandingContentQueryKey() } });
-  const updateSection = useUpdateLandingSection();
-  const [edits, setEdits] = useState<Record<string, any>>({});
-  const [saving, setSaving] = useState(false);
-  const hero = (sections as any[])?.find((s: any) => s.section === "hero")?.content ?? {};
-  const save = async () => {
-    setSaving(true);
-    await updateSection.mutateAsync({ section: "hero", data: { content: { ...hero, ...edits } } });
-    qc.invalidateQueries({ queryKey: getGetLandingContentQueryKey() });
-    setEdits({});
-    setSaving(false);
-  };
-  return (
-    <Card>
-      <CardHeader><CardTitle className="text-base flex items-center gap-2"><Edit3 className="h-4 w-4 text-primary" />Landing Page</CardTitle></CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground">Headline</p>
-          <Input defaultValue={hero.headline ?? ""} onChange={(e) => setEdits((p) => ({ ...p, headline: e.target.value }))} data-testid="input-landing-headline" />
-        </div>
-        <div className="space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground">Subtítulo</p>
-          <Input defaultValue={hero.subtitle ?? ""} onChange={(e) => setEdits((p) => ({ ...p, subtitle: e.target.value }))} data-testid="input-landing-subtitle" />
-        </div>
-        <div className="space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground">CTA</p>
-          <Input defaultValue={hero.cta ?? ""} onChange={(e) => setEdits((p) => ({ ...p, cta: e.target.value }))} data-testid="input-landing-cta" />
-        </div>
-        <Button onClick={save} disabled={saving || Object.keys(edits).length === 0} data-testid="button-save-landing">
-          {saving ? "Guardando…" : "Guardar"}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
 
 // ── Eventos Admin ─────────────────────────────────────────────────────────────
 

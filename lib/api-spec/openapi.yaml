@@ -1443,24 +1443,28 @@ paths:
     get:
       operationId: getLandingContent
       tags: [landing]
-      summary: Get all landing page content sections
+      summary: Get all landing page sections and FAQs (60s cache; ?preview=1 bypasses)
+      parameters:
+        - name: preview
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Landing content
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/LandingSection"
+                $ref: "#/components/schemas/LandingContent"
 
-  /landing/content/{section}:
-    put:
-      operationId: updateLandingSection
-      tags: [landing]
-      summary: Update a landing page section (admin only)
+  /admin/landing/sections/{id}:
+    patch:
+      operationId: adminUpdateLandingSection
+      tags: [admin]
+      summary: Update a landing section (admin)
       parameters:
-        - name: section
+        - name: id
           in: path
           required: true
           schema:
@@ -1478,6 +1482,80 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LandingSection"
+
+  /admin/landing/sections/reorder:
+    post:
+      operationId: adminReorderLandingSections
+      tags: [admin]
+      summary: Reorder landing sections (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderBody"
+      responses:
+        "200":
+          description: OK
+
+  /admin/landing/sections/{id}/reset:
+    post:
+      operationId: adminResetLandingSection
+      tags: [admin]
+      summary: Reset a landing section to its seed default (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reset section
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LandingSection"
+
+  /admin/landing/faqs/{id}:
+    patch:
+      operationId: adminUpdateLandingFaq
+      tags: [admin]
+      summary: Update a landing FAQ (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLandingFaqBody"
+      responses:
+        "200":
+          description: Updated FAQ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LandingFaq"
+
+  /admin/landing/faqs/reorder:
+    post:
+      operationId: adminReorderLandingFaqs
+      tags: [admin]
+      summary: Reorder landing FAQs (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderBody"
+      responses:
+        "200":
+          description: OK
 
   # ── Storage ──────────────────────────────────────────────────────────────────
   /storage/uploads/request-url:
@@ -2484,6 +2562,19 @@ components:
       required: [listings, resources, reports]
 
     # ── Landing Content ────────────────────────────────────────────────────────
+    LandingContent:
+      type: object
+      properties:
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/LandingSection"
+        faqs:
+          type: array
+          items:
+            $ref: "#/components/schemas/LandingFaq"
+      required: [sections, faqs]
+
     LandingSection:
       type: object
       properties:
@@ -2491,21 +2582,87 @@ components:
           type: string
         section:
           type: string
+        title:
+          type: string
+          nullable: true
+        subtitle:
+          type: string
+          nullable: true
+        body:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          nullable: true
+        orderIndex:
+          type: integer
+        enabled:
+          type: boolean
         content:
           type: object
           additionalProperties: true
         updatedAt:
           type: string
           format: date-time
-      required: [id, section, content, updatedAt]
+      required: [id, section, orderIndex, enabled, content, updatedAt]
+
+    LandingFaq:
+      type: object
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        answer:
+          type: string
+        orderIndex:
+          type: integer
+        enabled:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, question, answer, orderIndex, enabled, updatedAt]
 
     UpdateLandingSectionBody:
       type: object
       properties:
+        title:
+          type: string
+          nullable: true
+        subtitle:
+          type: string
+          nullable: true
+        body:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          nullable: true
+        enabled:
+          type: boolean
         content:
           type: object
           additionalProperties: true
-      required: [content]
+
+    UpdateLandingFaqBody:
+      type: object
+      properties:
+        question:
+          type: string
+        answer:
+          type: string
+        enabled:
+          type: boolean
+
+    ReorderBody:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+      required: [ids]
 
     # ── Storage ────────────────────────────────────────────────────────────────
     RequestUploadUrlBody:

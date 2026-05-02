@@ -1,16 +1,16 @@
 import { motion } from "framer-motion";
 import { useInView } from "./use-in-view";
+import type { LandingSection } from "@workspace/api-client-react";
 
 const REDUCED =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const steps = [
-  {
-    n: "01",
-    title: "Regístrate gratis",
-    body: "Con tu email, en menos de un minuto.",
-  },
+const DEFAULT_TITLE = "Cómo funciona";
+const DEFAULT_SUBTITLE =
+  "Cuatro pasos para pasar de nuevo miembro a parte activa de la comunidad.";
+const DEFAULT_STEPS = [
+  { n: "01", title: "Regístrate gratis", body: "Con tu email, en menos de un minuto." },
   {
     n: "02",
     title: "Completa tu perfil",
@@ -21,15 +21,25 @@ const steps = [
     title: "Participa",
     body: "Foro, eventos, marketplace, recursos — todo en un solo lugar.",
   },
-  {
-    n: "04",
-    title: "Crece",
-    body: "Aprende, conecta y construye con la comunidad.",
-  },
+  { n: "04", title: "Crece", body: "Aprende, conecta y construye con la comunidad." },
 ];
 
-export function HowItWorksSection() {
+interface Step {
+  n: string;
+  title: string;
+  body: string;
+}
+
+interface HowItWorksSectionProps {
+  data?: LandingSection | null;
+}
+
+export function HowItWorksSection({ data }: HowItWorksSectionProps) {
   const { ref, inView } = useInView();
+  const c = (data?.content ?? {}) as Record<string, unknown>;
+  const title = data?.title ?? DEFAULT_TITLE;
+  const subtitle = data?.subtitle ?? DEFAULT_SUBTITLE;
+  const steps = (c.steps as Step[]) ?? DEFAULT_STEPS;
 
   return (
     <section
@@ -42,11 +52,9 @@ export function HowItWorksSection() {
           id="howitworks-heading"
           className="text-3xl sm:text-4xl font-bold text-foreground mb-4"
         >
-          Cómo funciona
+          {title}
         </h2>
-        <p className="text-muted-foreground max-w-xl mx-auto">
-          Cuatro pasos para pasar de nuevo miembro a parte activa de la comunidad.
-        </p>
+        <p className="text-muted-foreground max-w-xl mx-auto">{subtitle}</p>
       </div>
 
       <div className="relative grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -56,7 +64,7 @@ export function HowItWorksSection() {
           className="hidden md:block absolute top-7 left-[12.5%] right-[12.5%] h-px bg-border"
         />
 
-        {steps.map(({ n, title, body }, i) => (
+        {steps.map(({ n, title: stepTitle, body }, i) => (
           <motion.div
             key={n}
             initial={{ opacity: 0, y: REDUCED ? 0 : 24 }}
@@ -71,7 +79,7 @@ export function HowItWorksSection() {
               <span className="text-sm font-bold text-primary tabular-nums">{n}</span>
             </div>
             <div>
-              <h3 className="font-semibold text-foreground mb-1">{title}</h3>
+              <h3 className="font-semibold text-foreground mb-1">{stepTitle}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
             </div>
           </motion.div>

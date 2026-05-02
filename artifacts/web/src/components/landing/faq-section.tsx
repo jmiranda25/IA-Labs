@@ -5,8 +5,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import type { LandingFaq } from "@workspace/api-client-react";
 
-const faqs = [
+const DEFAULT_FAQS = [
   {
     q: "¿Qué es esta comunidad y a quién está dirigida?",
     a: "Es una comunidad hispanohablante para personas que construyen, aprenden o trabajan con IA: builders, founders, consultores y profesionales que quieren integrar IA en su día a día. No es un grupo solo de consumo de noticias: el foco está en hacer.",
@@ -41,8 +42,17 @@ const faqs = [
   },
 ];
 
-export function FaqSection() {
+interface FaqSectionProps {
+  faqs?: LandingFaq[] | null;
+}
+
+export function FaqSection({ faqs }: FaqSectionProps) {
   const { ref, inView } = useInView(0.1);
+
+  const items =
+    faqs && faqs.length > 0
+      ? faqs.filter((f) => f.enabled).map((f) => ({ q: f.question, a: f.answer }))
+      : DEFAULT_FAQS;
 
   return (
     <section
@@ -70,7 +80,7 @@ export function FaqSection() {
         }}
       >
         <Accordion type="single" collapsible className="w-full">
-          {faqs.map(({ q, a }, i) => (
+          {items.map(({ q, a }, i) => (
             <AccordionItem key={i} value={`faq-${i}`}>
               <AccordionTrigger className="text-left text-base font-medium text-foreground hover:no-underline hover:text-primary transition-colors py-5">
                 {q}

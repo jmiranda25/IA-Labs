@@ -1,40 +1,59 @@
 import { motion } from "framer-motion";
 import { Quote } from "lucide-react";
 import { useInView } from "./use-in-view";
+import type { LandingSection } from "@workspace/api-client-react";
 
 const REDUCED =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const testimonials = [
+const GRADIENT_COLORS = [
+  "from-primary/30 to-primary/10",
+  "from-[hsl(190_100%_50%)]/30 to-[hsl(190_100%_50%)]/10",
+  "from-primary/30 to-[hsl(190_100%_50%)]/10",
+];
+
+const DEFAULT_TITLE = "Lo que dicen nuestros miembros";
+const DEFAULT_SUBTITLE = "Personas reales, resultados concretos.";
+const DEFAULT_ITEMS = [
   {
     quote:
       "Aquí encontré la comunidad que no sabía que necesitaba para empezar a construir agentes en serio.",
     name: "Nombre Apellido",
     role: "Founder en [Empresa]",
     initials: "NA",
-    color: "from-primary/30 to-primary/10",
   },
   {
-    quote:
-      "Los workshops valen oro. Aprendí más en un mes que en seis meses solo.",
+    quote: "Los workshops valen oro. Aprendí más en un mes que en seis meses solo.",
     name: "Nombre Apellido",
     role: "AI Engineer",
     initials: "NA",
-    color: "from-[hsl(190_100%_50%)]/30 to-[hsl(190_100%_50%)]/10",
   },
   {
-    quote:
-      "El marketplace me trajo mis primeros tres clientes consultando con IA.",
+    quote: "El marketplace me trajo mis primeros tres clientes consultando con IA.",
     name: "Nombre Apellido",
     role: "Consultor independiente",
     initials: "NA",
-    color: "from-primary/30 to-[hsl(190_100%_50%)]/10",
   },
 ];
 
-export function TestimonialsSection() {
+interface TestimonialItem {
+  quote: string;
+  name: string;
+  role: string;
+  initials: string;
+}
+
+interface TestimonialsSectionProps {
+  data?: LandingSection | null;
+}
+
+export function TestimonialsSection({ data }: TestimonialsSectionProps) {
   const { ref, inView } = useInView();
+  const c = (data?.content ?? {}) as Record<string, unknown>;
+  const title = data?.title ?? DEFAULT_TITLE;
+  const subtitle = data?.subtitle ?? DEFAULT_SUBTITLE;
+  const items = (c.items as TestimonialItem[]) ?? DEFAULT_ITEMS;
 
   return (
     <section
@@ -48,15 +67,13 @@ export function TestimonialsSection() {
             id="testimonials-heading"
             className="text-3xl sm:text-4xl font-bold text-foreground mb-4"
           >
-            Lo que dicen nuestros miembros
+            {title}
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Personas reales, resultados concretos.
-          </p>
+          <p className="text-muted-foreground max-w-xl mx-auto">{subtitle}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map(({ quote, name, role, initials, color }, i) => (
+          {items.map(({ quote, name, role, initials }, i) => (
             <motion.figure
               key={i}
               initial={{ opacity: 0, y: REDUCED ? 0 : 20 }}
@@ -71,7 +88,7 @@ export function TestimonialsSection() {
               <figcaption className="flex items-center gap-3 mt-auto">
                 <div
                   aria-hidden="true"
-                  className={`h-10 w-10 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shrink-0`}
+                  className={`h-10 w-10 rounded-full bg-gradient-to-br ${GRADIENT_COLORS[i % GRADIENT_COLORS.length]} flex items-center justify-center shrink-0`}
                 >
                   <span className="text-xs font-bold text-foreground">{initials}</span>
                 </div>
