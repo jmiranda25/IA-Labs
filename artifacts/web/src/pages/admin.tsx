@@ -79,6 +79,7 @@ import {
   GraduationCap, ExternalLink, Eye, ShoppingBag, TrendingUp,
   TrendingDown, Minus, Flag, MessageSquare, UserX,
 } from "lucide-react";
+import { useAuth } from "@clerk/react";
 import { LandingEditor } from "@/components/admin/landing-editor";
 
 // ── KPI Dashboard ─────────────────────────────────────────────────────────────
@@ -174,6 +175,7 @@ function AdminDashboard({ onDrillDown }: { onDrillDown: (tab: string) => void })
 // ── User Management (TanStack Table) ─────────────────────────────────────────
 
 function UserManagement() {
+  const { userId: currentUserId } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -234,6 +236,7 @@ function UserManagement() {
       cell: ({ row }) => {
         const u = row.original;
         const isDisabled = !!u.disabledAt;
+        const isSelf = u.clerkId === currentUserId;
         const newRole = u.role === "administrator" ? "participant" : "administrator";
         return (
           <div className="flex items-center gap-1.5 justify-end">
@@ -243,6 +246,8 @@ function UserManagement() {
               className="h-7 text-xs"
               onClick={() => setConfirmRole({ userId: u.clerkId, displayName: u.displayName, newRole })}
               data-testid={`btn-toggle-role-${u.id}`}
+              disabled={isSelf}
+              title={isSelf ? "No puedes modificar tu propio rol" : undefined}
             >
               {u.role === "administrator" ? "→ Participante" : "→ Admin"}
             </Button>
@@ -253,6 +258,8 @@ function UserManagement() {
                 className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={() => setConfirmDisable({ userId: u.clerkId, displayName: u.displayName })}
                 data-testid={`btn-disable-${u.id}`}
+                disabled={isSelf}
+                title={isSelf ? "No puedes desactivar tu propia cuenta" : undefined}
               >
                 <UserX className="h-3.5 w-3.5" />
               </Button>

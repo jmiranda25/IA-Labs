@@ -118,6 +118,12 @@ router.get("/admin/users", requireAdmin, async (req, res) => {
 // PATCH /admin/users/:id/role — update DB + Clerk publicMetadata
 router.patch("/admin/users/:userId/role", requireAdmin, async (req, res) => {
   const userId = req.params.userId as string;
+
+  if (userId === req.userId) {
+    res.status(403).json({ error: "You cannot modify your own admin status." });
+    return;
+  }
+
   const { role } = req.body as { role: string };
 
   if (!["participant", "administrator"].includes(role)) {
@@ -148,6 +154,12 @@ router.patch("/admin/users/:userId/role", requireAdmin, async (req, res) => {
 // Legacy PUT for backward compatibility with existing frontend hooks
 router.put("/admin/users/:userId/role", requireAdmin, async (req, res) => {
   const userId = req.params.userId as string;
+
+  if (userId === req.userId) {
+    res.status(403).json({ error: "You cannot modify your own admin status." });
+    return;
+  }
+
   const { role } = req.body as { role: string };
 
   if (!["participant", "administrator"].includes(role)) {
@@ -179,6 +191,11 @@ router.put("/admin/users/:userId/role", requireAdmin, async (req, res) => {
 router.post("/admin/users/:userId/disable", requireAdmin, async (req, res) => {
   const userId = req.params.userId as string;
 
+  if (userId === req.userId) {
+    res.status(403).json({ error: "You cannot modify your own admin status." });
+    return;
+  }
+
   const [updated] = await db
     .update(usersTable)
     .set({ disabledAt: new Date(), updatedAt: new Date() })
@@ -202,6 +219,12 @@ router.post("/admin/users/:userId/disable", requireAdmin, async (req, res) => {
 // Legacy ban endpoint
 router.post("/admin/users/:userId/ban", requireAdmin, async (req, res) => {
   const userId = req.params.userId as string;
+
+  if (userId === req.userId) {
+    res.status(403).json({ error: "You cannot modify your own admin status." });
+    return;
+  }
+
   await db
     .update(usersTable)
     .set({ isBanned: true, updatedAt: new Date() })
