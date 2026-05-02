@@ -19,6 +19,7 @@ import type {
 import type {
   ActivityItem,
   AdminListUsersParams,
+  AdminRejectResourceBody,
   AdminStats,
   AdminUploadEventCoverBody,
   CheckUsernameAvailabilityParams,
@@ -75,6 +76,7 @@ import type {
   UpdateUserRoleBody,
   UploadAvatarBody,
   UploadAvatarResponse,
+  UploadResourceFileBody,
   UserListResponse,
   UserProfile,
 } from "./api.schemas";
@@ -2780,7 +2782,7 @@ export const useAdminLockThread = <
 };
 
 /**
- * @summary List resources
+ * @summary List published resources (+ own unpublished)
  */
 export const getListResourcesUrl = (params?: ListResourcesParams) => {
   const normalizedParams = new URLSearchParams();
@@ -2847,7 +2849,7 @@ export type ListResourcesQueryResult = NonNullable<
 export type ListResourcesQueryError = ErrorType<unknown>;
 
 /**
- * @summary List resources
+ * @summary List published resources (+ own unpublished)
  */
 
 export function useListResources<
@@ -2874,7 +2876,7 @@ export function useListResources<
 }
 
 /**
- * @summary Upload a new resource
+ * @summary Submit a new resource (published=false by default)
  */
 export const getCreateResourceUrl = () => {
   return `/api/resources`;
@@ -2937,7 +2939,7 @@ export type CreateResourceMutationBody = BodyType<CreateResourceBody>;
 export type CreateResourceMutationError = ErrorType<unknown>;
 
 /**
- * @summary Upload a new resource
+ * @summary Submit a new resource (published=false by default)
  */
 export const useCreateResource = <
   TError = ErrorType<unknown>,
@@ -2960,31 +2962,31 @@ export const useCreateResource = <
 };
 
 /**
- * @summary Get a resource
+ * @summary Get a single resource by slug
  */
-export const getGetResourceUrl = (resourceId: string) => {
-  return `/api/resources/${resourceId}`;
+export const getGetResourceUrl = (slug: string) => {
+  return `/api/resources/${slug}`;
 };
 
 export const getResource = async (
-  resourceId: string,
+  slug: string,
   options?: RequestInit,
 ): Promise<Resource> => {
-  return customFetch<Resource>(getGetResourceUrl(resourceId), {
+  return customFetch<Resource>(getGetResourceUrl(slug), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetResourceQueryKey = (resourceId: string) => {
-  return [`/api/resources/${resourceId}`] as const;
+export const getGetResourceQueryKey = (slug: string) => {
+  return [`/api/resources/${slug}`] as const;
 };
 
 export const getGetResourceQueryOptions = <
   TData = Awaited<ReturnType<typeof getResource>>,
   TError = ErrorType<unknown>,
 >(
-  resourceId: string,
+  slug: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getResource>>,
@@ -2996,16 +2998,16 @@ export const getGetResourceQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetResourceQueryKey(resourceId);
+  const queryKey = queryOptions?.queryKey ?? getGetResourceQueryKey(slug);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getResource>>> = ({
     signal,
-  }) => getResource(resourceId, { signal, ...requestOptions });
+  }) => getResource(slug, { signal, ...requestOptions });
 
   return {
     queryKey,
     queryFn,
-    enabled: !!resourceId,
+    enabled: !!slug,
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getResource>>,
@@ -3020,14 +3022,14 @@ export type GetResourceQueryResult = NonNullable<
 export type GetResourceQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get a resource
+ * @summary Get a single resource by slug
  */
 
 export function useGetResource<
   TData = Awaited<ReturnType<typeof getResource>>,
   TError = ErrorType<unknown>,
 >(
-  resourceId: string,
+  slug: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getResource>>,
@@ -3037,7 +3039,7 @@ export function useGetResource<
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetResourceQueryOptions(resourceId, options);
+  const queryOptions = getGetResourceQueryOptions(slug, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -3049,15 +3051,15 @@ export function useGetResource<
 /**
  * @summary Delete a resource (author or admin)
  */
-export const getDeleteResourceUrl = (resourceId: string) => {
-  return `/api/resources/${resourceId}`;
+export const getDeleteResourceUrl = (slug: string) => {
+  return `/api/resources/${slug}`;
 };
 
 export const deleteResource = async (
-  resourceId: string,
+  slug: string,
   options?: RequestInit,
 ): Promise<void> => {
-  return customFetch<void>(getDeleteResourceUrl(resourceId), {
+  return customFetch<void>(getDeleteResourceUrl(slug), {
     ...options,
     method: "DELETE",
   });
@@ -3070,14 +3072,14 @@ export const getDeleteResourceMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteResource>>,
     TError,
-    { resourceId: string },
+    { slug: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteResource>>,
   TError,
-  { resourceId: string },
+  { slug: string },
   TContext
 > => {
   const mutationKey = ["deleteResource"];
@@ -3091,11 +3093,11 @@ export const getDeleteResourceMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteResource>>,
-    { resourceId: string }
+    { slug: string }
   > = (props) => {
-    const { resourceId } = props ?? {};
+    const { slug } = props ?? {};
 
-    return deleteResource(resourceId, requestOptions);
+    return deleteResource(slug, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -3117,45 +3119,136 @@ export const useDeleteResource = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteResource>>,
     TError,
-    { resourceId: string },
+    { slug: string },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof deleteResource>>,
   TError,
-  { resourceId: string },
+  { slug: string },
   TContext
 > => {
   return useMutation(getDeleteResourceMutationOptions(options));
 };
 
 /**
- * @summary List distinct resource categories
+ * @summary Upload file for a resource of type=file (multipart)
  */
-export const getListResourceCategoriesUrl = () => {
-  return `/api/resources/categories`;
+export const getUploadResourceFileUrl = (slug: string) => {
+  return `/api/resources/${slug}/file`;
 };
 
-export const listResourceCategories = async (
+export const uploadResourceFile = async (
+  slug: string,
+  uploadResourceFileBody: UploadResourceFileBody,
   options?: RequestInit,
-): Promise<string[]> => {
-  return customFetch<string[]>(getListResourceCategoriesUrl(), {
+): Promise<Resource> => {
+  const formData = new FormData();
+  if (uploadResourceFileBody.file !== undefined) {
+    formData.append(`file`, uploadResourceFileBody.file);
+  }
+
+  return customFetch<Resource>(getUploadResourceFileUrl(slug), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getUploadResourceFileMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadResourceFile>>,
+    TError,
+    { slug: string; data: BodyType<UploadResourceFileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadResourceFile>>,
+  TError,
+  { slug: string; data: BodyType<UploadResourceFileBody> },
+  TContext
+> => {
+  const mutationKey = ["uploadResourceFile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadResourceFile>>,
+    { slug: string; data: BodyType<UploadResourceFileBody> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return uploadResourceFile(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadResourceFileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadResourceFile>>
+>;
+export type UploadResourceFileMutationBody = BodyType<UploadResourceFileBody>;
+export type UploadResourceFileMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Upload file for a resource of type=file (multipart)
+ */
+export const useUploadResourceFile = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadResourceFile>>,
+    TError,
+    { slug: string; data: BodyType<UploadResourceFileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof uploadResourceFile>>,
+  TError,
+  { slug: string; data: BodyType<UploadResourceFileBody> },
+  TContext
+> => {
+  return useMutation(getUploadResourceFileMutationOptions(options));
+};
+
+/**
+ * @summary List pending (unpublished) resources for moderation
+ */
+export const getAdminListResourcesUrl = () => {
+  return `/api/admin/resources`;
+};
+
+export const adminListResources = async (
+  options?: RequestInit,
+): Promise<Resource[]> => {
+  return customFetch<Resource[]>(getAdminListResourcesUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListResourceCategoriesQueryKey = () => {
-  return [`/api/resources/categories`] as const;
+export const getAdminListResourcesQueryKey = () => {
+  return [`/api/admin/resources`] as const;
 };
 
-export const getListResourceCategoriesQueryOptions = <
-  TData = Awaited<ReturnType<typeof listResourceCategories>>,
+export const getAdminListResourcesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListResources>>,
   TError = ErrorType<unknown>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listResourceCategories>>,
+    Awaited<ReturnType<typeof adminListResources>>,
     TError,
     TData
   >;
@@ -3163,41 +3256,40 @@ export const getListResourceCategoriesQueryOptions = <
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getListResourceCategoriesQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getAdminListResourcesQueryKey();
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof listResourceCategories>>
-  > = ({ signal }) => listResourceCategories({ signal, ...requestOptions });
+    Awaited<ReturnType<typeof adminListResources>>
+  > = ({ signal }) => adminListResources({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof listResourceCategories>>,
+    Awaited<ReturnType<typeof adminListResources>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type ListResourceCategoriesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listResourceCategories>>
+export type AdminListResourcesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListResources>>
 >;
-export type ListResourceCategoriesQueryError = ErrorType<unknown>;
+export type AdminListResourcesQueryError = ErrorType<unknown>;
 
 /**
- * @summary List distinct resource categories
+ * @summary List pending (unpublished) resources for moderation
  */
 
-export function useListResourceCategories<
-  TData = Awaited<ReturnType<typeof listResourceCategories>>,
+export function useAdminListResources<
+  TData = Awaited<ReturnType<typeof adminListResources>>,
   TError = ErrorType<unknown>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listResourceCategories>>,
+    Awaited<ReturnType<typeof adminListResources>>,
     TError,
     TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListResourceCategoriesQueryOptions(options);
+  const queryOptions = getAdminListResourcesQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -3205,6 +3297,177 @@ export function useListResourceCategories<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Approve and publish a resource
+ */
+export const getAdminPublishResourceUrl = (slug: string) => {
+  return `/api/admin/resources/${slug}/publish`;
+};
+
+export const adminPublishResource = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<Resource> => {
+  return customFetch<Resource>(getAdminPublishResourceUrl(slug), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminPublishResourceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminPublishResource>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminPublishResource>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  const mutationKey = ["adminPublishResource"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminPublishResource>>,
+    { slug: string }
+  > = (props) => {
+    const { slug } = props ?? {};
+
+    return adminPublishResource(slug, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminPublishResourceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminPublishResource>>
+>;
+
+export type AdminPublishResourceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Approve and publish a resource
+ */
+export const useAdminPublishResource = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminPublishResource>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminPublishResource>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  return useMutation(getAdminPublishResourceMutationOptions(options));
+};
+
+/**
+ * @summary Reject and delete a resource
+ */
+export const getAdminRejectResourceUrl = (slug: string) => {
+  return `/api/admin/resources/${slug}/reject`;
+};
+
+export const adminRejectResource = async (
+  slug: string,
+  adminRejectResourceBody: AdminRejectResourceBody,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminRejectResourceUrl(slug), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminRejectResourceBody),
+  });
+};
+
+export const getAdminRejectResourceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRejectResource>>,
+    TError,
+    { slug: string; data: BodyType<AdminRejectResourceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRejectResource>>,
+  TError,
+  { slug: string; data: BodyType<AdminRejectResourceBody> },
+  TContext
+> => {
+  const mutationKey = ["adminRejectResource"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRejectResource>>,
+    { slug: string; data: BodyType<AdminRejectResourceBody> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return adminRejectResource(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRejectResourceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRejectResource>>
+>;
+export type AdminRejectResourceMutationBody = BodyType<AdminRejectResourceBody>;
+export type AdminRejectResourceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Reject and delete a resource
+ */
+export const useAdminRejectResource = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRejectResource>>,
+    TError,
+    { slug: string; data: BodyType<AdminRejectResourceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRejectResource>>,
+  TError,
+  { slug: string; data: BodyType<AdminRejectResourceBody> },
+  TContext
+> => {
+  return useMutation(getAdminRejectResourceMutationOptions(options));
+};
 
 /**
  * @summary List marketplace listings

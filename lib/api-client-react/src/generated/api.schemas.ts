@@ -287,35 +287,56 @@ export interface ReactBody {
   emoji: string;
 }
 
+export type ResourceType = (typeof ResourceType)[keyof typeof ResourceType];
+
+export const ResourceType = {
+  link: "link",
+  file: "file",
+  course: "course",
+} as const;
+
 export interface Resource {
   id: string;
   title: string;
-  description?: string | null;
-  fileUrl: string;
-  fileType: string;
-  fileSize: number;
-  category: string;
-  tags: string[];
+  slug: string;
+  type: ResourceType;
+  url?: string | null;
+  filePath?: string | null;
+  description: string;
+  coverUrl?: string | null;
   authorId: string;
   authorName: string;
   authorAvatar?: string | null;
-  downloadCount: number;
+  published: boolean;
+  tags: string[];
   createdAt: string;
 }
 
 export interface ResourceListResponse {
   resources: Resource[];
-  total: number;
+  nextCursor?: string | null;
 }
+
+export type CreateResourceBodyType =
+  (typeof CreateResourceBodyType)[keyof typeof CreateResourceBodyType];
+
+export const CreateResourceBodyType = {
+  link: "link",
+  file: "file",
+  course: "course",
+} as const;
 
 export interface CreateResourceBody {
   title: string;
-  description?: string | null;
-  fileUrl: string;
-  fileType: string;
-  fileSize: number;
-  category: string;
-  tags: string[];
+  type: CreateResourceBodyType;
+  url?: string | null;
+  description?: string;
+  coverUrl?: string | null;
+  tags?: string[];
+}
+
+export interface AdminRejectResourceBody {
+  reason: string;
 }
 
 export type MarketplaceListingType =
@@ -622,10 +643,26 @@ export type ListForumThreadsParams = {
 };
 
 export type ListResourcesParams = {
-  search?: string;
-  category?: string;
-  limit?: number;
-  offset?: number;
+  q?: string;
+  /**
+   * Comma-separated tag list
+   */
+  tags?: string;
+  type?: ListResourcesType;
+  cursor?: string;
+};
+
+export type ListResourcesType =
+  (typeof ListResourcesType)[keyof typeof ListResourcesType];
+
+export const ListResourcesType = {
+  link: "link",
+  file: "file",
+  course: "course",
+} as const;
+
+export type UploadResourceFileBody = {
+  file?: Blob;
 };
 
 export type ListMarketplaceListingsParams = {

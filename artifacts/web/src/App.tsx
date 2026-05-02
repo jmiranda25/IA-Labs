@@ -28,6 +28,9 @@ import ForoPage from "@/pages/foro";
 import ForoCategoriaPage from "@/pages/foro-categoria";
 import ForoHiloPage from "@/pages/foro-hilo";
 import ResourcesPage from "@/pages/resources";
+import RecursosPage from "@/pages/recursos";
+import RecursoDetallePage from "@/pages/recurso-detalle";
+import RecursoNuevoPage from "@/pages/recurso-nuevo";
 import MarketplacePage from "@/pages/marketplace";
 import MarketplaceListingPage from "@/pages/marketplace-listing";
 import MessagesPage from "@/pages/messages";
@@ -315,6 +318,19 @@ function ClerkProviderWithRoutes() {
             </Route>
             <Route path="/resources">
               <ProtectedRoute><ResourcesPage /></ProtectedRoute>
+            </Route>
+            <Route path="/recursos/nuevo">
+              <ProtectedRoute><RecursoNuevoPage /></ProtectedRoute>
+            </Route>
+            <Route path="/recursos/:slug">
+              {(params) => (
+                <ProtectedRoute>
+                  <RecursoDetallePage slug={params.slug as string} />
+                </ProtectedRoute>
+              )}
+            </Route>
+            <Route path="/recursos">
+              <ProtectedRoute><RecursosPage /></ProtectedRoute>
             </Route>
             <Route path="/marketplace">
               <ProtectedRoute><MarketplacePage /></ProtectedRoute>

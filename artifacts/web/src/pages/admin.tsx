@@ -15,11 +15,15 @@ import {
   useAdminUpdateEvent,
   useAdminDeleteEvent,
   useAdminUploadEventCover,
+  useAdminListResources,
+  useAdminPublishResource,
+  useAdminRejectResource,
   getGetAdminStatsQueryKey,
   getAdminListUsersQueryKey,
   getGetModerationQueueQueryKey,
   getGetLandingContentQueryKey,
   getAdminListEventsQueryKey,
+  getAdminListResourcesQueryKey,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +45,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import {
   Shield, Users, AlertTriangle, BarChart3, Edit3, Check, X,
-  Calendar, Plus, Trash2, Upload,
+  Calendar, Plus, Trash2, Upload, BookOpen, Link2, FileDown,
+  GraduationCap, ExternalLink, Eye,
 } from "lucide-react";
 
 // ── Admin Stats ───────────────────────────────────────────────────────────────
@@ -479,6 +484,210 @@ function EventosAdmin() {
   );
 }
 
+// ── Resources Admin ───────────────────────────────────────────────────────────
+
+const TYPE_ICON: Record<string, React.ReactNode> = {
+  link: <Link2 className="h-4 w-4 text-accent" />,
+  file: <FileDown className="h-4 w-4 text-primary" />,
+  course: <GraduationCap className="h-4 w-4 text-orange-400" />,
+};
+const TYPE_LABEL: Record<string, string> = { link: "Enlace", file: "Archivo", course: "Curso" };
+
+function ResourcesAdmin() {
+  const qc = useQueryClient();
+  const { data: pendingRaw, isLoading } = useAdminListResources({
+    query: { queryKey: getAdminListResourcesQueryKey() },
+  });
+  const pending = (pendingRaw as any[]) ?? [];
+
+  const publishMutation = useAdminPublishResource();
+  const rejectMutation = useAdminRejectResource();
+
+  const [preview, setPreview] = useState<any>(null);
+  const [rejectSlug, setRejectSlug] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectOpen, setRejectOpen] = useState(false);
+
+  const handlePublish = async (slug: string) => {
+    try {
+      await publishMutation.mutateAsync({ slug });
+      qc.invalidateQueries({ queryKey: getAdminListResourcesQueryKey() });
+      toast.success("Recurso publicado");
+    } catch {
+      toast.error("Error al publicar");
+    }
+  };
+
+  const openReject = (slug: string) => {
+    setRejectSlug(slug);
+    setRejectReason("");
+    setRejectOpen(true);
+  };
+
+  const handleReject = async () => {
+    if (!rejectSlug || !rejectReason.trim()) return;
+    try {
+      await rejectMutation.mutateAsync({ slug: rejectSlug, data: { reason: rejectReason } });
+      qc.invalidateQueries({ queryKey: getAdminListResourcesQueryKey() });
+      toast.success("Recurso rechazado");
+      setRejectOpen(false);
+      if (preview?.slug === rejectSlug) setPreview(null);
+    } catch {
+      toast.error("Error al rechazar");
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        {pending.length} recurso{pending.length !== 1 ? "s" : ""} en revisión
+      </p>
+
+      {isLoading ? (
+        <Skeleton className="h-32 rounded-xl" />
+      ) : pending.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No hay recursos pendientes.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Queue */}
+          <div className="space-y-2">
+            {pending.map((r: any) => (
+              <Card
+                key={r.id}
+                className={`cursor-pointer transition-colors ${preview?.id === r.id ? "border-primary/50 bg-primary/5" : "hover:border-border/80"}`}
+                onClick={() => setPreview(preview?.id === r.id ? null : r)}
+              >
+                <CardContent className="p-3 flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center shrink-0">
+                    {TYPE_ICON[r.type] ?? <BookOpen className="h-4 w-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{r.title}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                      <span>{TYPE_LABEL[r.type] ?? r.type}</span>
+                      <span>·</span>
+                      <span>{r.authorName}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-muted-foreground"
+                      title="Vista previa"
+                      onClick={(e) => { e.stopPropagation(); setPreview(preview?.id === r.id ? null : r); }}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-green-400 hover:text-green-300 hover:bg-green-500/10 text-xs"
+                      disabled={publishMutation.isPending}
+                      onClick={(e) => { e.stopPropagation(); handlePublish(r.slug); }}
+                    >
+                      <Check className="h-3 w-3 mr-1" />Aprobar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10 text-xs"
+                      onClick={(e) => { e.stopPropagation(); openReject(r.slug); }}
+                    >
+                      <X className="h-3 w-3 mr-1" />Rechazar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Preview pane */}
+          {preview && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-primary" />
+                  Vista previa — {preview.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {preview.coverUrl && (
+                  <img
+                    src={preview.coverUrl}
+                    alt={preview.title}
+                    className="w-full h-36 object-cover rounded-lg"
+                  />
+                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="text-xs">{TYPE_LABEL[preview.type]}</Badge>
+                  {preview.tags?.map((t: string) => (
+                    <span key={t} className="text-xs text-muted-foreground border border-border/40 rounded-full px-2 py-0.5">{t}</span>
+                  ))}
+                </div>
+                {preview.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-6 whitespace-pre-wrap">
+                    {preview.description}
+                  </p>
+                )}
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-medium">Autor:</span> {preview.authorName}
+                </div>
+                {(preview.url || preview.filePath) && (
+                  <a
+                    href={preview.url || preview.filePath}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    {preview.type === "file" ? "Ver archivo" : "Abrir enlace"}
+                  </a>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Reject dialog */}
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rechazar recurso</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Indica el motivo del rechazo. El autor recibirá una notificación.
+            </p>
+            <Textarea
+              placeholder="Motivo del rechazo..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!rejectReason.trim() || rejectMutation.isPending}
+              onClick={handleReject}
+            >
+              {rejectMutation.isPending ? "Rechazando..." : "Rechazar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // ── Admin Page ────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
@@ -505,12 +714,14 @@ export default function AdminPage() {
             <TabsTrigger value="moderation" data-testid="tab-admin-moderation"><AlertTriangle className="h-4 w-4 mr-1.5" />Moderation</TabsTrigger>
             <TabsTrigger value="landing" data-testid="tab-admin-landing"><Edit3 className="h-4 w-4 mr-1.5" />Landing</TabsTrigger>
             <TabsTrigger value="eventos" data-testid="tab-admin-eventos"><Calendar className="h-4 w-4 mr-1.5" />Eventos</TabsTrigger>
+            <TabsTrigger value="recursos" data-testid="tab-admin-recursos"><BookOpen className="h-4 w-4 mr-1.5" />Recursos</TabsTrigger>
           </TabsList>
           <TabsContent value="stats" className="mt-6"><AdminStats /></TabsContent>
           <TabsContent value="users" className="mt-6"><UserManagement /></TabsContent>
           <TabsContent value="moderation" className="mt-6"><ModerationQueue /></TabsContent>
           <TabsContent value="landing" className="mt-6"><LandingEditor /></TabsContent>
           <TabsContent value="eventos" className="mt-6"><EventosAdmin /></TabsContent>
+          <TabsContent value="recursos" className="mt-6"><ResourcesAdmin /></TabsContent>
         </Tabs>
       </div>
     </Layout>

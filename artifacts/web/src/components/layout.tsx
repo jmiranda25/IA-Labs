@@ -21,7 +21,7 @@ const navItems = [
   { href: "/miembros",        label: "Miembros",        icon: Users },
   { href: "/eventos",         label: "Eventos",         icon: Calendar },
   { href: "/foro",            label: "Foro",            icon: MessageSquare },
-  { href: "/resources",       label: "Recursos",        icon: BookOpen },
+  { href: "/recursos",        label: "Recursos",        icon: BookOpen },
   { href: "/marketplace",     label: "Marketplace",     icon: ShoppingBag },
   { href: "/messages",        label: "Mensajes",        icon: MessageCircle },
   { href: "/notificaciones",  label: "Notificaciones",  icon: BellRing },

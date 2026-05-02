@@ -77,6 +77,16 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - `PublicUser` schema excludes: email, clerkId, isBanned, updatedAt
 - Cursor is base64(JSON.stringify({ joinedAt, id })) — opaque to clients
 
+### `/recursos` — Resources Module (full implementation)
+- **DB schema**: `resources` (id, title, slug unique, type enum link/file/course, url nullable, file_path nullable, description, cover_url nullable, author_id FK, published bool default false, created_at), `resource_tags` (id, resource_id FK cascade, tag, unique resource_id+tag, idx on tag)
+- **List** (`/recursos`): type tabs (Todos/Enlaces/Archivos/Cursos), debounced search, tag chips (multi-select, URL-synced), infinite scroll via `useInfiniteQuery` + cursor, cover thumbnails, type icons
+- **Detail** (`/recursos/:slug`): cover, type badge, author chip, tag links, react-markdown description, "Abrir"/"Descargar" CTA based on type
+- **Submit** (`/recursos/nuevo`): RHF + Zod form, conditional URL/file fields, drag-drop-style file picker, Markdown description, pending state message after submit
+- **Backend** (`artifacts/api-server/src/routes/resources.ts`): `GET /api/resources` (cursor paginated, q/type/tags filters, published OR own unpublished), `GET /api/resources/:slug`, `POST /api/resources`, `POST /api/resources/:slug/file` (multer → Object Storage, ACL private), `DELETE /api/resources/:slug`, `GET /api/admin/resources`, `POST /api/admin/resources/:slug/publish` (sets ACL public-read + notifies author), `POST /api/admin/resources/:slug/reject` (deletes file + row + notifies author)
+- **Admin tab** (`/admin` → "Recursos" tab): pending queue with Aprobar/Rechazar buttons; side-by-side preview pane shows cover, tags, description, link before publishing; reject dialog requires reason text
+- Legacy `/resources` redirects to `/recursos`; nav link updated to `/recursos`
+
 ### Schema Migration Notes
 - **Never run `pnpm --filter @workspace/db run push`** — it hangs; always use `psql "$DATABASE_URL"` directly
 - Forum schema renamed: `forum_posts` → `forum_threads` (threads), new `forum_posts` (replies), new `forum_reactions`
+- Resources schema fully replaced: old `resources` table dropped, new `resources` + `resource_tags` tables created with `resource_type` enum

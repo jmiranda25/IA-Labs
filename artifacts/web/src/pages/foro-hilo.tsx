@@ -196,7 +196,10 @@ export default function ForoHiloPage({ categorySlug, threadId }: Props) {
   const [editThreadBody, setEditThreadBody] = useState("");
 
   const { data: thread, isLoading, isError } = useGetForumThread(threadId, {
-    query: { enabled: !!threadId },
+    query: {
+      queryKey: getGetForumThreadQueryKey(threadId),
+      enabled: !!threadId,
+    },
   });
 
   function invalidate() {

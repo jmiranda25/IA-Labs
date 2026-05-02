@@ -715,16 +715,13 @@ export const AdminLockThreadResponse = zod.object({
 });
 
 /**
- * @summary List resources
+ * @summary List published resources (+ own unpublished)
  */
-export const listResourcesQueryLimitDefault = 20;
-export const listResourcesQueryOffsetDefault = 0;
-
 export const ListResourcesQueryParams = zod.object({
-  search: zod.coerce.string().optional(),
-  category: zod.coerce.string().optional(),
-  limit: zod.coerce.number().default(listResourcesQueryLimitDefault),
-  offset: zod.coerce.number().default(listResourcesQueryOffsetDefault),
+  q: zod.coerce.string().optional(),
+  tags: zod.coerce.string().optional(),
+  type: zod.enum(["link", "file", "course"]).optional(),
+  cursor: zod.coerce.string().optional(),
 });
 
 export const ListResourcesResponse = zod.object({
@@ -732,55 +729,56 @@ export const ListResourcesResponse = zod.object({
     zod.object({
       id: zod.string(),
       title: zod.string(),
-      description: zod.string().nullish(),
-      fileUrl: zod.string(),
-      fileType: zod.string(),
-      fileSize: zod.number(),
-      category: zod.string(),
-      tags: zod.array(zod.string()),
+      slug: zod.string(),
+      type: zod.enum(["link", "file", "course"]),
+      url: zod.string().nullish(),
+      filePath: zod.string().nullish(),
+      description: zod.string(),
+      coverUrl: zod.string().nullish(),
       authorId: zod.string(),
       authorName: zod.string(),
       authorAvatar: zod.string().nullish(),
-      downloadCount: zod.number(),
+      published: zod.boolean(),
+      tags: zod.array(zod.string()),
       createdAt: zod.coerce.date(),
     }),
   ),
-  total: zod.number(),
+  nextCursor: zod.string().nullish(),
 });
 
 /**
- * @summary Upload a new resource
+ * @summary Submit a new resource (published=false by default)
  */
 export const CreateResourceBody = zod.object({
   title: zod.string(),
-  description: zod.string().nullish(),
-  fileUrl: zod.string(),
-  fileType: zod.string(),
-  fileSize: zod.number(),
-  category: zod.string(),
-  tags: zod.array(zod.string()),
+  type: zod.enum(["link", "file", "course"]),
+  url: zod.string().nullish(),
+  description: zod.string().optional(),
+  coverUrl: zod.string().nullish(),
+  tags: zod.array(zod.string()).optional(),
 });
 
 /**
- * @summary Get a resource
+ * @summary Get a single resource by slug
  */
 export const GetResourceParams = zod.object({
-  resourceId: zod.coerce.string(),
+  slug: zod.coerce.string(),
 });
 
 export const GetResourceResponse = zod.object({
   id: zod.string(),
   title: zod.string(),
-  description: zod.string().nullish(),
-  fileUrl: zod.string(),
-  fileType: zod.string(),
-  fileSize: zod.number(),
-  category: zod.string(),
-  tags: zod.array(zod.string()),
+  slug: zod.string(),
+  type: zod.enum(["link", "file", "course"]),
+  url: zod.string().nullish(),
+  filePath: zod.string().nullish(),
+  description: zod.string(),
+  coverUrl: zod.string().nullish(),
   authorId: zod.string(),
   authorName: zod.string(),
   authorAvatar: zod.string().nullish(),
-  downloadCount: zod.number(),
+  published: zod.boolean(),
+  tags: zod.array(zod.string()),
   createdAt: zod.coerce.date(),
 });
 
@@ -788,16 +786,94 @@ export const GetResourceResponse = zod.object({
  * @summary Delete a resource (author or admin)
  */
 export const DeleteResourceParams = zod.object({
-  resourceId: zod.coerce.string(),
+  slug: zod.coerce.string(),
 });
 
 /**
- * @summary List distinct resource categories
+ * @summary Upload file for a resource of type=file (multipart)
  */
-export const ListResourceCategoriesResponseItem = zod.string();
-export const ListResourceCategoriesResponse = zod.array(
-  ListResourceCategoriesResponseItem,
+export const UploadResourceFileParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const UploadResourceFileBody = zod.object({
+  file: zod.instanceof(File).optional(),
+});
+
+export const UploadResourceFileResponse = zod.object({
+  id: zod.string(),
+  title: zod.string(),
+  slug: zod.string(),
+  type: zod.enum(["link", "file", "course"]),
+  url: zod.string().nullish(),
+  filePath: zod.string().nullish(),
+  description: zod.string(),
+  coverUrl: zod.string().nullish(),
+  authorId: zod.string(),
+  authorName: zod.string(),
+  authorAvatar: zod.string().nullish(),
+  published: zod.boolean(),
+  tags: zod.array(zod.string()),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary List pending (unpublished) resources for moderation
+ */
+export const AdminListResourcesResponseItem = zod.object({
+  id: zod.string(),
+  title: zod.string(),
+  slug: zod.string(),
+  type: zod.enum(["link", "file", "course"]),
+  url: zod.string().nullish(),
+  filePath: zod.string().nullish(),
+  description: zod.string(),
+  coverUrl: zod.string().nullish(),
+  authorId: zod.string(),
+  authorName: zod.string(),
+  authorAvatar: zod.string().nullish(),
+  published: zod.boolean(),
+  tags: zod.array(zod.string()),
+  createdAt: zod.coerce.date(),
+});
+export const AdminListResourcesResponse = zod.array(
+  AdminListResourcesResponseItem,
 );
+
+/**
+ * @summary Approve and publish a resource
+ */
+export const AdminPublishResourceParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const AdminPublishResourceResponse = zod.object({
+  id: zod.string(),
+  title: zod.string(),
+  slug: zod.string(),
+  type: zod.enum(["link", "file", "course"]),
+  url: zod.string().nullish(),
+  filePath: zod.string().nullish(),
+  description: zod.string(),
+  coverUrl: zod.string().nullish(),
+  authorId: zod.string(),
+  authorName: zod.string(),
+  authorAvatar: zod.string().nullish(),
+  published: zod.boolean(),
+  tags: zod.array(zod.string()),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Reject and delete a resource
+ */
+export const AdminRejectResourceParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const AdminRejectResourceBody = zod.object({
+  reason: zod.string(),
+});
 
 /**
  * @summary List marketplace listings
