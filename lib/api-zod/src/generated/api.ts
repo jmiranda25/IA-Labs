@@ -67,6 +67,7 @@ export const GetMeResponse = zod.object({
   location: zod.string().nullish(),
   website: zod.string().nullish(),
   isBanned: zod.boolean(),
+  disabledAt: zod.coerce.date().nullish(),
   joinedAt: zod.coerce.date(),
 });
 
@@ -95,6 +96,7 @@ export const UpdateMeResponse = zod.object({
   location: zod.string().nullish(),
   website: zod.string().nullish(),
   isBanned: zod.boolean(),
+  disabledAt: zod.coerce.date().nullish(),
   joinedAt: zod.coerce.date(),
 });
 
@@ -193,6 +195,7 @@ export const GetUserByIdResponse = zod.object({
   location: zod.string().nullish(),
   website: zod.string().nullish(),
   isBanned: zod.boolean(),
+  disabledAt: zod.coerce.date().nullish(),
   joinedAt: zod.coerce.date(),
 });
 
@@ -1349,6 +1352,7 @@ export const AdminListUsersResponse = zod.object({
       location: zod.string().nullish(),
       website: zod.string().nullish(),
       isBanned: zod.boolean(),
+      disabledAt: zod.coerce.date().nullish(),
       joinedAt: zod.coerce.date(),
     }),
   ),
@@ -1378,6 +1382,7 @@ export const AdminUpdateUserRoleResponse = zod.object({
   location: zod.string().nullish(),
   website: zod.string().nullish(),
   isBanned: zod.boolean(),
+  disabledAt: zod.coerce.date().nullish(),
   joinedAt: zod.coerce.date(),
 });
 
@@ -1389,26 +1394,84 @@ export const AdminBanUserParams = zod.object({
 });
 
 /**
- * @summary Get flagged content for moderation
+ * @summary Disable a user account (sets disabled_at and locks Clerk account)
  */
-export const GetModerationQueueResponseItem = zod.object({
-  id: zod.string(),
-  contentType: zod.enum([
-    "forum_post",
-    "forum_reply",
-    "listing",
-    "resource",
-    "user",
-  ]),
-  contentId: zod.string(),
-  reason: zod.string(),
-  reportedBy: zod.string(),
-  status: zod.enum(["pending", "resolved_remove", "resolved_keep"]),
-  createdAt: zod.coerce.date(),
+export const AdminDisableUserParams = zod.object({
+  userId: zod.coerce.string(),
 });
-export const GetModerationQueueResponse = zod.array(
-  GetModerationQueueResponseItem,
-);
+
+export const AdminDisableUserResponse = zod.object({
+  id: zod.string(),
+  clerkId: zod.string(),
+  username: zod.string().nullish(),
+  displayName: zod.string(),
+  bio: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  role: zod.enum(["participant", "administrator"]),
+  skills: zod.array(zod.string()),
+  location: zod.string().nullish(),
+  website: zod.string().nullish(),
+  isBanned: zod.boolean(),
+  disabledAt: zod.coerce.date().nullish(),
+  joinedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Admin KPI metrics
+ */
+export const GetAdminMetricsResponse = zod.object({
+  totalMembers: zod.number(),
+  members30dGrowth: zod.number(),
+  upcomingEvents: zod.number(),
+  activeThreads7d: zod.number(),
+  pendingListings: zod.number(),
+  pendingResources: zod.number(),
+  openReports: zod.number(),
+});
+
+/**
+ * @summary Resolve a user report (remove content or dismiss)
+ */
+export const AdminResolveReportParams = zod.object({
+  reportId: zod.coerce.string(),
+});
+
+export const AdminResolveReportBody = zod.object({
+  action: zod.enum(["remove", "dismiss"]),
+});
+
+export const AdminResolveReportResponse = zod.object({
+  status: zod.string(),
+});
+
+/**
+ * @summary File a content report (any authenticated user)
+ */
+export const CreateReportBody = zod.object({
+  target_type: zod.enum(["forum_post", "forum_thread", "listing"]),
+  target_id: zod.string(),
+  reason: zod.string(),
+});
+
+/**
+ * @summary Get unified moderation queue (pending listings, pending resources, open reports)
+ */
+export const GetModerationQueueResponse = zod.object({
+  listings: zod.array(zod.record(zod.string(), zod.unknown())),
+  resources: zod.array(zod.record(zod.string(), zod.unknown())),
+  reports: zod.array(
+    zod.object({
+      id: zod.string(),
+      targetType: zod.enum(["forum_post", "forum_thread", "listing"]),
+      targetId: zod.string(),
+      reporterId: zod.string(),
+      reason: zod.string(),
+      status: zod.enum(["open", "resolved", "dismissed"]),
+      createdAt: zod.coerce.date(),
+      resolvedAt: zod.coerce.date().nullish(),
+    }),
+  ),
+});
 
 /**
  * @summary Resolve a moderation item

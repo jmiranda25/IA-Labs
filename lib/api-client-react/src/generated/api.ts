@@ -19,8 +19,10 @@ import type {
 import type {
   ActivityItem,
   AdminListUsersParams,
+  AdminMetrics,
   AdminRejectListingBody,
   AdminRejectResourceBody,
+  AdminResolveReport200,
   AdminStats,
   AdminUploadEventCoverBody,
   CheckUsernameAvailabilityParams,
@@ -29,6 +31,7 @@ import type {
   CreateEventBody,
   CreateListingBody,
   CreatePostBody,
+  CreateReportBody,
   CreateResourceBody,
   CreateThreadBody,
   EventCoverResponse,
@@ -56,20 +59,22 @@ import type {
   MarketplaceListing,
   MemberListResponse,
   MessageThread,
-  ModerationItem,
   NotificationListResponse,
   NotificationPreferences,
   PublicUser,
   ReactBody,
   ReactionSummary,
+  Report,
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
   ResolveModerationBody,
+  ResolveReportBody,
   Resource,
   ResourceListResponse,
   RsvpBody,
   SendMessageBody,
   ThreadListPageResponse,
+  UnifiedModerationQueue,
   UpdateEventBody,
   UpdateLandingSectionBody,
   UpdateListingBody,
@@ -5399,7 +5404,342 @@ export const useAdminBanUser = <
 };
 
 /**
- * @summary Get flagged content for moderation
+ * @summary Disable a user account (sets disabled_at and locks Clerk account)
+ */
+export const getAdminDisableUserUrl = (userId: string) => {
+  return `/api/admin/users/${userId}/disable`;
+};
+
+export const adminDisableUser = async (
+  userId: string,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getAdminDisableUserUrl(userId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminDisableUserMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDisableUser>>,
+    TError,
+    { userId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDisableUser>>,
+  TError,
+  { userId: string },
+  TContext
+> => {
+  const mutationKey = ["adminDisableUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDisableUser>>,
+    { userId: string }
+  > = (props) => {
+    const { userId } = props ?? {};
+
+    return adminDisableUser(userId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDisableUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDisableUser>>
+>;
+
+export type AdminDisableUserMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Disable a user account (sets disabled_at and locks Clerk account)
+ */
+export const useAdminDisableUser = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDisableUser>>,
+    TError,
+    { userId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDisableUser>>,
+  TError,
+  { userId: string },
+  TContext
+> => {
+  return useMutation(getAdminDisableUserMutationOptions(options));
+};
+
+/**
+ * @summary Admin KPI metrics
+ */
+export const getGetAdminMetricsUrl = () => {
+  return `/api/admin/metrics`;
+};
+
+export const getAdminMetrics = async (
+  options?: RequestInit,
+): Promise<AdminMetrics> => {
+  return customFetch<AdminMetrics>(getGetAdminMetricsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAdminMetricsQueryKey = () => {
+  return [`/api/admin/metrics`] as const;
+};
+
+export const getGetAdminMetricsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminMetrics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminMetrics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAdminMetricsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminMetrics>>> = ({
+    signal,
+  }) => getAdminMetrics({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminMetrics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAdminMetricsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdminMetrics>>
+>;
+export type GetAdminMetricsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Admin KPI metrics
+ */
+
+export function useGetAdminMetrics<
+  TData = Awaited<ReturnType<typeof getAdminMetrics>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminMetrics>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAdminMetricsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Resolve a user report (remove content or dismiss)
+ */
+export const getAdminResolveReportUrl = (reportId: string) => {
+  return `/api/admin/reports/${reportId}/resolve`;
+};
+
+export const adminResolveReport = async (
+  reportId: string,
+  resolveReportBody: ResolveReportBody,
+  options?: RequestInit,
+): Promise<AdminResolveReport200> => {
+  return customFetch<AdminResolveReport200>(
+    getAdminResolveReportUrl(reportId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(resolveReportBody),
+    },
+  );
+};
+
+export const getAdminResolveReportMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminResolveReport>>,
+    TError,
+    { reportId: string; data: BodyType<ResolveReportBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminResolveReport>>,
+  TError,
+  { reportId: string; data: BodyType<ResolveReportBody> },
+  TContext
+> => {
+  const mutationKey = ["adminResolveReport"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminResolveReport>>,
+    { reportId: string; data: BodyType<ResolveReportBody> }
+  > = (props) => {
+    const { reportId, data } = props ?? {};
+
+    return adminResolveReport(reportId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminResolveReportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminResolveReport>>
+>;
+export type AdminResolveReportMutationBody = BodyType<ResolveReportBody>;
+export type AdminResolveReportMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Resolve a user report (remove content or dismiss)
+ */
+export const useAdminResolveReport = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminResolveReport>>,
+    TError,
+    { reportId: string; data: BodyType<ResolveReportBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminResolveReport>>,
+  TError,
+  { reportId: string; data: BodyType<ResolveReportBody> },
+  TContext
+> => {
+  return useMutation(getAdminResolveReportMutationOptions(options));
+};
+
+/**
+ * @summary File a content report (any authenticated user)
+ */
+export const getCreateReportUrl = () => {
+  return `/api/reports`;
+};
+
+export const createReport = async (
+  createReportBody: CreateReportBody,
+  options?: RequestInit,
+): Promise<Report> => {
+  return customFetch<Report>(getCreateReportUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createReportBody),
+  });
+};
+
+export const getCreateReportMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createReport>>,
+    TError,
+    { data: BodyType<CreateReportBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createReport>>,
+  TError,
+  { data: BodyType<CreateReportBody> },
+  TContext
+> => {
+  const mutationKey = ["createReport"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createReport>>,
+    { data: BodyType<CreateReportBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createReport(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateReportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createReport>>
+>;
+export type CreateReportMutationBody = BodyType<CreateReportBody>;
+export type CreateReportMutationError = ErrorType<unknown>;
+
+/**
+ * @summary File a content report (any authenticated user)
+ */
+export const useCreateReport = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createReport>>,
+    TError,
+    { data: BodyType<CreateReportBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createReport>>,
+  TError,
+  { data: BodyType<CreateReportBody> },
+  TContext
+> => {
+  return useMutation(getCreateReportMutationOptions(options));
+};
+
+/**
+ * @summary Get unified moderation queue (pending listings, pending resources, open reports)
  */
 export const getGetModerationQueueUrl = () => {
   return `/api/admin/moderation/queue`;
@@ -5407,8 +5747,8 @@ export const getGetModerationQueueUrl = () => {
 
 export const getModerationQueue = async (
   options?: RequestInit,
-): Promise<ModerationItem[]> => {
-  return customFetch<ModerationItem[]>(getGetModerationQueueUrl(), {
+): Promise<UnifiedModerationQueue> => {
+  return customFetch<UnifiedModerationQueue>(getGetModerationQueueUrl(), {
     ...options,
     method: "GET",
   });
@@ -5450,7 +5790,7 @@ export type GetModerationQueueQueryResult = NonNullable<
 export type GetModerationQueueQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get flagged content for moderation
+ * @summary Get unified moderation queue (pending listings, pending resources, open reports)
  */
 
 export function useGetModerationQueue<

@@ -24,6 +24,8 @@ tags:
     description: In-app notifications
   - name: admin
     description: Admin moderation
+  - name: reports
+    description: User-submitted content reports
   - name: landing
     description: Editable landing content
   - name: storage
@@ -1309,20 +1311,98 @@ paths:
         "204":
           description: Banned
 
+  /admin/users/{userId}/disable:
+    post:
+      operationId: adminDisableUser
+      tags: [admin]
+      summary: Disable a user account (sets disabled_at and locks Clerk account)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Disabled user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /admin/metrics:
+    get:
+      operationId: getAdminMetrics
+      tags: [admin]
+      summary: Admin KPI metrics
+      responses:
+        "200":
+          description: Admin metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminMetrics"
+
+  /admin/reports/{reportId}/resolve:
+    post:
+      operationId: adminResolveReport
+      tags: [admin]
+      summary: Resolve a user report (remove content or dismiss)
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveReportBody"
+      responses:
+        "200":
+          description: Resolved report status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                required: [status]
+
+  /reports:
+    post:
+      operationId: createReport
+      tags: [reports]
+      summary: File a content report (any authenticated user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReportBody"
+      responses:
+        "201":
+          description: Created report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+
   /admin/moderation/queue:
     get:
       operationId: getModerationQueue
       tags: [admin]
-      summary: Get flagged content for moderation
+      summary: Get unified moderation queue (pending listings, pending resources, open reports)
       responses:
         "200":
-          description: Flagged items
+          description: Unified moderation queue
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ModerationItem"
+                $ref: "#/components/schemas/UnifiedModerationQueue"
 
   /admin/moderation/{itemId}/resolve:
     post:
@@ -1563,6 +1643,10 @@ components:
           nullable: true
         isBanned:
           type: boolean
+        disabledAt:
+          type: string
+          format: date-time
+          nullable: true
         joinedAt:
           type: string
           format: date-time
@@ -2314,6 +2398,90 @@ components:
         totalListings:
           type: integer
       required: [totalUsers, newUsersThisWeek, totalEvents, upcomingEvents, totalForumPosts, pendingModerationItems, totalResources, totalListings]
+
+    AdminMetrics:
+      type: object
+      properties:
+        totalMembers:
+          type: integer
+        members30dGrowth:
+          type: integer
+        upcomingEvents:
+          type: integer
+        activeThreads7d:
+          type: integer
+        pendingListings:
+          type: integer
+        pendingResources:
+          type: integer
+        openReports:
+          type: integer
+      required: [totalMembers, members30dGrowth, upcomingEvents, activeThreads7d, pendingListings, pendingResources, openReports]
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+        targetType:
+          type: string
+          enum: [forum_post, forum_thread, listing]
+        targetId:
+          type: string
+        reporterId:
+          type: string
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [open, resolved, dismissed]
+        createdAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, targetType, targetId, reporterId, reason, status, createdAt]
+
+    CreateReportBody:
+      type: object
+      properties:
+        target_type:
+          type: string
+          enum: [forum_post, forum_thread, listing]
+        target_id:
+          type: string
+        reason:
+          type: string
+      required: [target_type, target_id, reason]
+
+    ResolveReportBody:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [remove, dismiss]
+      required: [action]
+
+    UnifiedModerationQueue:
+      type: object
+      properties:
+        listings:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        resources:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        reports:
+          type: array
+          items:
+            $ref: "#/components/schemas/Report"
+      required: [listings, resources, reports]
 
     # ── Landing Content ────────────────────────────────────────────────────────
     LandingSection:

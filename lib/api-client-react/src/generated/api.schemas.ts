@@ -85,6 +85,7 @@ export interface UserProfile {
   location?: string | null;
   website?: string | null;
   isBanned: boolean;
+  disabledAt?: string | null;
   joinedAt: string;
 }
 
@@ -534,6 +535,81 @@ export interface AdminStats {
   totalListings: number;
 }
 
+export interface AdminMetrics {
+  totalMembers: number;
+  members30dGrowth: number;
+  upcomingEvents: number;
+  activeThreads7d: number;
+  pendingListings: number;
+  pendingResources: number;
+  openReports: number;
+}
+
+export type ReportTargetType =
+  (typeof ReportTargetType)[keyof typeof ReportTargetType];
+
+export const ReportTargetType = {
+  forum_post: "forum_post",
+  forum_thread: "forum_thread",
+  listing: "listing",
+} as const;
+
+export type ReportStatus = (typeof ReportStatus)[keyof typeof ReportStatus];
+
+export const ReportStatus = {
+  open: "open",
+  resolved: "resolved",
+  dismissed: "dismissed",
+} as const;
+
+export interface Report {
+  id: string;
+  targetType: ReportTargetType;
+  targetId: string;
+  reporterId: string;
+  reason: string;
+  status: ReportStatus;
+  createdAt: string;
+  resolvedAt?: string | null;
+}
+
+export type CreateReportBodyTargetType =
+  (typeof CreateReportBodyTargetType)[keyof typeof CreateReportBodyTargetType];
+
+export const CreateReportBodyTargetType = {
+  forum_post: "forum_post",
+  forum_thread: "forum_thread",
+  listing: "listing",
+} as const;
+
+export interface CreateReportBody {
+  target_type: CreateReportBodyTargetType;
+  target_id: string;
+  reason: string;
+}
+
+export type ResolveReportBodyAction =
+  (typeof ResolveReportBodyAction)[keyof typeof ResolveReportBodyAction];
+
+export const ResolveReportBodyAction = {
+  remove: "remove",
+  dismiss: "dismiss",
+} as const;
+
+export interface ResolveReportBody {
+  action: ResolveReportBodyAction;
+}
+
+export type UnifiedModerationQueueListingsItem = { [key: string]: unknown };
+
+export type UnifiedModerationQueueResourcesItem = { [key: string]: unknown };
+
+export interface UnifiedModerationQueue {
+  listings: UnifiedModerationQueueListingsItem[];
+  resources: UnifiedModerationQueueResourcesItem[];
+  reports: Report[];
+}
+
 export type LandingSectionContent = { [key: string]: unknown };
 
 export interface LandingSection {
@@ -690,4 +766,8 @@ export type AdminListUsersParams = {
   search?: string;
   limit?: number;
   offset?: number;
+};
+
+export type AdminResolveReport200 = {
+  status: string;
 };

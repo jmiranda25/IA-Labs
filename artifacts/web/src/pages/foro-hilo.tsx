@@ -13,6 +13,7 @@ import {
   useToggleForumReaction,
   useAdminPinThread,
   useAdminLockThread,
+  useCreateReport,
   type ForumPostWithAuthor,
 } from "@workspace/api-client-react";
 import { useUser } from "@clerk/react";
@@ -27,6 +28,7 @@ import {
   Send,
   Unlock,
   PinOff,
+  Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,10 +40,79 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { toast } from "sonner";
+
+function ReportarDialog({
+  open,
+  onOpenChange,
+  targetType,
+  targetId,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  targetType: "forum_post" | "forum_thread";
+  targetId: string;
+}) {
+  const [reason, setReason] = useState("");
+  const createReport = useCreateReport();
+
+  const handleSubmit = async () => {
+    if (!reason.trim()) return;
+    try {
+      await createReport.mutateAsync({ data: { target_type: targetType, target_id: targetId, reason: reason.trim() } });
+      toast.success("Reporte enviado. Lo revisaremos pronto.");
+      onOpenChange(false);
+      setReason("");
+    } catch {
+      toast.error("Error al enviar el reporte.");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Flag className="h-4 w-4 text-destructive" />
+            Reportar contenido
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Describe brevemente por qué reportas este contenido.
+          </p>
+          <Textarea
+            placeholder="Motivo del reporte…"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={3}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button
+            variant="destructive"
+            disabled={!reason.trim() || createReport.isPending}
+            onClick={handleSubmit}
+          >
+            {createReport.isPending ? "Enviando…" : "Reportar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 const EMOJIS = ["👍", "❤️", "🔥", "🚀", "💡", "🤔"];
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
@@ -70,7 +141,9 @@ interface PostCardProps {
 
 function PostCard({ post, myId, isAdmin, threadId, onReactionToggle, onDelete, onEdit, isLocked }: PostCardProps) {
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const editable = canEdit(post.authorId, myId, post.createdAt as unknown as string, isAdmin);
+  const canReport = !!myId && post.authorId !== myId;
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 space-y-3">
@@ -96,7 +169,7 @@ function PostCard({ post, myId, isAdmin, threadId, onReactionToggle, onDelete, o
         </div>
 
         {/* Actions */}
-        {(editable || isAdmin) && (
+        {(editable || isAdmin || canReport) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -122,9 +195,28 @@ function PostCard({ post, myId, isAdmin, threadId, onReactionToggle, onDelete, o
                   </DropdownMenuItem>
                 </>
               )}
+              {canReport && (
+                <>
+                  {(editable || isAdmin) && <DropdownMenuSeparator />}
+                  <DropdownMenuItem
+                    className="text-yellow-500 focus:text-yellow-500"
+                    onClick={() => setReportOpen(true)}
+                  >
+                    <Flag className="mr-2 h-4 w-4" />
+                    Reportar
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+
+        <ReportarDialog
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          targetType="forum_post"
+          targetId={post.id}
+        />
       </div>
 
       {/* Body */}

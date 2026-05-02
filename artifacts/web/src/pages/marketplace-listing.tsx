@@ -3,12 +3,12 @@ import { Layout } from "@/components/layout";
 import {
   useGetMarketplaceListing,
   useMarkListingAsSold,
-  useSendListingMessage,
   useGetMe,
+  useCreateReport,
   getGetMarketplaceListingQueryKey,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +19,14 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
@@ -26,7 +34,7 @@ import { es } from "date-fns/locale";
 import ReactMarkdown from "react-markdown";
 import {
   ShoppingBag, Tag, DollarSign, MessageCircle,
-  CheckCircle, Edit, ExternalLink, ChevronLeft,
+  CheckCircle, Edit, ExternalLink, ChevronLeft, Flag,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,9 +58,25 @@ export default function MarketplaceListingPage({ slug }: { slug: string }) {
   });
   const { data: me } = useGetMe();
   const markSold = useMarkListingAsSold();
+  const createReport = useCreateReport();
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
 
   const l = listing as any;
   const isSeller = me?.id === l?.sellerId;
+  const canReport = !!me && !isSeller;
+
+  const handleReport = async () => {
+    if (!reportReason.trim() || !l) return;
+    try {
+      await createReport.mutateAsync({ data: { target_type: "listing", target_id: l.id, reason: reportReason.trim() } });
+      toast.success("Reporte enviado. Lo revisaremos pronto.");
+      setReportOpen(false);
+      setReportReason("");
+    } catch {
+      toast.error("Error al enviar el reporte.");
+    }
+  };
 
   const handleMarkSold = async () => {
     try {
@@ -205,14 +229,59 @@ export default function MarketplaceListingPage({ slug }: { slug: string }) {
                 )}
               </div>
             ) : (
-              l.status === "active" && (
-                <Button className="w-full gap-2 mt-1" onClick={handleContact}>
-                  <MessageCircle className="h-4 w-4" />Contactar al vendedor
-                </Button>
-              )
+              <div className="flex flex-col gap-2 pt-1">
+                {l.status === "active" && (
+                  <Button className="w-full gap-2" onClick={handleContact}>
+                    <MessageCircle className="h-4 w-4" />Contactar al vendedor
+                  </Button>
+                )}
+                {canReport && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-muted-foreground hover:text-yellow-500 self-start"
+                    onClick={() => setReportOpen(true)}
+                  >
+                    <Flag className="h-3.5 w-3.5" />Reportar anuncio
+                  </Button>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Report dialog */}
+        <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Flag className="h-4 w-4 text-destructive" />
+                Reportar anuncio
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Describe brevemente por qué reportas este anuncio.
+              </p>
+              <Textarea
+                placeholder="Motivo del reporte…"
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setReportOpen(false)}>Cancelar</Button>
+              <Button
+                variant="destructive"
+                disabled={!reportReason.trim() || createReport.isPending}
+                onClick={handleReport}
+              >
+                {createReport.isPending ? "Enviando…" : "Reportar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

@@ -78,6 +78,7 @@
     "@clerk/localizations": "^4.5.8",
     "@clerk/react": "^6.4.7",
     "@clerk/themes": "^2.4.57",
+    "@tanstack/react-table": "^8.21.3",
     "react-intersection-observer": "^10.0.3",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1"

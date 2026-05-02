@@ -15,6 +15,7 @@ export const usersTable = pgTable("users", {
   location: text("location"),
   website: text("website"),
   isBanned: boolean("is_banned").notNull().default(false),
+  disabledAt: timestamp("disabled_at"),
   notificationPreferences: jsonb("notification_preferences").notNull().default({
     forum_reply: true,
     event_rsvp: true,

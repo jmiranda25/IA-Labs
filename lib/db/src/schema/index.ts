@@ -5,4 +5,5 @@ export * from "./resources";
 export * from "./marketplace";
 export * from "./notifications";
 export * from "./moderation";
+export * from "./reports";
 export * from "./landing";

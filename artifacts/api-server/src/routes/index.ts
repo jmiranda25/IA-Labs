@@ -7,6 +7,7 @@ import resourcesRouter from "./resources";
 import marketplaceRouter from "./marketplace";
 import notificationsRouter from "./notifications";
 import adminRouter from "./admin";
+import reportsRouter from "./reports";
 import communityRouter from "./community";
 import landingRouter from "./landing";
 import storageRouter from "./storage";
@@ -24,6 +25,7 @@ router.use(resourcesRouter);
 router.use(marketplaceRouter);
 router.use(notificationsRouter);
 router.use(adminRouter);
+router.use(reportsRouter);
 router.use(landingRouter);
 router.use(storageRouter);
 
