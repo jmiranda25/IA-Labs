@@ -111,6 +111,49 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
 
+  /users/me/avatar:
+    post:
+      operationId: uploadAvatar
+      tags: [users]
+      summary: Upload avatar image
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+              required: [avatar]
+      responses:
+        "200":
+          description: Avatar uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadAvatarResponse"
+
+  /users/check-username:
+    get:
+      operationId: checkUsernameAvailability
+      tags: [users]
+      summary: Check if a username is available
+      parameters:
+        - name: value
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Username availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckUsernameResponse"
+
   /users:
     get:
       operationId: listUsers
@@ -1194,6 +1237,9 @@ components:
           type: string
         clerkId:
           type: string
+        username:
+          type: string
+          nullable: true
         displayName:
           type: string
         bio:
@@ -1227,6 +1273,9 @@ components:
       properties:
         displayName:
           type: string
+        username:
+          type: string
+          nullable: true
         bio:
           type: string
           nullable: true
@@ -1983,3 +2032,17 @@ components:
         objectPath:
           type: string
       required: [uploadURL, objectPath]
+
+    UploadAvatarResponse:
+      type: object
+      properties:
+        avatarUrl:
+          type: string
+      required: [avatarUrl]
+
+    CheckUsernameResponse:
+      type: object
+      properties:
+        available:
+          type: boolean
+      required: [available]

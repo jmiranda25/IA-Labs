@@ -20,6 +20,8 @@ import type {
   ActivityItem,
   AdminListUsersParams,
   AdminStats,
+  CheckUsernameAvailabilityParams,
+  CheckUsernameResponse,
   CommunityStats,
   CreateEventBody,
   CreateForumCategoryBody,
@@ -71,6 +73,8 @@ import type {
   UpdateListingBody,
   UpdateProfileBody,
   UpdateUserRoleBody,
+  UploadAvatarBody,
+  UploadAvatarResponse,
   UpsertRsvpBody,
   UserListResponse,
   UserProfile,
@@ -477,6 +481,200 @@ export const useUpdateMe = <
 > => {
   return useMutation(getUpdateMeMutationOptions(options));
 };
+
+/**
+ * @summary Upload avatar image
+ */
+export const getUploadAvatarUrl = () => {
+  return `/api/users/me/avatar`;
+};
+
+export const uploadAvatar = async (
+  uploadAvatarBody: UploadAvatarBody,
+  options?: RequestInit,
+): Promise<UploadAvatarResponse> => {
+  const formData = new FormData();
+  formData.append(`avatar`, uploadAvatarBody.avatar);
+
+  return customFetch<UploadAvatarResponse>(getUploadAvatarUrl(), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getUploadAvatarMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadAvatar>>,
+    TError,
+    { data: BodyType<UploadAvatarBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadAvatar>>,
+  TError,
+  { data: BodyType<UploadAvatarBody> },
+  TContext
+> => {
+  const mutationKey = ["uploadAvatar"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadAvatar>>,
+    { data: BodyType<UploadAvatarBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return uploadAvatar(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadAvatarMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadAvatar>>
+>;
+export type UploadAvatarMutationBody = BodyType<UploadAvatarBody>;
+export type UploadAvatarMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Upload avatar image
+ */
+export const useUploadAvatar = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadAvatar>>,
+    TError,
+    { data: BodyType<UploadAvatarBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof uploadAvatar>>,
+  TError,
+  { data: BodyType<UploadAvatarBody> },
+  TContext
+> => {
+  return useMutation(getUploadAvatarMutationOptions(options));
+};
+
+/**
+ * @summary Check if a username is available
+ */
+export const getCheckUsernameAvailabilityUrl = (
+  params: CheckUsernameAvailabilityParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/users/check-username?${stringifiedParams}`
+    : `/api/users/check-username`;
+};
+
+export const checkUsernameAvailability = async (
+  params: CheckUsernameAvailabilityParams,
+  options?: RequestInit,
+): Promise<CheckUsernameResponse> => {
+  return customFetch<CheckUsernameResponse>(
+    getCheckUsernameAvailabilityUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getCheckUsernameAvailabilityQueryKey = (
+  params?: CheckUsernameAvailabilityParams,
+) => {
+  return [`/api/users/check-username`, ...(params ? [params] : [])] as const;
+};
+
+export const getCheckUsernameAvailabilityQueryOptions = <
+  TData = Awaited<ReturnType<typeof checkUsernameAvailability>>,
+  TError = ErrorType<unknown>,
+>(
+  params: CheckUsernameAvailabilityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof checkUsernameAvailability>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getCheckUsernameAvailabilityQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof checkUsernameAvailability>>
+  > = ({ signal }) =>
+    checkUsernameAvailability(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof checkUsernameAvailability>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type CheckUsernameAvailabilityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof checkUsernameAvailability>>
+>;
+export type CheckUsernameAvailabilityQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Check if a username is available
+ */
+
+export function useCheckUsernameAvailability<
+  TData = Awaited<ReturnType<typeof checkUsernameAvailability>>,
+  TError = ErrorType<unknown>,
+>(
+  params: CheckUsernameAvailabilityParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof checkUsernameAvailability>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getCheckUsernameAvailabilityQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List members (directory)

@@ -1,0 +1,41 @@
+Context: Stack from step 1. Auth = Clerk. DB table is `users`
+(id = Clerk user id text PK, full_name, username unique, bio, avatar_url,
+role, created_at). Storage = Replit Object Storage, served via
+GET /api/storage/objects/*, ACL helpers in objectAcl.ts. Frontend uses
+RHF + Zod with shared schemas. API contracts in OpenAPI → Orval-generated
+client. Everything inside Replit + Agent 4.
+
+Goals:
+
+Backend (artifacts/api-server):
+- Add to OpenAPI + regenerate with Orval:
+    PUT  /api/users/me              → updates full_name, username, bio,
+                                       avatar_url. Zod schema MUST reject
+                                       any `role` field (stays excluded
+                                       like in step 3).
+    POST /api/users/me/avatar       → multipart upload to the `avatars`
+                                       bucket in Replit Object Storage,
+                                       ACL = owner-only-write, public-read;
+                                       returns the new avatar_url.
+    GET  /api/users/check-username?value=…  → { available: boolean }
+- Username regex enforced both client + server: ^[a-z0-9-]{3,24}$.
+- Username uniqueness already enforced at the DB layer (unique index);
+  surface conflicts as 409 with body { error: 'username_taken' }.
+
+Frontend (artifacts/react-vite):
+- /perfil renders inside the authenticated shell from step 6.
+- Form built with RHF + Zod (shared schema imported from a workspace
+  package or kept in sync via Orval-generated types):
+    * Avatar (drag-drop or click-to-upload, square preview before save)
+    * Nombre completo (full_name)
+    * Usuario (@username) with debounced live availability check
+      via GET /api/users/check-username
+    * Bio (textarea, 280 chars max with counter)
+- Optimistic UI: update the /api/users/me cache before the network call;
+  rollback on error.
+- shadcn <Toaster /> for success "Perfil actualizado" / error toasts.
+- Link to /perfil from <UserButton /> menu and from the user name in
+  the top bar.
+
+Deliverables: working profile editing + avatar upload, fully validated
+client + server side, optimistic UI.

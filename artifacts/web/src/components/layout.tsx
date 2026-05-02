@@ -150,10 +150,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <NavLinks />
         </div>
         <div className="border-t border-border p-3 space-y-1">
+          <Link href="/perfil">
+            <span className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors cursor-pointer ${location === "/perfil" ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="nav-perfil">
+              <User className="h-4 w-4" aria-hidden="true" />
+              Mi perfil
+            </span>
+          </Link>
           <Link href={`/members/${me?.clerkId}`}>
             <span className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer" data-testid="nav-profile">
               <User className="h-4 w-4" aria-hidden="true" />
-              Ver perfil
+              Ver perfil público
             </span>
           </Link>
           <Link href="/settings">
@@ -200,9 +206,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* User area */}
           <div className="flex items-center gap-2 pl-1">
-            <span className="hidden sm:block text-sm font-medium max-w-[120px] truncate text-foreground">
-              {me?.displayName}
-            </span>
+            <Link href="/perfil">
+              <span className="hidden sm:block text-sm font-medium max-w-[120px] truncate text-foreground hover:text-primary transition-colors cursor-pointer">
+                {me?.displayName}
+              </span>
+            </Link>
             <UserButton
               appearance={{
                 elements: { avatarBox: "h-7 w-7" },

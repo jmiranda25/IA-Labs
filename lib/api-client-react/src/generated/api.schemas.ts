@@ -50,6 +50,7 @@ export const UserProfileRole = {
 export interface UserProfile {
   id: string;
   clerkId: string;
+  username?: string | null;
   displayName: string;
   bio?: string | null;
   avatarUrl?: string | null;
@@ -63,6 +64,7 @@ export interface UserProfile {
 
 export interface UpdateProfileBody {
   displayName?: string;
+  username?: string | null;
   bio?: string | null;
   avatarUrl?: string | null;
   skills?: string[];
@@ -552,8 +554,24 @@ export interface RequestUploadUrlResponse {
   objectPath: string;
 }
 
+export interface UploadAvatarResponse {
+  avatarUrl: string;
+}
+
+export interface CheckUsernameResponse {
+  available: boolean;
+}
+
 export type GetActivityFeedParams = {
   limit?: number;
+};
+
+export type UploadAvatarBody = {
+  avatar: Blob;
+};
+
+export type CheckUsernameAvailabilityParams = {
+  value: string;
 };
 
 export type ListUsersParams = {

@@ -58,6 +58,7 @@ export const GetActivityFeedResponse = zod.array(GetActivityFeedResponseItem);
 export const GetMeResponse = zod.object({
   id: zod.string(),
   clerkId: zod.string(),
+  username: zod.string().nullish(),
   displayName: zod.string(),
   bio: zod.string().nullish(),
   avatarUrl: zod.string().nullish(),
@@ -74,6 +75,7 @@ export const GetMeResponse = zod.object({
  */
 export const UpdateMeBody = zod.object({
   displayName: zod.string().optional(),
+  username: zod.string().nullish(),
   bio: zod.string().nullish(),
   avatarUrl: zod.string().nullish(),
   skills: zod.array(zod.string()).optional(),
@@ -84,6 +86,7 @@ export const UpdateMeBody = zod.object({
 export const UpdateMeResponse = zod.object({
   id: zod.string(),
   clerkId: zod.string(),
+  username: zod.string().nullish(),
   displayName: zod.string(),
   bio: zod.string().nullish(),
   avatarUrl: zod.string().nullish(),
@@ -93,6 +96,28 @@ export const UpdateMeResponse = zod.object({
   website: zod.string().nullish(),
   isBanned: zod.boolean(),
   joinedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Upload avatar image
+ */
+export const UploadAvatarBody = zod.object({
+  avatar: zod.instanceof(File),
+});
+
+export const UploadAvatarResponse = zod.object({
+  avatarUrl: zod.string(),
+});
+
+/**
+ * @summary Check if a username is available
+ */
+export const CheckUsernameAvailabilityQueryParams = zod.object({
+  value: zod.coerce.string(),
+});
+
+export const CheckUsernameAvailabilityResponse = zod.object({
+  available: zod.boolean(),
 });
 
 /**
@@ -113,6 +138,7 @@ export const ListUsersResponse = zod.object({
     zod.object({
       id: zod.string(),
       clerkId: zod.string(),
+      username: zod.string().nullish(),
       displayName: zod.string(),
       bio: zod.string().nullish(),
       avatarUrl: zod.string().nullish(),
@@ -137,6 +163,7 @@ export const GetUserByIdParams = zod.object({
 export const GetUserByIdResponse = zod.object({
   id: zod.string(),
   clerkId: zod.string(),
+  username: zod.string().nullish(),
   displayName: zod.string(),
   bio: zod.string().nullish(),
   avatarUrl: zod.string().nullish(),
@@ -366,6 +393,7 @@ export const ListEventAttendeesResponseItem = zod
         .object({
           id: zod.string(),
           clerkId: zod.string(),
+          username: zod.string().nullish(),
           displayName: zod.string(),
           bio: zod.string().nullish(),
           avatarUrl: zod.string().nullish(),
@@ -1013,6 +1041,7 @@ export const AdminListUsersResponse = zod.object({
     zod.object({
       id: zod.string(),
       clerkId: zod.string(),
+      username: zod.string().nullish(),
       displayName: zod.string(),
       bio: zod.string().nullish(),
       avatarUrl: zod.string().nullish(),
@@ -1041,6 +1070,7 @@ export const AdminUpdateUserRoleBody = zod.object({
 export const AdminUpdateUserRoleResponse = zod.object({
   id: zod.string(),
   clerkId: zod.string(),
+  username: zod.string().nullish(),
   displayName: zod.string(),
   bio: zod.string().nullish(),
   avatarUrl: zod.string().nullish(),

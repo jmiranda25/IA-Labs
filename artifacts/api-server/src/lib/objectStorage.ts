@@ -189,6 +189,22 @@ export class ObjectStorageService {
     return normalizedPath;
   }
 
+  async uploadToPrivate(
+    subPath: string,
+    buffer: Buffer,
+    contentType: string,
+    aclPolicy: ObjectAclPolicy,
+  ): Promise<string> {
+    const privateObjectDir = this.getPrivateObjectDir();
+    const fullPath = `${privateObjectDir}/${subPath}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    await file.save(buffer, { contentType });
+    await setObjectAclPolicy(file, aclPolicy);
+    return `/objects/${subPath}`;
+  }
+
   async canAccessObjectEntity({
     userId,
     objectFile,
@@ -206,7 +222,7 @@ export class ObjectStorageService {
   }
 }
 
-function parseObjectPath(path: string): {
+export function parseObjectPath(path: string): {
   bucketName: string;
   objectName: string;
 } {

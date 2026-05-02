@@ -25,6 +25,7 @@ import MarketplacePage from "@/pages/marketplace";
 import MarketplaceListingPage from "@/pages/marketplace-listing";
 import MessagesPage from "@/pages/messages";
 import SettingsPage from "@/pages/settings";
+import PerfilPage from "@/pages/perfil";
 import AdminPage from "@/pages/admin";
 import NotificacionesPage from "@/pages/notificaciones";
 
@@ -285,6 +286,9 @@ function ClerkProviderWithRoutes() {
             </Route>
             <Route path="/settings">
               <ProtectedRoute><SettingsPage /></ProtectedRoute>
+            </Route>
+            <Route path="/perfil">
+              <ProtectedRoute><PerfilPage /></ProtectedRoute>
             </Route>
             <Route path="/notificaciones">
               <ProtectedRoute><NotificacionesPage /></ProtectedRoute>
