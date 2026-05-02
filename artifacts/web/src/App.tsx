@@ -172,6 +172,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/" component={HomeRedirect} />
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
+            <Route path="/registro/*?" component={SignUpPage} />
             <Route path="/dashboard">
               <AuthGuard><DashboardPage /></AuthGuard>
             </Route>

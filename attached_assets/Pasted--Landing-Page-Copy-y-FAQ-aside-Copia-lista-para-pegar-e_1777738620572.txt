@@ -1,0 +1,122 @@
+# Landing Page — Copy y FAQ
+
+<aside>
+📝
+
+Copia lista para pegar en los componentes de la landing. Pensada para una **Comunidad de IA** hispanohablante. Ajusta el tono al estilo final de tu marca.
+
+</aside>
+
+## Hero
+
+**Eyebrow:** Comunidad de IA en español
+
+**Titular:** Construye, aprende y crece con la comunidad de IA más activa.
+
+**Subtítulo:** Conéctate con builders, founders y profesionales que están creando con IA todos los días. Eventos, recursos, foro y marketplace en un solo lugar.
+
+**CTA primario:** `Unirme gratis`
+
+**CTA secundario:** `Ya tengo cuenta`
+
+## Sobre la comunidad
+
+Somos un espacio para quienes quieren **dejar de mirar la IA desde afuera y empezar a construir con ella**. Compartimos prompts, plantillas, agentes, automatizaciones y aprendizajes reales — sin humo y sin gurús.
+
+**Números clave** (placeholders para reemplazar cuando crezca):
+
+- 🧑‍💻 +500 miembros activos
+- 🎓 +20 workshops realizados
+- 📚 +100 recursos curados
+
+## Beneficios
+
+| Icono | Beneficio | Descripción corta |
+| --- | --- | --- |
+| 🎓 | **Workshops y eventos** | Sesiones prácticas mensuales para aprender haciendo. |
+| 💬 | **Foro activo** | Resuelve dudas, comparte avances y aprende en público. |
+| 🔔 | **Novedades al día** | Lo más relevante del ecosistema de IA, filtrado y resumido. |
+
+## ¿Para quién es?
+
+- 🛠️ **Builders de IA** que crean agentes, automatizaciones o productos.
+- 🚀 **Founders y emprendedores** que quieren integrar IA en su negocio.
+- 🎯 **Profesionales en transición** que buscan re-skillearse con IA.
+
+## Cómo funciona
+
+1. **Regístrate gratis** con tu email.
+2. **Completa tu perfil** con tus intereses en IA.
+3. **Participa**: foro, eventos, marketplace, recursos.
+4. **Crece**: aprende, conecta y construye con la comunidad.
+
+## Testimonios *(placeholders)*
+
+> "Aquí encontré la comunidad que no sabía que necesitaba para empezar a construir agentes en serio."
+— **Nombre Apellido**, Founder en [Empresa]
+> 
+
+> "Los workshops valen oro. Aprendí más en un mes que en seis meses solo."
+— **Nombre Apellido**, AI Engineer
+> 
+
+> "El marketplace me trajo mis primeros tres clientes consultando con IA."
+— **Nombre Apellido**, Consultor independiente
+> 
+
+## Q&A / FAQ
+
+- ¿Qué es esta comunidad y a quién está dirigida?
+    
+    Es una comunidad hispanohablante para personas que **construyen, aprenden o trabajan con IA**: builders, founders, consultores y profesionales que quieren integrar IA en su día a día. No es un grupo solo de consumo de noticias: el foco está en **hacer**.
+    
+- ¿Tiene algún costo unirse?
+    
+    El acceso a la comunidad y al MVP es **gratuito**. En el futuro podrían existir niveles premium para eventos cerrados o marketplace, pero el núcleo seguirá siendo abierto.
+    
+- ¿Qué nivel técnico necesito para participar?
+    
+    Ninguno específico. Hay miembros que recién empiezan y otros que ya tienen productos en producción. Lo importante es **tener ganas de construir y compartir**.
+    
+- ¿Cómo funcionan los eventos y workshops?
+    
+    Publicamos eventos dentro de la plataforma. Te registras con un clic (RSVP) y recibes el enlace y los recordatorios. La mayoría son online; algunos presenciales por ciudad.
+    
+- ¿Puedo publicar mis servicios o productos en el marketplace?
+    
+    Sí. Cualquier participante puede crear un listado (servicio, plantilla, agente, curso). Un administrador revisa antes de publicar para mantener la calidad. En el MVP no hay pasarela de pagos: el contacto inicial se hace dentro de la plataforma.
+    
+- ¿Cómo se modera el foro?
+    
+    Tenemos guías de comunidad simples: respeto, contenido on-topic y cero spam. Los administradores pueden cerrar, fijar o eliminar hilos cuando sea necesario.
+    
+- ¿Mis datos están seguros?
+    
+    Usamos autenticación con Supabase Auth y políticas de **Row Level Security** que aseguran que cada usuario solo accede a lo suyo. No vendemos datos a terceros.
+    
+- ¿Cómo me convierto en colaborador o admin?
+    
+    Los roles `administrador` se asignan manualmente desde el panel admin. Si quieres colaborar (organizar eventos, curar recursos, moderar), escríbenos desde tu perfil.
+    
+
+## CTA final
+
+**Titular:** Tu próximo proyecto con IA empieza aquí.
+
+**Subtítulo:** Únete gratis y empieza a construir con la comunidad hoy mismo.
+
+**Botón:** `Crear mi cuenta`
+
+## Footer
+
+- **Producto:** Eventos · Foro · Recursos · Marketplace
+- **Comunidad:** Sobre nosotros · Código de conducta · Contacto
+- **Legal:** Términos · Privacidad
+- **Redes:** X · LinkedIn · YouTube · Discord
+
+## SEO sugerido
+
+- **Meta title:** Comunidad de IA en español — Aprende, conecta y construye
+- **Meta description:** Únete a la comunidad hispanohablante de IA. Eventos, recursos, foro y marketplace para builders, founders y profesionales.
+- **OG image:** Hero con isotipo + tagline
+- **JSON-LD:** `Organization` + `FAQPage` (usa las preguntas de arriba)
