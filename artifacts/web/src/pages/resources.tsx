@@ -134,10 +134,10 @@ export default function ResourcesPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search resources..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" data-testid="input-resource-search" />
           </div>
-          <Select value={category} onValueChange={setCategory}>
+          <Select value={category || "all"} onValueChange={(v) => setCategory(v === "all" ? "" : v)}>
             <SelectTrigger className="w-40" data-testid="select-resource-category"><SelectValue placeholder="All categories" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All categories</SelectItem>
+              <SelectItem value="all">All categories</SelectItem>
               {[...CATEGORIES, ...((cats as string[]) ?? [])].filter((v, i, a) => a.indexOf(v) === i).map((c) => (
                 <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}

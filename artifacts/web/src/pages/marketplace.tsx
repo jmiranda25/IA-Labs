@@ -129,10 +129,10 @@ export default function MarketplacePage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search listings..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" data-testid="input-listing-search" />
           </div>
-          <Select value={type} onValueChange={setType}>
+          <Select value={type || "all"} onValueChange={(v) => setType(v === "all" ? "" : v)}>
             <SelectTrigger className="w-44" data-testid="select-listing-filter"><SelectValue placeholder="All types" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All types</SelectItem>
+              <SelectItem value="all">All types</SelectItem>
               <SelectItem value="offering">Offering</SelectItem>
               <SelectItem value="seeking">Seeking</SelectItem>
             </SelectContent>
