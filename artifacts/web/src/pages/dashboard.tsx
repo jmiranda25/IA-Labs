@@ -191,7 +191,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-muted-foreground text-center py-4">No hay eventos próximos</p>
                 ) : (
                   (upcomingEvents as any[])?.map((event: any) => (
-                    <Link href={`/events/${event.id}`} key={event.id}>
+                    <Link href={`/eventos/${event.slug}`} key={event.id}>
                       <div
                         className="p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                         data-testid={`event-upcoming-${event.id}`}
@@ -200,17 +200,17 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-1 mt-1">
                           <Clock className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
                           <span className="text-xs text-muted-foreground">
-                            {new Date(event.startAt).toLocaleDateString("es", { month: "short", day: "numeric" })}
+                            {new Date(event.startsAt).toLocaleDateString("es", { month: "short", day: "numeric" })}
                           </span>
-                          {event.isVirtual && (
-                            <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 ml-1">Virtual</Badge>
+                          {event.isOnline && (
+                            <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 ml-1">Online</Badge>
                           )}
                         </div>
                       </div>
                     </Link>
                   ))
                 )}
-                <Link href="/events" className="flex items-center gap-1 text-xs text-primary hover:underline pt-1">
+                <Link href="/eventos" className="flex items-center gap-1 text-xs text-primary hover:underline pt-1">
                   Ver todos los eventos <ArrowRight className="h-3 w-3" aria-hidden="true" />
                 </Link>
               </CardContent>

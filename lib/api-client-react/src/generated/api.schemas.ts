@@ -103,85 +103,45 @@ export interface UserListResponse {
   total: number;
 }
 
-export type EventStatus = (typeof EventStatus)[keyof typeof EventStatus];
-
-export const EventStatus = {
-  upcoming: "upcoming",
-  ongoing: "ongoing",
-  past: "past",
-  cancelled: "cancelled",
-} as const;
-
 export interface Event {
   id: string;
   title: string;
+  slug: string;
   description: string;
-  startAt: string;
-  endAt: string;
+  startsAt: string;
+  endsAt: string;
   location?: string | null;
-  isVirtual: boolean;
-  virtualLink?: string | null;
+  capacity?: number | null;
+  isOnline: boolean;
+  meetingUrl?: string | null;
   coverUrl?: string | null;
-  maxAttendees?: number | null;
-  attendeeCount: number;
-  hostId: string;
-  hostName: string;
-  status: EventStatus;
+  createdBy: string;
   createdAt: string;
 }
 
-export type EventWithRsvpMyRsvp =
-  | (typeof EventWithRsvpMyRsvp)[keyof typeof EventWithRsvpMyRsvp]
-  | null;
-
-export const EventWithRsvpMyRsvp = {
-  going: "going",
-  waitlist: "waitlist",
-  cancelled: "cancelled",
-} as const;
-
-export type EventWithRsvp = Event & {
-  myRsvp?: EventWithRsvpMyRsvp;
+export type EventDetailCounts = {
+  going: number;
+  interested: number;
 };
 
-export interface EventListResponse {
-  events: EventWithRsvp[];
-  total: number;
-}
+export type EventDetailMyRsvp =
+  | (typeof EventDetailMyRsvp)[keyof typeof EventDetailMyRsvp]
+  | null;
 
-export interface CreateEventBody {
-  title: string;
-  description: string;
-  startAt: string;
-  endAt: string;
-  location?: string | null;
-  isVirtual: boolean;
-  virtualLink?: string | null;
-  coverUrl?: string | null;
-  maxAttendees?: number | null;
-}
-
-export type UpdateEventBodyStatus =
-  (typeof UpdateEventBodyStatus)[keyof typeof UpdateEventBodyStatus];
-
-export const UpdateEventBodyStatus = {
-  upcoming: "upcoming",
-  ongoing: "ongoing",
-  past: "past",
+export const EventDetailMyRsvp = {
+  going: "going",
+  interested: "interested",
   cancelled: "cancelled",
 } as const;
 
-export interface UpdateEventBody {
-  title?: string;
-  description?: string;
-  startAt?: string;
-  endAt?: string;
-  location?: string | null;
-  isVirtual?: boolean;
-  virtualLink?: string | null;
-  coverUrl?: string | null;
-  maxAttendees?: number | null;
-  status?: UpdateEventBodyStatus;
+export type EventDetail = Event & {
+  counts: EventDetailCounts;
+  myRsvp?: EventDetailMyRsvp;
+};
+
+export interface EventListPageResponse {
+  items: EventDetail[];
+  nextCursor: string | null;
 }
 
 export type EventRsvpStatus =
@@ -189,7 +149,7 @@ export type EventRsvpStatus =
 
 export const EventRsvpStatus = {
   going: "going",
-  waitlist: "waitlist",
+  interested: "interested",
   cancelled: "cancelled",
 } as const;
 
@@ -201,20 +161,45 @@ export interface EventRsvp {
   createdAt: string;
 }
 
-export type EventRsvpWithUser = EventRsvp & {
-  user?: UserProfile;
-};
+export type RsvpBodyStatus =
+  (typeof RsvpBodyStatus)[keyof typeof RsvpBodyStatus];
 
-export type UpsertRsvpBodyStatus =
-  (typeof UpsertRsvpBodyStatus)[keyof typeof UpsertRsvpBodyStatus];
-
-export const UpsertRsvpBodyStatus = {
+export const RsvpBodyStatus = {
   going: "going",
-  waitlist: "waitlist",
+  interested: "interested",
+  cancelled: "cancelled",
 } as const;
 
-export interface UpsertRsvpBody {
-  status: UpsertRsvpBodyStatus;
+export interface RsvpBody {
+  status: RsvpBodyStatus;
+}
+
+export interface CreateEventBody {
+  title: string;
+  description: string;
+  startsAt: string;
+  endsAt: string;
+  location?: string | null;
+  capacity?: number | null;
+  isOnline?: boolean;
+  meetingUrl?: string | null;
+  coverUrl?: string | null;
+}
+
+export interface UpdateEventBody {
+  title?: string;
+  description?: string;
+  startsAt?: string;
+  endsAt?: string;
+  location?: string | null;
+  capacity?: number | null;
+  isOnline?: boolean;
+  meetingUrl?: string | null;
+  coverUrl?: string | null;
+}
+
+export interface EventCoverResponse {
+  coverUrl: string;
 }
 
 export interface ForumCategory {
@@ -619,8 +604,13 @@ export const ListUsersRole = {
 
 export type ListEventsParams = {
   status?: ListEventsStatus;
+  mode?: ListEventsMode;
+  q?: string;
+  cursor?: string;
+  /**
+   * @maximum 60
+   */
   limit?: number;
-  offset?: number;
 };
 
 export type ListEventsStatus =
@@ -629,11 +619,22 @@ export type ListEventsStatus =
 export const ListEventsStatus = {
   upcoming: "upcoming",
   past: "past",
-  all: "all",
+} as const;
+
+export type ListEventsMode =
+  (typeof ListEventsMode)[keyof typeof ListEventsMode];
+
+export const ListEventsMode = {
+  online: "online",
+  in_person: "in_person",
 } as const;
 
 export type GetUpcomingEventsParams = {
   limit?: number;
+};
+
+export type AdminUploadEventCoverBody = {
+  cover: Blob;
 };
 
 export type ListForumPostsParams = {

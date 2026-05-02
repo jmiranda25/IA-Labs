@@ -232,35 +232,128 @@ paths:
     get:
       operationId: listEvents
       tags: [events]
-      summary: List events
+      summary: List events (cursor-paginated)
       parameters:
         - name: status
           in: query
           schema:
             type: string
-            enum: [upcoming, past, all]
+            enum: [upcoming, past]
             default: upcoming
+        - name: mode
+          in: query
+          schema:
+            type: string
+            enum: [online, in_person]
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          schema:
+            type: string
         - name: limit
           in: query
           schema:
             type: integer
             default: 12
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
+            maximum: 60
       responses:
         "200":
-          description: Paginated events
+          description: Cursor-paginated events
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EventListResponse"
-    post:
-      operationId: createEvent
+                $ref: "#/components/schemas/EventListPageResponse"
+
+  /events/upcoming:
+    get:
+      operationId: getUpcomingEvents
       tags: [events]
-      summary: Create an event (admin only)
+      summary: Get upcoming events (dashboard widget)
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+      responses:
+        "200":
+          description: Upcoming events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventDetail"
+
+  /events/{slug}:
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get a single event by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventDetail"
+        "404":
+          description: Not found
+
+  /events/{slug}/rsvp:
+    post:
+      operationId: rsvpEvent
+      tags: [events]
+      summary: RSVP to an event (going / interested / cancelled)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RsvpBody"
+      responses:
+        "200":
+          description: RSVP result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventRsvp"
+        "409":
+          description: Event full
+
+  /admin/events:
+    get:
+      operationId: adminListEvents
+      tags: [events]
+      summary: List all events for admin management
+      responses:
+        "200":
+          description: All events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventDetail"
+    post:
+      operationId: adminCreateEvent
+      tags: [events]
+      summary: Create an event (admin)
       requestBody:
         required: true
         content:
@@ -273,53 +366,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Event"
+                $ref: "#/components/schemas/EventDetail"
 
-  /events/upcoming:
-    get:
-      operationId: getUpcomingEvents
+  /admin/events/{slug}:
+    patch:
+      operationId: adminUpdateEvent
       tags: [events]
-      summary: Get upcoming events with current user RSVP status
+      summary: Update an event (admin)
       parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 5
-      responses:
-        "200":
-          description: Upcoming events with RSVP
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/EventWithRsvp"
-
-  /events/{eventId}:
-    get:
-      operationId: getEvent
-      tags: [events]
-      summary: Get a single event
-      parameters:
-        - name: eventId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Event details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EventWithRsvp"
-    put:
-      operationId: updateEvent
-      tags: [events]
-      summary: Update an event (admin only)
-      parameters:
-        - name: eventId
+        - name: slug
           in: path
           required: true
           schema:
@@ -336,13 +391,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Event"
+                $ref: "#/components/schemas/EventDetail"
     delete:
-      operationId: deleteEvent
+      operationId: adminDeleteEvent
       tags: [events]
-      summary: Delete an event (admin only)
+      summary: Delete an event (admin)
       parameters:
-        - name: eventId
+        - name: slug
           in: path
           required: true
           schema:
@@ -351,13 +406,13 @@ paths:
         "204":
           description: Deleted
 
-  /events/{eventId}/rsvp:
-    put:
-      operationId: upsertRsvp
+  /admin/events/{slug}/cover:
+    post:
+      operationId: adminUploadEventCover
       tags: [events]
-      summary: RSVP to an event (or update existing RSVP)
+      summary: Upload event cover image (admin)
       parameters:
-        - name: eventId
+        - name: slug
           in: path
           required: true
           schema:
@@ -365,50 +420,21 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: "#/components/schemas/UpsertRsvpBody"
+              type: object
+              properties:
+                cover:
+                  type: string
+                  format: binary
+              required: [cover]
       responses:
         "200":
-          description: Updated RSVP
+          description: Cover URL
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EventRsvp"
-    delete:
-      operationId: cancelRsvp
-      tags: [events]
-      summary: Cancel RSVP
-      parameters:
-        - name: eventId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "204":
-          description: Cancelled
-
-  /events/{eventId}/attendees:
-    get:
-      operationId: listEventAttendees
-      tags: [events]
-      summary: List attendees for an event
-      parameters:
-        - name: eventId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Attendees list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/EventRsvpWithUser"
+                $ref: "#/components/schemas/EventCoverResponse"
 
   # ── Forum ────────────────────────────────────────────────────────────────────
   /forum/categories:
@@ -1379,122 +1405,67 @@ components:
           type: string
         title:
           type: string
+        slug:
+          type: string
         description:
           type: string
-        startAt:
+        startsAt:
           type: string
           format: date-time
-        endAt:
+        endsAt:
           type: string
           format: date-time
         location:
           type: string
           nullable: true
-        isVirtual:
+        capacity:
+          type: integer
+          nullable: true
+        isOnline:
           type: boolean
-        virtualLink:
+        meetingUrl:
           type: string
           nullable: true
         coverUrl:
           type: string
           nullable: true
-        maxAttendees:
-          type: integer
-          nullable: true
-        attendeeCount:
-          type: integer
-        hostId:
+        createdBy:
           type: string
-        hostName:
-          type: string
-        status:
-          type: string
-          enum: [upcoming, ongoing, past, cancelled]
         createdAt:
           type: string
           format: date-time
-      required: [id, title, description, startAt, endAt, isVirtual, attendeeCount, hostId, hostName, status, createdAt]
+      required: [id, title, slug, description, startsAt, endsAt, isOnline, createdBy, createdAt]
 
-    EventWithRsvp:
+    EventDetail:
       allOf:
         - $ref: "#/components/schemas/Event"
         - type: object
           properties:
+            counts:
+              type: object
+              properties:
+                going:
+                  type: integer
+                interested:
+                  type: integer
+              required: [going, interested]
             myRsvp:
               type: string
-              enum: [going, waitlist, cancelled]
+              enum: [going, interested, cancelled]
               nullable: true
+          required: [counts]
 
-    EventListResponse:
+    EventListPageResponse:
       type: object
       properties:
-        events:
+        items:
           type: array
           items:
-            $ref: "#/components/schemas/EventWithRsvp"
-        total:
-          type: integer
-      required: [events, total]
-
-    CreateEventBody:
-      type: object
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-        startAt:
-          type: string
-          format: date-time
-        endAt:
-          type: string
-          format: date-time
-        location:
+            $ref: "#/components/schemas/EventDetail"
+        nextCursor:
           type: string
           nullable: true
-        isVirtual:
-          type: boolean
-        virtualLink:
-          type: string
-          nullable: true
-        coverUrl:
-          type: string
-          nullable: true
-        maxAttendees:
-          type: integer
-          nullable: true
-      required: [title, description, startAt, endAt, isVirtual]
-
-    UpdateEventBody:
-      type: object
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-        startAt:
-          type: string
-          format: date-time
-        endAt:
-          type: string
-          format: date-time
-        location:
-          type: string
-          nullable: true
-        isVirtual:
-          type: boolean
-        virtualLink:
-          type: string
-          nullable: true
-        coverUrl:
-          type: string
-          nullable: true
-        maxAttendees:
-          type: integer
-          nullable: true
-        status:
-          type: string
-          enum: [upcoming, ongoing, past, cancelled]
+      required: [items, nextCursor]
 
     EventRsvp:
       type: object
@@ -1507,27 +1478,83 @@ components:
           type: string
         status:
           type: string
-          enum: [going, waitlist, cancelled]
+          enum: [going, interested, cancelled]
         createdAt:
           type: string
           format: date-time
       required: [id, eventId, userId, status, createdAt]
 
-    EventRsvpWithUser:
-      allOf:
-        - $ref: "#/components/schemas/EventRsvp"
-        - type: object
-          properties:
-            user:
-              $ref: "#/components/schemas/UserProfile"
-
-    UpsertRsvpBody:
+    RsvpBody:
       type: object
       properties:
         status:
           type: string
-          enum: [going, waitlist]
+          enum: [going, interested, cancelled]
       required: [status]
+
+    CreateEventBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        location:
+          type: string
+          nullable: true
+        capacity:
+          type: integer
+          nullable: true
+        isOnline:
+          type: boolean
+        meetingUrl:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+      required: [title, description, startsAt, endsAt]
+
+    UpdateEventBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        location:
+          type: string
+          nullable: true
+        capacity:
+          type: integer
+          nullable: true
+        isOnline:
+          type: boolean
+        meetingUrl:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+
+    EventCoverResponse:
+      type: object
+      properties:
+        coverUrl:
+          type: string
+      required: [coverUrl]
 
     # ── Forum ──────────────────────────────────────────────────────────────────
     ForumCategory:

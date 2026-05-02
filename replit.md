@@ -51,6 +51,15 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - 404 state with back-link when username not found
 - Backend: `GET /api/users/by-username/:username` → `PublicUser` (no email/clerkId/isBanned)
 
+### `/eventos` — Events Module
+- **List page** (`/eventos`): tabs Próximos / Pasados, mode filter (Online/Presencial), debounced search, infinite scroll via `useInfiniteQuery` + `react-intersection-observer`
+- **Detail page** (`/eventos/:slug`): cover hero, Intl.DateTimeFormat range, capacity bar, RSVP buttons (Voy / Me interesa / Cancelar), react-markdown description, meeting URL revealed only to confirmed/interested users
+- **DB schema**: `events` table — slug (unique), `startsAt`, `endsAt`, `isOnline`, `meetingUrl`, `capacity`, `coverUrl`, `createdBy`; `rsvps` table — unique(eventId, userId), status enum (going/interested/cancelled)
+- **Backend**: `GET /api/events` (cursor paginated, `status`/`mode`/`q` filters), `GET /api/events/:slug`, `POST /api/events/:slug/rsvp` (upsert, 409 if event_full), admin CRUD at `/api/admin/events`, cover upload at `/api/admin/events/:slug/cover` via Object Storage
+- **Admin tab**: "Eventos" tab in `/admin` — table with cover thumbnail, create/edit Dialog (RHF + Zod), inline cover upload, delete with confirm
+- Legacy `/events` and `/events/:eventId` redirect to `/eventos`
+- Dependencies added: `react-markdown`, `remark-gfm`
+
 ### API Safety
 - All `/api/users` endpoints require Clerk auth (`requireAuth` middleware)
 - `PublicUser` schema excludes: email, clerkId, isBanned, updatedAt

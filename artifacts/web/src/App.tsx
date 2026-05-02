@@ -20,6 +20,8 @@ import MiembrosPage from "@/pages/miembros";
 import MiembroPerfilPage from "@/pages/miembro-perfil";
 import EventsPage from "@/pages/events";
 import EventDetailPage from "@/pages/event-detail";
+import EventosPage from "@/pages/eventos";
+import EventoDetallePage from "@/pages/evento-detalle";
 import ForumPage from "@/pages/forum";
 import ForumPostPage from "@/pages/forum-post";
 import ResourcesPage from "@/pages/resources";
@@ -260,15 +262,23 @@ function ClerkProviderWithRoutes() {
                 </ProtectedRoute>
               )}
             </Route>
+            {/* Spanish events routes (canonical) */}
+            <Route path="/eventos">
+              <ProtectedRoute><EventosPage /></ProtectedRoute>
+            </Route>
+            <Route path="/eventos/:slug">
+              {(params) => (
+                <ProtectedRoute>
+                  <EventoDetallePage slug={params.slug as string} />
+                </ProtectedRoute>
+              )}
+            </Route>
+            {/* Legacy English routes → redirect */}
             <Route path="/events">
               <ProtectedRoute><EventsPage /></ProtectedRoute>
             </Route>
             <Route path="/events/:eventId">
-              {(params) => (
-                <ProtectedRoute>
-                  <EventDetailPage eventId={params.eventId as string} />
-                </ProtectedRoute>
-              )}
+              <ProtectedRoute><Redirect to="/eventos" /></ProtectedRoute>
             </Route>
             <Route path="/forum">
               <ProtectedRoute><ForumPage /></ProtectedRoute>

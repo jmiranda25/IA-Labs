@@ -197,66 +197,56 @@ export const GetUserByIdResponse = zod.object({
 });
 
 /**
- * @summary List events
+ * @summary List events (cursor-paginated)
  */
 export const listEventsQueryStatusDefault = `upcoming`;
 export const listEventsQueryLimitDefault = 12;
-export const listEventsQueryOffsetDefault = 0;
+export const listEventsQueryLimitMax = 60;
 
 export const ListEventsQueryParams = zod.object({
-  status: zod
-    .enum(["upcoming", "past", "all"])
-    .default(listEventsQueryStatusDefault),
-  limit: zod.coerce.number().default(listEventsQueryLimitDefault),
-  offset: zod.coerce.number().default(listEventsQueryOffsetDefault),
+  status: zod.enum(["upcoming", "past"]).default(listEventsQueryStatusDefault),
+  mode: zod.enum(["online", "in_person"]).optional(),
+  q: zod.coerce.string().optional(),
+  cursor: zod.coerce.string().optional(),
+  limit: zod.coerce
+    .number()
+    .max(listEventsQueryLimitMax)
+    .default(listEventsQueryLimitDefault),
 });
 
 export const ListEventsResponse = zod.object({
-  events: zod.array(
+  items: zod.array(
     zod
       .object({
         id: zod.string(),
         title: zod.string(),
+        slug: zod.string(),
         description: zod.string(),
-        startAt: zod.coerce.date(),
-        endAt: zod.coerce.date(),
+        startsAt: zod.coerce.date(),
+        endsAt: zod.coerce.date(),
         location: zod.string().nullish(),
-        isVirtual: zod.boolean(),
-        virtualLink: zod.string().nullish(),
+        capacity: zod.number().nullish(),
+        isOnline: zod.boolean(),
+        meetingUrl: zod.string().nullish(),
         coverUrl: zod.string().nullish(),
-        maxAttendees: zod.number().nullish(),
-        attendeeCount: zod.number(),
-        hostId: zod.string(),
-        hostName: zod.string(),
-        status: zod.enum(["upcoming", "ongoing", "past", "cancelled"]),
+        createdBy: zod.string(),
         createdAt: zod.coerce.date(),
       })
       .and(
         zod.object({
-          myRsvp: zod.enum(["going", "waitlist", "cancelled"]).nullish(),
+          counts: zod.object({
+            going: zod.number(),
+            interested: zod.number(),
+          }),
+          myRsvp: zod.enum(["going", "interested", "cancelled"]).nullish(),
         }),
       ),
   ),
-  total: zod.number(),
+  nextCursor: zod.string().nullable(),
 });
 
 /**
- * @summary Create an event (admin only)
- */
-export const CreateEventBody = zod.object({
-  title: zod.string(),
-  description: zod.string(),
-  startAt: zod.coerce.date(),
-  endAt: zod.coerce.date(),
-  location: zod.string().nullish(),
-  isVirtual: zod.boolean(),
-  virtualLink: zod.string().nullish(),
-  coverUrl: zod.string().nullish(),
-  maxAttendees: zod.number().nullish(),
-});
-
-/**
- * @summary Get upcoming events with current user RSVP status
+ * @summary Get upcoming events (dashboard widget)
  */
 export const getUpcomingEventsQueryLimitDefault = 5;
 
@@ -268,23 +258,25 @@ export const GetUpcomingEventsResponseItem = zod
   .object({
     id: zod.string(),
     title: zod.string(),
+    slug: zod.string(),
     description: zod.string(),
-    startAt: zod.coerce.date(),
-    endAt: zod.coerce.date(),
+    startsAt: zod.coerce.date(),
+    endsAt: zod.coerce.date(),
     location: zod.string().nullish(),
-    isVirtual: zod.boolean(),
-    virtualLink: zod.string().nullish(),
+    capacity: zod.number().nullish(),
+    isOnline: zod.boolean(),
+    meetingUrl: zod.string().nullish(),
     coverUrl: zod.string().nullish(),
-    maxAttendees: zod.number().nullish(),
-    attendeeCount: zod.number(),
-    hostId: zod.string(),
-    hostName: zod.string(),
-    status: zod.enum(["upcoming", "ongoing", "past", "cancelled"]),
+    createdBy: zod.string(),
     createdAt: zod.coerce.date(),
   })
   .and(
     zod.object({
-      myRsvp: zod.enum(["going", "waitlist", "cancelled"]).nullish(),
+      counts: zod.object({
+        going: zod.number(),
+        interested: zod.number(),
+      }),
+      myRsvp: zod.enum(["going", "interested", "cancelled"]).nullish(),
     }),
   );
 export const GetUpcomingEventsResponse = zod.array(
@@ -292,145 +284,168 @@ export const GetUpcomingEventsResponse = zod.array(
 );
 
 /**
- * @summary Get a single event
+ * @summary Get a single event by slug
  */
 export const GetEventParams = zod.object({
-  eventId: zod.coerce.string(),
+  slug: zod.coerce.string(),
 });
 
 export const GetEventResponse = zod
   .object({
     id: zod.string(),
     title: zod.string(),
+    slug: zod.string(),
     description: zod.string(),
-    startAt: zod.coerce.date(),
-    endAt: zod.coerce.date(),
+    startsAt: zod.coerce.date(),
+    endsAt: zod.coerce.date(),
     location: zod.string().nullish(),
-    isVirtual: zod.boolean(),
-    virtualLink: zod.string().nullish(),
+    capacity: zod.number().nullish(),
+    isOnline: zod.boolean(),
+    meetingUrl: zod.string().nullish(),
     coverUrl: zod.string().nullish(),
-    maxAttendees: zod.number().nullish(),
-    attendeeCount: zod.number(),
-    hostId: zod.string(),
-    hostName: zod.string(),
-    status: zod.enum(["upcoming", "ongoing", "past", "cancelled"]),
+    createdBy: zod.string(),
     createdAt: zod.coerce.date(),
   })
   .and(
     zod.object({
-      myRsvp: zod.enum(["going", "waitlist", "cancelled"]).nullish(),
+      counts: zod.object({
+        going: zod.number(),
+        interested: zod.number(),
+      }),
+      myRsvp: zod.enum(["going", "interested", "cancelled"]).nullish(),
     }),
   );
 
 /**
- * @summary Update an event (admin only)
+ * @summary RSVP to an event (going / interested / cancelled)
  */
-export const UpdateEventParams = zod.object({
-  eventId: zod.coerce.string(),
+export const RsvpEventParams = zod.object({
+  slug: zod.coerce.string(),
 });
 
-export const UpdateEventBody = zod.object({
-  title: zod.string().optional(),
-  description: zod.string().optional(),
-  startAt: zod.coerce.date().optional(),
-  endAt: zod.coerce.date().optional(),
-  location: zod.string().nullish(),
-  isVirtual: zod.boolean().optional(),
-  virtualLink: zod.string().nullish(),
-  coverUrl: zod.string().nullish(),
-  maxAttendees: zod.number().nullish(),
-  status: zod.enum(["upcoming", "ongoing", "past", "cancelled"]).optional(),
+export const RsvpEventBody = zod.object({
+  status: zod.enum(["going", "interested", "cancelled"]),
 });
 
-export const UpdateEventResponse = zod.object({
-  id: zod.string(),
-  title: zod.string(),
-  description: zod.string(),
-  startAt: zod.coerce.date(),
-  endAt: zod.coerce.date(),
-  location: zod.string().nullish(),
-  isVirtual: zod.boolean(),
-  virtualLink: zod.string().nullish(),
-  coverUrl: zod.string().nullish(),
-  maxAttendees: zod.number().nullish(),
-  attendeeCount: zod.number(),
-  hostId: zod.string(),
-  hostName: zod.string(),
-  status: zod.enum(["upcoming", "ongoing", "past", "cancelled"]),
-  createdAt: zod.coerce.date(),
-});
-
-/**
- * @summary Delete an event (admin only)
- */
-export const DeleteEventParams = zod.object({
-  eventId: zod.coerce.string(),
-});
-
-/**
- * @summary RSVP to an event (or update existing RSVP)
- */
-export const UpsertRsvpParams = zod.object({
-  eventId: zod.coerce.string(),
-});
-
-export const UpsertRsvpBody = zod.object({
-  status: zod.enum(["going", "waitlist"]),
-});
-
-export const UpsertRsvpResponse = zod.object({
+export const RsvpEventResponse = zod.object({
   id: zod.string(),
   eventId: zod.string(),
   userId: zod.string(),
-  status: zod.enum(["going", "waitlist", "cancelled"]),
+  status: zod.enum(["going", "interested", "cancelled"]),
   createdAt: zod.coerce.date(),
 });
 
 /**
- * @summary Cancel RSVP
+ * @summary List all events for admin management
  */
-export const CancelRsvpParams = zod.object({
-  eventId: zod.coerce.string(),
-});
-
-/**
- * @summary List attendees for an event
- */
-export const ListEventAttendeesParams = zod.object({
-  eventId: zod.coerce.string(),
-});
-
-export const ListEventAttendeesResponseItem = zod
+export const AdminListEventsResponseItem = zod
   .object({
     id: zod.string(),
-    eventId: zod.string(),
-    userId: zod.string(),
-    status: zod.enum(["going", "waitlist", "cancelled"]),
+    title: zod.string(),
+    slug: zod.string(),
+    description: zod.string(),
+    startsAt: zod.coerce.date(),
+    endsAt: zod.coerce.date(),
+    location: zod.string().nullish(),
+    capacity: zod.number().nullish(),
+    isOnline: zod.boolean(),
+    meetingUrl: zod.string().nullish(),
+    coverUrl: zod.string().nullish(),
+    createdBy: zod.string(),
     createdAt: zod.coerce.date(),
   })
   .and(
     zod.object({
-      user: zod
-        .object({
-          id: zod.string(),
-          clerkId: zod.string(),
-          username: zod.string().nullish(),
-          displayName: zod.string(),
-          bio: zod.string().nullish(),
-          avatarUrl: zod.string().nullish(),
-          role: zod.enum(["participant", "administrator"]),
-          skills: zod.array(zod.string()),
-          location: zod.string().nullish(),
-          website: zod.string().nullish(),
-          isBanned: zod.boolean(),
-          joinedAt: zod.coerce.date(),
-        })
-        .optional(),
+      counts: zod.object({
+        going: zod.number(),
+        interested: zod.number(),
+      }),
+      myRsvp: zod.enum(["going", "interested", "cancelled"]).nullish(),
     }),
   );
-export const ListEventAttendeesResponse = zod.array(
-  ListEventAttendeesResponseItem,
-);
+export const AdminListEventsResponse = zod.array(AdminListEventsResponseItem);
+
+/**
+ * @summary Create an event (admin)
+ */
+export const AdminCreateEventBody = zod.object({
+  title: zod.string(),
+  description: zod.string(),
+  startsAt: zod.coerce.date(),
+  endsAt: zod.coerce.date(),
+  location: zod.string().nullish(),
+  capacity: zod.number().nullish(),
+  isOnline: zod.boolean().optional(),
+  meetingUrl: zod.string().nullish(),
+  coverUrl: zod.string().nullish(),
+});
+
+/**
+ * @summary Update an event (admin)
+ */
+export const AdminUpdateEventParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const AdminUpdateEventBody = zod.object({
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  startsAt: zod.coerce.date().optional(),
+  endsAt: zod.coerce.date().optional(),
+  location: zod.string().nullish(),
+  capacity: zod.number().nullish(),
+  isOnline: zod.boolean().optional(),
+  meetingUrl: zod.string().nullish(),
+  coverUrl: zod.string().nullish(),
+});
+
+export const AdminUpdateEventResponse = zod
+  .object({
+    id: zod.string(),
+    title: zod.string(),
+    slug: zod.string(),
+    description: zod.string(),
+    startsAt: zod.coerce.date(),
+    endsAt: zod.coerce.date(),
+    location: zod.string().nullish(),
+    capacity: zod.number().nullish(),
+    isOnline: zod.boolean(),
+    meetingUrl: zod.string().nullish(),
+    coverUrl: zod.string().nullish(),
+    createdBy: zod.string(),
+    createdAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      counts: zod.object({
+        going: zod.number(),
+        interested: zod.number(),
+      }),
+      myRsvp: zod.enum(["going", "interested", "cancelled"]).nullish(),
+    }),
+  );
+
+/**
+ * @summary Delete an event (admin)
+ */
+export const AdminDeleteEventParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+/**
+ * @summary Upload event cover image (admin)
+ */
+export const AdminUploadEventCoverParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const AdminUploadEventCoverBody = zod.object({
+  cover: zod.instanceof(File),
+});
+
+export const AdminUploadEventCoverResponse = zod.object({
+  coverUrl: zod.string(),
+});
 
 /**
  * @summary List forum categories

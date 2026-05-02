@@ -37,7 +37,7 @@ router.get("/activity/feed", requireAuth, async (req, res) => {
     items.push({ id: `member_joined_${u.id}`, type: "member_joined", actorId: u.clerkId, actorName: u.displayName, actorAvatar: u.avatarUrl ?? null, title: `${u.displayName} joined the community`, link: `/members/${u.clerkId}`, createdAt: u.joinedAt.toISOString() });
   }
   for (const e of recentEvents) {
-    items.push({ id: `event_${e.id}`, type: "event_created", actorId: e.hostId, actorName: "", actorAvatar: null, title: `New event: ${e.title}`, link: `/events/${e.id}`, createdAt: e.createdAt.toISOString() });
+    items.push({ id: `event_${e.id}`, type: "event_created", actorId: e.createdBy, actorName: "", actorAvatar: null, title: `Nuevo evento: ${e.title}`, link: `/eventos/${e.slug}`, createdAt: e.createdAt.toISOString() });
   }
   for (const p of recentPosts) {
     items.push({ id: `forum_${p.id}`, type: "forum_post", actorId: p.authorId, actorName: "", actorAvatar: null, title: p.title, link: `/forum/${p.id}`, createdAt: p.createdAt.toISOString() });

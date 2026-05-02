@@ -20,6 +20,7 @@ import type {
   ActivityItem,
   AdminListUsersParams,
   AdminStats,
+  AdminUploadEventCoverBody,
   CheckUsernameAvailabilityParams,
   CheckUsernameResponse,
   CommunityStats,
@@ -29,11 +30,10 @@ import type {
   CreateForumReplyBody,
   CreateListingBody,
   CreateResourceBody,
-  Event,
-  EventListResponse,
+  EventCoverResponse,
+  EventDetail,
+  EventListPageResponse,
   EventRsvp,
-  EventRsvpWithUser,
-  EventWithRsvp,
   ForumCategory,
   ForumPost,
   ForumPostDetail,
@@ -66,6 +66,7 @@ import type {
   ResolveModerationBody,
   Resource,
   ResourceListResponse,
+  RsvpBody,
   SendMessageBody,
   ToggleReactionBody,
   UpdateEventBody,
@@ -77,7 +78,6 @@ import type {
   UpdateUserRoleBody,
   UploadAvatarBody,
   UploadAvatarResponse,
-  UpsertRsvpBody,
   UserListResponse,
   UserProfile,
 } from "./api.schemas";
@@ -949,7 +949,7 @@ export function useGetUserById<
 }
 
 /**
- * @summary List events
+ * @summary List events (cursor-paginated)
  */
 export const getListEventsUrl = (params?: ListEventsParams) => {
   const normalizedParams = new URLSearchParams();
@@ -970,8 +970,8 @@ export const getListEventsUrl = (params?: ListEventsParams) => {
 export const listEvents = async (
   params?: ListEventsParams,
   options?: RequestInit,
-): Promise<EventListResponse> => {
-  return customFetch<EventListResponse>(getListEventsUrl(params), {
+): Promise<EventListPageResponse> => {
+  return customFetch<EventListPageResponse>(getListEventsUrl(params), {
     ...options,
     method: "GET",
   });
@@ -1016,7 +1016,7 @@ export type ListEventsQueryResult = NonNullable<
 export type ListEventsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List events
+ * @summary List events (cursor-paginated)
  */
 
 export function useListEvents<
@@ -1043,93 +1043,7 @@ export function useListEvents<
 }
 
 /**
- * @summary Create an event (admin only)
- */
-export const getCreateEventUrl = () => {
-  return `/api/events`;
-};
-
-export const createEvent = async (
-  createEventBody: CreateEventBody,
-  options?: RequestInit,
-): Promise<Event> => {
-  return customFetch<Event>(getCreateEventUrl(), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createEventBody),
-  });
-};
-
-export const getCreateEventMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createEvent>>,
-    TError,
-    { data: BodyType<CreateEventBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof createEvent>>,
-  TError,
-  { data: BodyType<CreateEventBody> },
-  TContext
-> => {
-  const mutationKey = ["createEvent"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createEvent>>,
-    { data: BodyType<CreateEventBody> }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return createEvent(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type CreateEventMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createEvent>>
->;
-export type CreateEventMutationBody = BodyType<CreateEventBody>;
-export type CreateEventMutationError = ErrorType<unknown>;
-
-/**
- * @summary Create an event (admin only)
- */
-export const useCreateEvent = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createEvent>>,
-    TError,
-    { data: BodyType<CreateEventBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof createEvent>>,
-  TError,
-  { data: BodyType<CreateEventBody> },
-  TContext
-> => {
-  return useMutation(getCreateEventMutationOptions(options));
-};
-
-/**
- * @summary Get upcoming events with current user RSVP status
+ * @summary Get upcoming events (dashboard widget)
  */
 export const getGetUpcomingEventsUrl = (params?: GetUpcomingEventsParams) => {
   const normalizedParams = new URLSearchParams();
@@ -1150,8 +1064,8 @@ export const getGetUpcomingEventsUrl = (params?: GetUpcomingEventsParams) => {
 export const getUpcomingEvents = async (
   params?: GetUpcomingEventsParams,
   options?: RequestInit,
-): Promise<EventWithRsvp[]> => {
-  return customFetch<EventWithRsvp[]>(getGetUpcomingEventsUrl(params), {
+): Promise<EventDetail[]> => {
+  return customFetch<EventDetail[]>(getGetUpcomingEventsUrl(params), {
     ...options,
     method: "GET",
   });
@@ -1199,7 +1113,7 @@ export type GetUpcomingEventsQueryResult = NonNullable<
 export type GetUpcomingEventsQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get upcoming events with current user RSVP status
+ * @summary Get upcoming events (dashboard widget)
  */
 
 export function useGetUpcomingEvents<
@@ -1226,31 +1140,31 @@ export function useGetUpcomingEvents<
 }
 
 /**
- * @summary Get a single event
+ * @summary Get a single event by slug
  */
-export const getGetEventUrl = (eventId: string) => {
-  return `/api/events/${eventId}`;
+export const getGetEventUrl = (slug: string) => {
+  return `/api/events/${slug}`;
 };
 
 export const getEvent = async (
-  eventId: string,
+  slug: string,
   options?: RequestInit,
-): Promise<EventWithRsvp> => {
-  return customFetch<EventWithRsvp>(getGetEventUrl(eventId), {
+): Promise<EventDetail> => {
+  return customFetch<EventDetail>(getGetEventUrl(slug), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetEventQueryKey = (eventId: string) => {
-  return [`/api/events/${eventId}`] as const;
+export const getGetEventQueryKey = (slug: string) => {
+  return [`/api/events/${slug}`] as const;
 };
 
 export const getGetEventQueryOptions = <
   TData = Awaited<ReturnType<typeof getEvent>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<void>,
 >(
-  eventId: string,
+  slug: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getEvent>>,
@@ -1262,16 +1176,16 @@ export const getGetEventQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetEventQueryKey(eventId);
+  const queryKey = queryOptions?.queryKey ?? getGetEventQueryKey(slug);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getEvent>>> = ({
     signal,
-  }) => getEvent(eventId, { signal, ...requestOptions });
+  }) => getEvent(slug, { signal, ...requestOptions });
 
   return {
     queryKey,
     queryFn,
-    enabled: !!eventId,
+    enabled: !!slug,
     ...queryOptions,
   } as UseQueryOptions<Awaited<ReturnType<typeof getEvent>>, TError, TData> & {
     queryKey: QueryKey;
@@ -1281,17 +1195,17 @@ export const getGetEventQueryOptions = <
 export type GetEventQueryResult = NonNullable<
   Awaited<ReturnType<typeof getEvent>>
 >;
-export type GetEventQueryError = ErrorType<unknown>;
+export type GetEventQueryError = ErrorType<void>;
 
 /**
- * @summary Get a single event
+ * @summary Get a single event by slug
  */
 
 export function useGetEvent<
   TData = Awaited<ReturnType<typeof getEvent>>,
-  TError = ErrorType<unknown>,
+  TError = ErrorType<void>,
 >(
-  eventId: string,
+  slug: string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getEvent>>,
@@ -1301,7 +1215,7 @@ export function useGetEvent<
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetEventQueryOptions(eventId, options);
+  const queryOptions = getGetEventQueryOptions(slug, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -1311,214 +1225,43 @@ export function useGetEvent<
 }
 
 /**
- * @summary Update an event (admin only)
+ * @summary RSVP to an event (going / interested / cancelled)
  */
-export const getUpdateEventUrl = (eventId: string) => {
-  return `/api/events/${eventId}`;
+export const getRsvpEventUrl = (slug: string) => {
+  return `/api/events/${slug}/rsvp`;
 };
 
-export const updateEvent = async (
-  eventId: string,
-  updateEventBody: UpdateEventBody,
-  options?: RequestInit,
-): Promise<Event> => {
-  return customFetch<Event>(getUpdateEventUrl(eventId), {
-    ...options,
-    method: "PUT",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(updateEventBody),
-  });
-};
-
-export const getUpdateEventMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateEvent>>,
-    TError,
-    { eventId: string; data: BodyType<UpdateEventBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof updateEvent>>,
-  TError,
-  { eventId: string; data: BodyType<UpdateEventBody> },
-  TContext
-> => {
-  const mutationKey = ["updateEvent"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updateEvent>>,
-    { eventId: string; data: BodyType<UpdateEventBody> }
-  > = (props) => {
-    const { eventId, data } = props ?? {};
-
-    return updateEvent(eventId, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type UpdateEventMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updateEvent>>
->;
-export type UpdateEventMutationBody = BodyType<UpdateEventBody>;
-export type UpdateEventMutationError = ErrorType<unknown>;
-
-/**
- * @summary Update an event (admin only)
- */
-export const useUpdateEvent = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateEvent>>,
-    TError,
-    { eventId: string; data: BodyType<UpdateEventBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof updateEvent>>,
-  TError,
-  { eventId: string; data: BodyType<UpdateEventBody> },
-  TContext
-> => {
-  return useMutation(getUpdateEventMutationOptions(options));
-};
-
-/**
- * @summary Delete an event (admin only)
- */
-export const getDeleteEventUrl = (eventId: string) => {
-  return `/api/events/${eventId}`;
-};
-
-export const deleteEvent = async (
-  eventId: string,
-  options?: RequestInit,
-): Promise<void> => {
-  return customFetch<void>(getDeleteEventUrl(eventId), {
-    ...options,
-    method: "DELETE",
-  });
-};
-
-export const getDeleteEventMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteEvent>>,
-    TError,
-    { eventId: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof deleteEvent>>,
-  TError,
-  { eventId: string },
-  TContext
-> => {
-  const mutationKey = ["deleteEvent"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof deleteEvent>>,
-    { eventId: string }
-  > = (props) => {
-    const { eventId } = props ?? {};
-
-    return deleteEvent(eventId, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type DeleteEventMutationResult = NonNullable<
-  Awaited<ReturnType<typeof deleteEvent>>
->;
-
-export type DeleteEventMutationError = ErrorType<unknown>;
-
-/**
- * @summary Delete an event (admin only)
- */
-export const useDeleteEvent = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteEvent>>,
-    TError,
-    { eventId: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof deleteEvent>>,
-  TError,
-  { eventId: string },
-  TContext
-> => {
-  return useMutation(getDeleteEventMutationOptions(options));
-};
-
-/**
- * @summary RSVP to an event (or update existing RSVP)
- */
-export const getUpsertRsvpUrl = (eventId: string) => {
-  return `/api/events/${eventId}/rsvp`;
-};
-
-export const upsertRsvp = async (
-  eventId: string,
-  upsertRsvpBody: UpsertRsvpBody,
+export const rsvpEvent = async (
+  slug: string,
+  rsvpBody: RsvpBody,
   options?: RequestInit,
 ): Promise<EventRsvp> => {
-  return customFetch<EventRsvp>(getUpsertRsvpUrl(eventId), {
+  return customFetch<EventRsvp>(getRsvpEventUrl(slug), {
     ...options,
-    method: "PUT",
+    method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(upsertRsvpBody),
+    body: JSON.stringify(rsvpBody),
   });
 };
 
-export const getUpsertRsvpMutationOptions = <
-  TError = ErrorType<unknown>,
+export const getRsvpEventMutationOptions = <
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof upsertRsvp>>,
+    Awaited<ReturnType<typeof rsvpEvent>>,
     TError,
-    { eventId: string; data: BodyType<UpsertRsvpBody> },
+    { slug: string; data: BodyType<RsvpBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof upsertRsvp>>,
+  Awaited<ReturnType<typeof rsvpEvent>>,
   TError,
-  { eventId: string; data: BodyType<UpsertRsvpBody> },
+  { slug: string; data: BodyType<RsvpBody> },
   TContext
 > => {
-  const mutationKey = ["upsertRsvp"];
+  const mutationKey = ["rsvpEvent"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -1528,211 +1271,113 @@ export const getUpsertRsvpMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof upsertRsvp>>,
-    { eventId: string; data: BodyType<UpsertRsvpBody> }
+    Awaited<ReturnType<typeof rsvpEvent>>,
+    { slug: string; data: BodyType<RsvpBody> }
   > = (props) => {
-    const { eventId, data } = props ?? {};
+    const { slug, data } = props ?? {};
 
-    return upsertRsvp(eventId, data, requestOptions);
+    return rsvpEvent(slug, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type UpsertRsvpMutationResult = NonNullable<
-  Awaited<ReturnType<typeof upsertRsvp>>
+export type RsvpEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof rsvpEvent>>
 >;
-export type UpsertRsvpMutationBody = BodyType<UpsertRsvpBody>;
-export type UpsertRsvpMutationError = ErrorType<unknown>;
+export type RsvpEventMutationBody = BodyType<RsvpBody>;
+export type RsvpEventMutationError = ErrorType<void>;
 
 /**
- * @summary RSVP to an event (or update existing RSVP)
+ * @summary RSVP to an event (going / interested / cancelled)
  */
-export const useUpsertRsvp = <
-  TError = ErrorType<unknown>,
+export const useRsvpEvent = <
+  TError = ErrorType<void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof upsertRsvp>>,
+    Awaited<ReturnType<typeof rsvpEvent>>,
     TError,
-    { eventId: string; data: BodyType<UpsertRsvpBody> },
+    { slug: string; data: BodyType<RsvpBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
-  Awaited<ReturnType<typeof upsertRsvp>>,
+  Awaited<ReturnType<typeof rsvpEvent>>,
   TError,
-  { eventId: string; data: BodyType<UpsertRsvpBody> },
+  { slug: string; data: BodyType<RsvpBody> },
   TContext
 > => {
-  return useMutation(getUpsertRsvpMutationOptions(options));
+  return useMutation(getRsvpEventMutationOptions(options));
 };
 
 /**
- * @summary Cancel RSVP
+ * @summary List all events for admin management
  */
-export const getCancelRsvpUrl = (eventId: string) => {
-  return `/api/events/${eventId}/rsvp`;
+export const getAdminListEventsUrl = () => {
+  return `/api/admin/events`;
 };
 
-export const cancelRsvp = async (
-  eventId: string,
+export const adminListEvents = async (
   options?: RequestInit,
-): Promise<void> => {
-  return customFetch<void>(getCancelRsvpUrl(eventId), {
-    ...options,
-    method: "DELETE",
-  });
-};
-
-export const getCancelRsvpMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof cancelRsvp>>,
-    TError,
-    { eventId: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof cancelRsvp>>,
-  TError,
-  { eventId: string },
-  TContext
-> => {
-  const mutationKey = ["cancelRsvp"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof cancelRsvp>>,
-    { eventId: string }
-  > = (props) => {
-    const { eventId } = props ?? {};
-
-    return cancelRsvp(eventId, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type CancelRsvpMutationResult = NonNullable<
-  Awaited<ReturnType<typeof cancelRsvp>>
->;
-
-export type CancelRsvpMutationError = ErrorType<unknown>;
-
-/**
- * @summary Cancel RSVP
- */
-export const useCancelRsvp = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof cancelRsvp>>,
-    TError,
-    { eventId: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof cancelRsvp>>,
-  TError,
-  { eventId: string },
-  TContext
-> => {
-  return useMutation(getCancelRsvpMutationOptions(options));
-};
-
-/**
- * @summary List attendees for an event
- */
-export const getListEventAttendeesUrl = (eventId: string) => {
-  return `/api/events/${eventId}/attendees`;
-};
-
-export const listEventAttendees = async (
-  eventId: string,
-  options?: RequestInit,
-): Promise<EventRsvpWithUser[]> => {
-  return customFetch<EventRsvpWithUser[]>(getListEventAttendeesUrl(eventId), {
+): Promise<EventDetail[]> => {
+  return customFetch<EventDetail[]>(getAdminListEventsUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListEventAttendeesQueryKey = (eventId: string) => {
-  return [`/api/events/${eventId}/attendees`] as const;
+export const getAdminListEventsQueryKey = () => {
+  return [`/api/admin/events`] as const;
 };
 
-export const getListEventAttendeesQueryOptions = <
-  TData = Awaited<ReturnType<typeof listEventAttendees>>,
+export const getAdminListEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListEvents>>,
   TError = ErrorType<unknown>,
->(
-  eventId: string,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof listEventAttendees>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListEvents>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getListEventAttendeesQueryKey(eventId);
+  const queryKey = queryOptions?.queryKey ?? getAdminListEventsQueryKey();
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof listEventAttendees>>
-  > = ({ signal }) =>
-    listEventAttendees(eventId, { signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListEvents>>> = ({
+    signal,
+  }) => adminListEvents({ signal, ...requestOptions });
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!eventId,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof listEventAttendees>>,
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListEvents>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type ListEventAttendeesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listEventAttendees>>
+export type AdminListEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListEvents>>
 >;
-export type ListEventAttendeesQueryError = ErrorType<unknown>;
+export type AdminListEventsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List attendees for an event
+ * @summary List all events for admin management
  */
 
-export function useListEventAttendees<
-  TData = Awaited<ReturnType<typeof listEventAttendees>>,
+export function useAdminListEvents<
+  TData = Awaited<ReturnType<typeof adminListEvents>>,
   TError = ErrorType<unknown>,
->(
-  eventId: string,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof listEventAttendees>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListEventAttendeesQueryOptions(eventId, options);
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListEvents>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListEventsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -1740,6 +1385,353 @@ export function useListEventAttendees<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Create an event (admin)
+ */
+export const getAdminCreateEventUrl = () => {
+  return `/api/admin/events`;
+};
+
+export const adminCreateEvent = async (
+  createEventBody: CreateEventBody,
+  options?: RequestInit,
+): Promise<EventDetail> => {
+  return customFetch<EventDetail>(getAdminCreateEventUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createEventBody),
+  });
+};
+
+export const getAdminCreateEventMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateEvent>>,
+    TError,
+    { data: BodyType<CreateEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateEvent>>,
+  TError,
+  { data: BodyType<CreateEventBody> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateEvent>>,
+    { data: BodyType<CreateEventBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateEvent(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateEvent>>
+>;
+export type AdminCreateEventMutationBody = BodyType<CreateEventBody>;
+export type AdminCreateEventMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create an event (admin)
+ */
+export const useAdminCreateEvent = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateEvent>>,
+    TError,
+    { data: BodyType<CreateEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateEvent>>,
+  TError,
+  { data: BodyType<CreateEventBody> },
+  TContext
+> => {
+  return useMutation(getAdminCreateEventMutationOptions(options));
+};
+
+/**
+ * @summary Update an event (admin)
+ */
+export const getAdminUpdateEventUrl = (slug: string) => {
+  return `/api/admin/events/${slug}`;
+};
+
+export const adminUpdateEvent = async (
+  slug: string,
+  updateEventBody: UpdateEventBody,
+  options?: RequestInit,
+): Promise<EventDetail> => {
+  return customFetch<EventDetail>(getAdminUpdateEventUrl(slug), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateEventBody),
+  });
+};
+
+export const getAdminUpdateEventMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateEvent>>,
+    TError,
+    { slug: string; data: BodyType<UpdateEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateEvent>>,
+  TError,
+  { slug: string; data: BodyType<UpdateEventBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateEvent>>,
+    { slug: string; data: BodyType<UpdateEventBody> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return adminUpdateEvent(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateEvent>>
+>;
+export type AdminUpdateEventMutationBody = BodyType<UpdateEventBody>;
+export type AdminUpdateEventMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update an event (admin)
+ */
+export const useAdminUpdateEvent = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateEvent>>,
+    TError,
+    { slug: string; data: BodyType<UpdateEventBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateEvent>>,
+  TError,
+  { slug: string; data: BodyType<UpdateEventBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateEventMutationOptions(options));
+};
+
+/**
+ * @summary Delete an event (admin)
+ */
+export const getAdminDeleteEventUrl = (slug: string) => {
+  return `/api/admin/events/${slug}`;
+};
+
+export const adminDeleteEvent = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminDeleteEventUrl(slug), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteEventMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteEvent>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteEvent>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteEvent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteEvent>>,
+    { slug: string }
+  > = (props) => {
+    const { slug } = props ?? {};
+
+    return adminDeleteEvent(slug, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteEventMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteEvent>>
+>;
+
+export type AdminDeleteEventMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete an event (admin)
+ */
+export const useAdminDeleteEvent = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteEvent>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteEvent>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  return useMutation(getAdminDeleteEventMutationOptions(options));
+};
+
+/**
+ * @summary Upload event cover image (admin)
+ */
+export const getAdminUploadEventCoverUrl = (slug: string) => {
+  return `/api/admin/events/${slug}/cover`;
+};
+
+export const adminUploadEventCover = async (
+  slug: string,
+  adminUploadEventCoverBody: AdminUploadEventCoverBody,
+  options?: RequestInit,
+): Promise<EventCoverResponse> => {
+  const formData = new FormData();
+  formData.append(`cover`, adminUploadEventCoverBody.cover);
+
+  return customFetch<EventCoverResponse>(getAdminUploadEventCoverUrl(slug), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getAdminUploadEventCoverMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUploadEventCover>>,
+    TError,
+    { slug: string; data: BodyType<AdminUploadEventCoverBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUploadEventCover>>,
+  TError,
+  { slug: string; data: BodyType<AdminUploadEventCoverBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUploadEventCover"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUploadEventCover>>,
+    { slug: string; data: BodyType<AdminUploadEventCoverBody> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return adminUploadEventCover(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUploadEventCoverMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUploadEventCover>>
+>;
+export type AdminUploadEventCoverMutationBody =
+  BodyType<AdminUploadEventCoverBody>;
+export type AdminUploadEventCoverMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Upload event cover image (admin)
+ */
+export const useAdminUploadEventCover = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUploadEventCover>>,
+    TError,
+    { slug: string; data: BodyType<AdminUploadEventCoverBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUploadEventCover>>,
+  TError,
+  { slug: string; data: BodyType<AdminUploadEventCoverBody> },
+  TContext
+> => {
+  return useMutation(getAdminUploadEventCoverMutationOptions(options));
+};
 
 /**
  * @summary List forum categories
