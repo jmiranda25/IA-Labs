@@ -1,5 +1,7 @@
 import { getAuth } from "@clerk/express";
 import type { Request, Response, NextFunction } from "express";
+import { db, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 declare global {
   namespace Express {
@@ -31,11 +33,10 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 /**
  * Factory that produces a middleware requiring a specific role.
- * Useful when a single route needs a role check beyond basic auth.
- * Example: router.post("/events", requireRole("administrator"), handler)
+ * Checks JWT publicMetadata first; falls back to DB for stale sessions.
  */
 export function requireRole(role: string) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     const auth = getAuth(req);
     const claims = auth?.sessionClaims as ClerkClaims | null;
     const userId = claims?.userId as string | undefined || auth?.userId;
@@ -44,8 +45,19 @@ export function requireRole(role: string) {
       return;
     }
     req.userId = userId;
-    const userRole = claims?.publicMetadata?.role;
-    if (userRole !== role) {
+
+    const jwtRole = claims?.publicMetadata?.role;
+    if (jwtRole === role) {
+      next();
+      return;
+    }
+
+    // Fallback: DB check for stale JWTs or missing JWT template
+    const user = await db.query.usersTable.findFirst({
+      where: eq(usersTable.clerkId, userId),
+      columns: { role: true },
+    });
+    if (user?.role !== role) {
       res.status(403).json({ error: "Forbidden" });
       return;
     }
@@ -53,7 +65,7 @@ export function requireRole(role: string) {
   };
 }
 
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const auth = getAuth(req);
   const claims = auth?.sessionClaims as ClerkClaims | null;
   const userId = claims?.userId as string | undefined || auth?.userId;
@@ -62,8 +74,21 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     return;
   }
   req.userId = userId;
-  const role = claims?.publicMetadata?.role;
-  if (role !== "administrator") {
+
+  // Fast path: JWT already has the role
+  const jwtRole = claims?.publicMetadata?.role;
+  if (jwtRole === "administrator") {
+    req.isAdmin = true;
+    next();
+    return;
+  }
+
+  // Fallback: DB check for stale JWTs or missing Clerk JWT template
+  const user = await db.query.usersTable.findFirst({
+    where: eq(usersTable.clerkId, userId),
+    columns: { role: true },
+  });
+  if (user?.role !== "administrator") {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
