@@ -3,20 +3,40 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AI Community Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: User profiles and member directory
+  - name: events
+    description: Events and RSVPs
+  - name: forum
+    description: Forum posts and replies
+  - name: resources
+    description: Resource library
+  - name: marketplace
+    description: Marketplace listings and messages
+  - name: notifications
+    description: In-app notifications
+  - name: admin
+    description: Admin moderation
+  - name: landing
+    description: Editable landing content
+  - name: storage
+    description: File storage
+  - name: community
+    description: Community-wide aggregates
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +44,1099 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Community stats (wow endpoint) ──────────────────────────────────────────
+  /community/stats:
+    get:
+      operationId: getCommunityStats
+      tags: [community]
+      summary: Get community-wide statistics
+      responses:
+        "200":
+          description: Community stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityStats"
+
+  /activity/feed:
+    get:
+      operationId: getActivityFeed
+      tags: [community]
+      summary: Recent activity feed across all modules
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Activity feed items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  # ── Users / Member Directory ────────────────────────────────────────────────
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    put:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List members (directory)
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [participant, administrator]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 24
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Paginated member list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+
+  /users/{userId}:
+    get:
+      operationId: getUserById
+      tags: [users]
+      summary: Get a user profile by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  # ── Events ──────────────────────────────────────────────────────────────────
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List events
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [upcoming, past, all]
+            default: upcoming
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 12
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Paginated events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventListResponse"
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create an event (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventBody"
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+
+  /events/upcoming:
+    get:
+      operationId: getUpcomingEvents
+      tags: [events]
+      summary: Get upcoming events with current user RSVP status
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+      responses:
+        "200":
+          description: Upcoming events with RSVP
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventWithRsvp"
+
+  /events/{eventId}:
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get a single event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventWithRsvp"
+    put:
+      operationId: updateEvent
+      tags: [events]
+      summary: Update an event (admin only)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEventBody"
+      responses:
+        "200":
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+    delete:
+      operationId: deleteEvent
+      tags: [events]
+      summary: Delete an event (admin only)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /events/{eventId}/rsvp:
+    put:
+      operationId: upsertRsvp
+      tags: [events]
+      summary: RSVP to an event (or update existing RSVP)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertRsvpBody"
+      responses:
+        "200":
+          description: Updated RSVP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventRsvp"
+    delete:
+      operationId: cancelRsvp
+      tags: [events]
+      summary: Cancel RSVP
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Cancelled
+
+  /events/{eventId}/attendees:
+    get:
+      operationId: listEventAttendees
+      tags: [events]
+      summary: List attendees for an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Attendees list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventRsvpWithUser"
+
+  # ── Forum ────────────────────────────────────────────────────────────────────
+  /forum/categories:
+    get:
+      operationId: listForumCategories
+      tags: [forum]
+      summary: List forum categories
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ForumCategory"
+    post:
+      operationId: createForumCategory
+      tags: [forum]
+      summary: Create a forum category (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateForumCategoryBody"
+      responses:
+        "201":
+          description: Created category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumCategory"
+
+  /forum/posts:
+    get:
+      operationId: listForumPosts
+      tags: [forum]
+      summary: List forum posts
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Paginated posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumPostListResponse"
+    post:
+      operationId: createForumPost
+      tags: [forum]
+      summary: Create a forum post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateForumPostBody"
+      responses:
+        "201":
+          description: Created post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumPost"
+
+  /forum/posts/trending:
+    get:
+      operationId: getTrendingForumPosts
+      tags: [forum]
+      summary: Get trending forum posts
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+      responses:
+        "200":
+          description: Trending posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ForumPostSummary"
+
+  /forum/posts/{postId}:
+    get:
+      operationId: getForumPost
+      tags: [forum]
+      summary: Get a forum post with its replies
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Post with replies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumPostDetail"
+    put:
+      operationId: updateForumPost
+      tags: [forum]
+      summary: Update a forum post (author or admin)
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateForumPostBody"
+      responses:
+        "200":
+          description: Updated post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumPost"
+    delete:
+      operationId: deleteForumPost
+      tags: [forum]
+      summary: Delete a forum post (author or admin)
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /forum/posts/{postId}/replies:
+    get:
+      operationId: listForumReplies
+      tags: [forum]
+      summary: List replies for a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Replies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ForumReply"
+    post:
+      operationId: createForumReply
+      tags: [forum]
+      summary: Create a reply to a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateForumReplyBody"
+      responses:
+        "201":
+          description: Created reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumReply"
+
+  /forum/replies/{replyId}:
+    put:
+      operationId: updateForumReply
+      tags: [forum]
+      summary: Update a reply (author or admin)
+      parameters:
+        - name: replyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateForumReplyBody"
+      responses:
+        "200":
+          description: Updated reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumReply"
+    delete:
+      operationId: deleteForumReply
+      tags: [forum]
+      summary: Delete a reply (author or admin)
+      parameters:
+        - name: replyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /forum/reactions:
+    post:
+      operationId: toggleForumReaction
+      tags: [forum]
+      summary: Toggle an emoji reaction on a post or reply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToggleReactionBody"
+      responses:
+        "200":
+          description: Updated reaction counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionResult"
+
+  # ── Resources ────────────────────────────────────────────────────────────────
+  /resources:
+    get:
+      operationId: listResources
+      tags: [resources]
+      summary: List resources
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Paginated resources
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceListResponse"
+    post:
+      operationId: createResource
+      tags: [resources]
+      summary: Upload a new resource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateResourceBody"
+      responses:
+        "201":
+          description: Created resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+
+  /resources/{resourceId}:
+    get:
+      operationId: getResource
+      tags: [resources]
+      summary: Get a resource
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+    delete:
+      operationId: deleteResource
+      tags: [resources]
+      summary: Delete a resource (author or admin)
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /resources/categories:
+    get:
+      operationId: listResourceCategories
+      tags: [resources]
+      summary: List distinct resource categories
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  # ── Marketplace ──────────────────────────────────────────────────────────────
+  /marketplace/listings:
+    get:
+      operationId: listMarketplaceListings
+      tags: [marketplace]
+      summary: List marketplace listings
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [offering, seeking]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, closed, all]
+            default: active
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Paginated listings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListingListResponse"
+    post:
+      operationId: createMarketplaceListing
+      tags: [marketplace]
+      summary: Create a marketplace listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateListingBody"
+      responses:
+        "201":
+          description: Created listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceListing"
+
+  /marketplace/listings/featured:
+    get:
+      operationId: getFeaturedListings
+      tags: [marketplace]
+      summary: Get featured/recent active listings
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 6
+      responses:
+        "200":
+          description: Featured listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MarketplaceListing"
+
+  /marketplace/listings/{listingId}:
+    get:
+      operationId: getMarketplaceListing
+      tags: [marketplace]
+      summary: Get a marketplace listing
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceListing"
+    put:
+      operationId: updateMarketplaceListing
+      tags: [marketplace]
+      summary: Update a listing (owner or admin)
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateListingBody"
+      responses:
+        "200":
+          description: Updated listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceListing"
+    delete:
+      operationId: deleteMarketplaceListing
+      tags: [marketplace]
+      summary: Delete a listing (owner or admin)
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /marketplace/messages:
+    get:
+      operationId: listMyMessages
+      tags: [marketplace]
+      summary: List message threads for current user
+      responses:
+        "200":
+          description: Message threads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MessageThread"
+
+  /marketplace/messages/{listingId}:
+    get:
+      operationId: getMessageThread
+      tags: [marketplace]
+      summary: Get messages for a listing thread
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Messages in thread
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MarketplaceMessage"
+    post:
+      operationId: sendMessage
+      tags: [marketplace]
+      summary: Send a message about a listing
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageBody"
+      responses:
+        "201":
+          description: Sent message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceMessage"
+
+  # ── Notifications ────────────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications for current user
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationListResponse"
+
+  /notifications/mark-all-read:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "204":
+          description: Marked
+
+  /notifications/{notificationId}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a single notification as read
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Marked
+
+  # ── Admin ─────────────────────────────────────────────────────────────────────
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [admin]
+      summary: Admin list all users
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: All users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+
+  /admin/users/{userId}/role:
+    put:
+      operationId: adminUpdateUserRole
+      tags: [admin]
+      summary: Change a user's role
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRoleBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /admin/users/{userId}/ban:
+    post:
+      operationId: adminBanUser
+      tags: [admin]
+      summary: Ban a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Banned
+
+  /admin/moderation/queue:
+    get:
+      operationId: getModerationQueue
+      tags: [admin]
+      summary: Get flagged content for moderation
+      responses:
+        "200":
+          description: Flagged items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModerationItem"
+
+  /admin/moderation/{itemId}/resolve:
+    post:
+      operationId: resolveModerationItem
+      tags: [admin]
+      summary: Resolve a moderation item
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveModerationBody"
+      responses:
+        "204":
+          description: Resolved
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Admin dashboard statistics
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  # ── Landing Content ──────────────────────────────────────────────────────────
+  /landing/content:
+    get:
+      operationId: getLandingContent
+      tags: [landing]
+      summary: Get all landing page content sections
+      responses:
+        "200":
+          description: Landing content
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LandingSection"
+
+  /landing/content/{section}:
+    put:
+      operationId: updateLandingSection
+      tags: [landing]
+      summary: Update a landing page section (admin only)
+      parameters:
+        - name: section
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLandingSectionBody"
+      responses:
+        "200":
+          description: Updated section
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LandingSection"
+
+  # ── Storage ──────────────────────────────────────────────────────────────────
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [storage]
+      summary: Request a presigned upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestUploadUrlBody"
+      responses:
+        "200":
+          description: Presigned URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestUploadUrlResponse"
+
+  /storage/objects/{objectPath}:
+    get:
+      operationId: getStorageObject
+      tags: [storage]
+      summary: Serve a stored object
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object file
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +1144,842 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    # ── Community ──────────────────────────────────────────────────────────────
+    CommunityStats:
+      type: object
+      properties:
+        memberCount:
+          type: integer
+        eventCount:
+          type: integer
+        forumPostCount:
+          type: integer
+        resourceCount:
+          type: integer
+        listingCount:
+          type: integer
+      required: [memberCount, eventCount, forumPostCount, resourceCount, listingCount]
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [event_created, forum_post, resource_uploaded, listing_created, member_joined]
+        actorId:
+          type: string
+        actorName:
+          type: string
+        actorAvatar:
+          type: string
+          nullable: true
+        title:
+          type: string
+        link:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, type, actorId, actorName, title, link, createdAt]
+
+    # ── Users ──────────────────────────────────────────────────────────────────
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        clerkId:
+          type: string
+        displayName:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [participant, administrator]
+        skills:
+          type: array
+          items:
+            type: string
+        location:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        isBanned:
+          type: boolean
+        joinedAt:
+          type: string
+          format: date-time
+      required: [id, clerkId, displayName, role, skills, isBanned, joinedAt]
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        displayName:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        skills:
+          type: array
+          items:
+            type: string
+        location:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+
+    UserListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProfile"
+        total:
+          type: integer
+      required: [users, total]
+
+    # ── Events ─────────────────────────────────────────────────────────────────
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        location:
+          type: string
+          nullable: true
+        isVirtual:
+          type: boolean
+        virtualLink:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        maxAttendees:
+          type: integer
+          nullable: true
+        attendeeCount:
+          type: integer
+        hostId:
+          type: string
+        hostName:
+          type: string
+        status:
+          type: string
+          enum: [upcoming, ongoing, past, cancelled]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, description, startAt, endAt, isVirtual, attendeeCount, hostId, hostName, status, createdAt]
+
+    EventWithRsvp:
+      allOf:
+        - $ref: "#/components/schemas/Event"
+        - type: object
+          properties:
+            myRsvp:
+              type: string
+              enum: [going, waitlist, cancelled]
+              nullable: true
+
+    EventListResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventWithRsvp"
+        total:
+          type: integer
+      required: [events, total]
+
+    CreateEventBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        location:
+          type: string
+          nullable: true
+        isVirtual:
+          type: boolean
+        virtualLink:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        maxAttendees:
+          type: integer
+          nullable: true
+      required: [title, description, startAt, endAt, isVirtual]
+
+    UpdateEventBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        location:
+          type: string
+          nullable: true
+        isVirtual:
+          type: boolean
+        virtualLink:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        maxAttendees:
+          type: integer
+          nullable: true
+        status:
+          type: string
+          enum: [upcoming, ongoing, past, cancelled]
+
+    EventRsvp:
+      type: object
+      properties:
+        id:
+          type: string
+        eventId:
+          type: string
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [going, waitlist, cancelled]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, eventId, userId, status, createdAt]
+
+    EventRsvpWithUser:
+      allOf:
+        - $ref: "#/components/schemas/EventRsvp"
+        - type: object
+          properties:
+            user:
+              $ref: "#/components/schemas/UserProfile"
+
+    UpsertRsvpBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [going, waitlist]
+      required: [status]
+
+    # ── Forum ──────────────────────────────────────────────────────────────────
+    ForumCategory:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        color:
+          type: string
+        postCount:
+          type: integer
+      required: [id, name, slug, color, postCount]
+
+    CreateForumCategoryBody:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        color:
+          type: string
+      required: [name, slug, color]
+
+    ForumPostSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        categoryId:
+          type: string
+        categoryName:
+          type: string
+        authorId:
+          type: string
+        authorName:
+          type: string
+        authorAvatar:
+          type: string
+          nullable: true
+        replyCount:
+          type: integer
+        reactionCount:
+          type: integer
+        isPinned:
+          type: boolean
+        isLocked:
+          type: boolean
+        lastActivityAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, categoryId, categoryName, authorId, authorName, replyCount, reactionCount, isPinned, isLocked, lastActivityAt, createdAt]
+
+    ForumPost:
+      allOf:
+        - $ref: "#/components/schemas/ForumPostSummary"
+        - type: object
+          properties:
+            body:
+              type: string
+          required: [body]
+
+    ForumPostDetail:
+      allOf:
+        - $ref: "#/components/schemas/ForumPost"
+        - type: object
+          properties:
+            replies:
+              type: array
+              items:
+                $ref: "#/components/schemas/ForumReply"
+            reactions:
+              type: array
+              items:
+                $ref: "#/components/schemas/ReactionSummary"
+          required: [replies, reactions]
+
+    ForumPostListResponse:
+      type: object
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ForumPostSummary"
+        total:
+          type: integer
+      required: [posts, total]
+
+    CreateForumPostBody:
+      type: object
+      properties:
+        categoryId:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+      required: [categoryId, title, body]
+
+    UpdateForumPostBody:
+      type: object
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        isPinned:
+          type: boolean
+        isLocked:
+          type: boolean
+
+    ForumReply:
+      type: object
+      properties:
+        id:
+          type: string
+        postId:
+          type: string
+        parentReplyId:
+          type: string
+          nullable: true
+        authorId:
+          type: string
+        authorName:
+          type: string
+        authorAvatar:
+          type: string
+          nullable: true
+        body:
+          type: string
+        reactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReactionSummary"
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/ForumReply"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, postId, authorId, authorName, body, reactions, children, createdAt, updatedAt]
+
+    CreateForumReplyBody:
+      type: object
+      properties:
+        body:
+          type: string
+        parentReplyId:
+          type: string
+          nullable: true
+      required: [body]
+
+    UpdateForumReplyBody:
+      type: object
+      properties:
+        body:
+          type: string
+      required: [body]
+
+    ReactionSummary:
+      type: object
+      properties:
+        emoji:
+          type: string
+        count:
+          type: integer
+        hasReacted:
+          type: boolean
+      required: [emoji, count, hasReacted]
+
+    ToggleReactionBody:
+      type: object
+      properties:
+        targetType:
+          type: string
+          enum: [post, reply]
+        targetId:
+          type: string
+        emoji:
+          type: string
+      required: [targetType, targetId, emoji]
+
+    ReactionResult:
+      type: object
+      properties:
+        reactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReactionSummary"
+      required: [reactions]
+
+    # ── Resources ──────────────────────────────────────────────────────────────
+    Resource:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        fileUrl:
+          type: string
+        fileType:
+          type: string
+        fileSize:
+          type: integer
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        authorId:
+          type: string
+        authorName:
+          type: string
+        authorAvatar:
+          type: string
+          nullable: true
+        downloadCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, fileUrl, fileType, fileSize, category, tags, authorId, authorName, downloadCount, createdAt]
+
+    ResourceListResponse:
+      type: object
+      properties:
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/Resource"
+        total:
+          type: integer
+      required: [resources, total]
+
+    CreateResourceBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        fileUrl:
+          type: string
+        fileType:
+          type: string
+        fileSize:
+          type: integer
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+      required: [title, fileUrl, fileType, fileSize, category, tags]
+
+    # ── Marketplace ────────────────────────────────────────────────────────────
+    MarketplaceListing:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [offering, seeking]
+        status:
+          type: string
+          enum: [active, closed]
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: string
+          nullable: true
+        authorId:
+          type: string
+        authorName:
+          type: string
+        authorAvatar:
+          type: string
+          nullable: true
+        messageCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, title, description, type, status, tags, authorId, authorName, messageCount, createdAt, updatedAt]
+
+    ListingListResponse:
+      type: object
+      properties:
+        listings:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketplaceListing"
+        total:
+          type: integer
+      required: [listings, total]
+
+    CreateListingBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [offering, seeking]
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: string
+          nullable: true
+      required: [title, description, type, tags]
+
+    UpdateListingBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [offering, seeking]
+        status:
+          type: string
+          enum: [active, closed]
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: string
+          nullable: true
+
+    MarketplaceMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        listingId:
+          type: string
+        senderId:
+          type: string
+        senderName:
+          type: string
+        senderAvatar:
+          type: string
+          nullable: true
+        receiverId:
+          type: string
+        body:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, listingId, senderId, senderName, receiverId, body, isRead, createdAt]
+
+    MessageThread:
+      type: object
+      properties:
+        listingId:
+          type: string
+        listingTitle:
+          type: string
+        otherUserId:
+          type: string
+        otherUserName:
+          type: string
+        otherUserAvatar:
+          type: string
+          nullable: true
+        lastMessage:
+          type: string
+        unreadCount:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+      required: [listingId, listingTitle, otherUserId, otherUserName, lastMessage, unreadCount, updatedAt]
+
+    SendMessageBody:
+      type: object
+      properties:
+        receiverId:
+          type: string
+        body:
+          type: string
+      required: [receiverId, body]
+
+    # ── Notifications ──────────────────────────────────────────────────────────
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        type:
+          type: string
+          enum: [event_rsvp, forum_reply, forum_reaction, message_received, resource_liked, admin_action]
+        title:
+          type: string
+        body:
+          type: string
+        link:
+          type: string
+          nullable: true
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, type, title, body, isRead, createdAt]
+
+    NotificationListResponse:
+      type: object
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        unreadCount:
+          type: integer
+      required: [notifications, unreadCount]
+
+    # ── Admin ──────────────────────────────────────────────────────────────────
+    UpdateUserRoleBody:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [participant, administrator]
+      required: [role]
+
+    ModerationItem:
+      type: object
+      properties:
+        id:
+          type: string
+        contentType:
+          type: string
+          enum: [forum_post, forum_reply, listing, resource, user]
+        contentId:
+          type: string
+        reason:
+          type: string
+        reportedBy:
+          type: string
+        status:
+          type: string
+          enum: [pending, resolved_remove, resolved_keep]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, contentType, contentId, reason, reportedBy, status, createdAt]
+
+    ResolveModerationBody:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [remove, keep]
+        note:
+          type: string
+          nullable: true
+      required: [action]
+
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        newUsersThisWeek:
+          type: integer
+        totalEvents:
+          type: integer
+        upcomingEvents:
+          type: integer
+        totalForumPosts:
+          type: integer
+        pendingModerationItems:
+          type: integer
+        totalResources:
+          type: integer
+        totalListings:
+          type: integer
+      required: [totalUsers, newUsersThisWeek, totalEvents, upcomingEvents, totalForumPosts, pendingModerationItems, totalResources, totalListings]
+
+    # ── Landing Content ────────────────────────────────────────────────────────
+    LandingSection:
+      type: object
+      properties:
+        id:
+          type: string
+        section:
+          type: string
+        content:
+          type: object
+          additionalProperties: true
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, section, content, updatedAt]
+
+    UpdateLandingSectionBody:
+      type: object
+      properties:
+        content:
+          type: object
+          additionalProperties: true
+      required: [content]
+
+    # ── Storage ────────────────────────────────────────────────────────────────
+    RequestUploadUrlBody:
+      type: object
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+      required: [name, size, contentType]
+
+    RequestUploadUrlResponse:
+      type: object
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string
+      required: [uploadURL, objectPath]
