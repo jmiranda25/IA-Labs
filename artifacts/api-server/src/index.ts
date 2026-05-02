@@ -1,3 +1,4 @@
+import "./env"; // validate env vars at startup — throws loudly if anything is missing
 import app from "./app";
 import { logger } from "./lib/logger";
 

@@ -75,7 +75,7 @@ export default function ResourcesPage() {
     if (!uploadFile) return;
     setUploading(true);
     try {
-      const urlData = await requestUrl.mutateAsync({ data: { objectPath: `resources/${Date.now()}_${uploadFile.name}`, contentType: uploadFile.type } });
+      const urlData = await requestUrl.mutateAsync({ data: { name: uploadFile.name, size: uploadFile.size, contentType: uploadFile.type } });
       await fetch((urlData as any).uploadURL, { method: "PUT", body: uploadFile, headers: { "Content-Type": uploadFile.type } });
       const fileUrl = (urlData as any).objectPath;
       const tags = fields.tags ? fields.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
