@@ -1,11 +1,14 @@
 import { useEffect, useRef } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
+import { esES } from "@clerk/localizations";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthLayout } from "@/components/auth-layout";
+import { ProtectedRoute } from "@/components/protected-route";
 import { queryClient } from "@/lib/queryClient";
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
@@ -45,9 +48,6 @@ const clerkAppearance = {
   theme: shadcn,
   cssLayerName: "clerk",
   options: {
-    logoPlacement: "inside" as const,
-    logoLinkUrl: basePath || "/",
-    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
     socialButtonsVariant: "blockButton" as const,
   },
   variables: {
@@ -64,7 +64,8 @@ const clerkAppearance = {
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-[hsl(224_71%_6%)] rounded-2xl w-[440px] max-w-full overflow-hidden border border-[hsl(216_34%_17%)]",
+    cardBox:
+      "bg-[hsl(224_71%_6%)] rounded-2xl w-[440px] max-w-full overflow-hidden border border-[hsl(216_34%_17%)]",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "text-[hsl(213_31%_91%)] font-semibold",
@@ -77,17 +78,17 @@ const clerkAppearance = {
     identityPreviewEditButton: "text-[hsl(270_100%_70%)]",
     formFieldSuccessText: "text-green-400",
     alertText: "text-[hsl(213_31%_91%)]",
-    logoBox: "mb-2",
-    logoImage: "h-8 w-auto",
-    socialButtonsBlockButton: "!border-[hsl(216_34%_17%)] hover:!border-[hsl(270_100%_60%)]",
-    formButtonPrimary: "!bg-[hsl(270_100%_60%)] hover:!bg-[hsl(270_100%_65%)]",
-    formFieldInput: "!bg-[hsl(216_34%_17%)] !border-[hsl(216_34%_25%)] !text-[hsl(213_31%_91%)]",
+    socialButtonsBlockButton:
+      "!border-[hsl(216_34%_17%)] hover:!border-[hsl(270_100%_60%)]",
+    formButtonPrimary:
+      "!bg-[hsl(270_100%_60%)] hover:!bg-[hsl(270_100%_65%)]",
+    formFieldInput:
+      "!bg-[hsl(216_34%_17%)] !border-[hsl(216_34%_25%)] !text-[hsl(213_31%_91%)]",
     footerAction: "!bg-transparent",
     dividerLine: "!bg-[hsl(216_34%_17%)]",
     alert: "!border-[hsl(216_34%_17%)]",
-    otpCodeFieldInput: "!bg-[hsl(216_34%_17%)] !border-[hsl(216_34%_25%)]",
-    formFieldRow: "",
-    main: "",
+    otpCodeFieldInput:
+      "!bg-[hsl(216_34%_17%)] !border-[hsl(216_34%_25%)]",
   },
 };
 
@@ -110,19 +111,76 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+/** Redirect signed-in users away from auth pages */
+function GuestOnlyPage({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <Show when="signed-in">
+        <Redirect to="/dashboard" />
+      </Show>
+      <Show when="signed-out">{children}</Show>
+    </>
+  );
+}
+
 function SignInPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
-    </div>
+    <GuestOnlyPage>
+      <AuthLayout
+        switchText="¿No tienes cuenta?"
+        switchLinkText="Crear cuenta"
+        switchHref="/registro"
+      >
+        <SignIn
+          routing="path"
+          path={`${basePath}/iniciar-sesion`}
+          signUpUrl={`${basePath}/registro`}
+          forceRedirectUrl={`${basePath}/dashboard`}
+          fallbackRedirectUrl={`${basePath}/dashboard`}
+        />
+      </AuthLayout>
+    </GuestOnlyPage>
   );
 }
 
 function SignUpPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-    </div>
+    <GuestOnlyPage>
+      <AuthLayout
+        switchText="¿Ya tienes cuenta?"
+        switchLinkText="Iniciar sesión"
+        switchHref="/iniciar-sesion"
+      >
+        <SignUp
+          routing="path"
+          path={`${basePath}/registro`}
+          signInUrl={`${basePath}/iniciar-sesion`}
+          forceRedirectUrl={`${basePath}/dashboard`}
+          fallbackRedirectUrl={`${basePath}/dashboard`}
+        />
+      </AuthLayout>
+    </GuestOnlyPage>
+  );
+}
+
+/** /recuperar — Clerk's "Forgot password?" flow lives inside <SignIn> */
+function RecuperarPage() {
+  return (
+    <GuestOnlyPage>
+      <AuthLayout
+        switchText="¿Recuerdas tu contraseña?"
+        switchLinkText="Iniciar sesión"
+        switchHref="/iniciar-sesion"
+      >
+        <SignIn
+          routing="path"
+          path={`${basePath}/recuperar`}
+          signUpUrl={`${basePath}/registro`}
+          forceRedirectUrl={`${basePath}/dashboard`}
+          fallbackRedirectUrl={`${basePath}/dashboard`}
+        />
+      </AuthLayout>
+    </GuestOnlyPage>
   );
 }
 
@@ -139,15 +197,6 @@ function HomeRedirect() {
   );
 }
 
-function AuthGuard({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <Show when="signed-in">{children}</Show>
-      <Show when="signed-out"><Redirect to="/" /></Show>
-    </>
-  );
-}
-
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
 
@@ -156,12 +205,11 @@ function ClerkProviderWithRoutes() {
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
       appearance={clerkAppearance}
-      signInUrl={`${basePath}/sign-in`}
-      signUpUrl={`${basePath}/sign-up`}
-      localization={{
-        signIn: { start: { title: "Welcome back", subtitle: "Sign in to your AI Community account" } },
-        signUp: { start: { title: "Join AI Community", subtitle: "Connect, collaborate, and grow" } },
-      }}
+      localization={esES}
+      signInUrl={`${basePath}/iniciar-sesion`}
+      signUpUrl={`${basePath}/registro`}
+      signInFallbackRedirectUrl={`${basePath}/dashboard`}
+      signUpFallbackRedirectUrl={`${basePath}/dashboard`}
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
@@ -170,47 +218,74 @@ function ClerkProviderWithRoutes() {
         <TooltipProvider>
           <Switch>
             <Route path="/" component={HomeRedirect} />
-            <Route path="/sign-in/*?" component={SignInPage} />
-            <Route path="/sign-up/*?" component={SignUpPage} />
+
+            {/* Spanish auth routes (canonical) */}
+            <Route path="/iniciar-sesion/*?" component={SignInPage} />
             <Route path="/registro/*?" component={SignUpPage} />
+            <Route path="/recuperar/*?" component={RecuperarPage} />
+
+            {/* Legacy English routes → redirect to Spanish equivalents */}
+            <Route path="/sign-in/*?">
+              <Redirect to="/iniciar-sesion" />
+            </Route>
+            <Route path="/sign-up/*?">
+              <Redirect to="/registro" />
+            </Route>
+
             <Route path="/dashboard">
-              <AuthGuard><DashboardPage /></AuthGuard>
+              <ProtectedRoute><DashboardPage /></ProtectedRoute>
             </Route>
             <Route path="/members">
-              <AuthGuard><MembersPage /></AuthGuard>
+              <ProtectedRoute><MembersPage /></ProtectedRoute>
             </Route>
             <Route path="/members/:userId">
-              {(params) => <AuthGuard><MemberProfilePage userId={params.userId} /></AuthGuard>}
+              {(params) => (
+                <ProtectedRoute>
+                  <MemberProfilePage userId={params.userId as string} />
+                </ProtectedRoute>
+              )}
             </Route>
             <Route path="/events">
-              <AuthGuard><EventsPage /></AuthGuard>
+              <ProtectedRoute><EventsPage /></ProtectedRoute>
             </Route>
             <Route path="/events/:eventId">
-              {(params) => <AuthGuard><EventDetailPage eventId={params.eventId} /></AuthGuard>}
+              {(params) => (
+                <ProtectedRoute>
+                  <EventDetailPage eventId={params.eventId as string} />
+                </ProtectedRoute>
+              )}
             </Route>
             <Route path="/forum">
-              <AuthGuard><ForumPage /></AuthGuard>
+              <ProtectedRoute><ForumPage /></ProtectedRoute>
             </Route>
             <Route path="/forum/:postId">
-              {(params) => <AuthGuard><ForumPostPage postId={params.postId} /></AuthGuard>}
+              {(params) => (
+                <ProtectedRoute>
+                  <ForumPostPage postId={params.postId as string} />
+                </ProtectedRoute>
+              )}
             </Route>
             <Route path="/resources">
-              <AuthGuard><ResourcesPage /></AuthGuard>
+              <ProtectedRoute><ResourcesPage /></ProtectedRoute>
             </Route>
             <Route path="/marketplace">
-              <AuthGuard><MarketplacePage /></AuthGuard>
+              <ProtectedRoute><MarketplacePage /></ProtectedRoute>
             </Route>
             <Route path="/marketplace/:listingId">
-              {(params) => <AuthGuard><MarketplaceListingPage listingId={params.listingId} /></AuthGuard>}
+              {(params) => (
+                <ProtectedRoute>
+                  <MarketplaceListingPage listingId={params.listingId as string} />
+                </ProtectedRoute>
+              )}
             </Route>
             <Route path="/messages">
-              <AuthGuard><MessagesPage /></AuthGuard>
+              <ProtectedRoute><MessagesPage /></ProtectedRoute>
             </Route>
             <Route path="/settings">
-              <AuthGuard><SettingsPage /></AuthGuard>
+              <ProtectedRoute><SettingsPage /></ProtectedRoute>
             </Route>
             <Route path="/admin">
-              <AuthGuard><AdminPage /></AuthGuard>
+              <ProtectedRoute><AdminPage /></ProtectedRoute>
             </Route>
             <Route component={NotFound} />
           </Switch>

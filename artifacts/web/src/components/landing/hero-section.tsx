@@ -70,7 +70,7 @@ export function HeroSection() {
             </Link>
           </Button>
           <Button size="lg" variant="outline" className="text-base" asChild>
-            <Link href="/sign-in">Ya tengo cuenta</Link>
+            <Link href="/iniciar-sesion">Ya tengo cuenta</Link>
           </Button>
         </motion.div>
 

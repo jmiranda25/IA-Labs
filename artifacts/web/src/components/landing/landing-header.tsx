@@ -32,7 +32,7 @@ export function LandingHeader() {
 
         <nav aria-label="Main navigation" className="hidden sm:flex items-center gap-1">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/sign-in">Iniciar sesión</Link>
+            <Link href="/iniciar-sesion">Iniciar sesión</Link>
           </Button>
           <Button size="sm" asChild>
             <Link href="/registro">Unirme gratis</Link>
@@ -52,7 +52,7 @@ export function LandingHeader() {
       {menuOpen && (
         <div className="sm:hidden border-t border-border bg-background/95 backdrop-blur-md px-4 py-4 flex flex-col gap-2">
           <Button variant="ghost" className="w-full justify-start" asChild onClick={() => setMenuOpen(false)}>
-            <Link href="/sign-in">Iniciar sesión</Link>
+            <Link href="/iniciar-sesion">Iniciar sesión</Link>
           </Button>
           <Button className="w-full" asChild onClick={() => setMenuOpen(false)}>
             <Link href="/registro">Unirme gratis</Link>
