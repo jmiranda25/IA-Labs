@@ -4,12 +4,15 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   CLERK_SECRET_KEY: z.string().min(1, "CLERK_SECRET_KEY is required"),
   CLERK_PUBLISHABLE_KEY: z.string().optional(),
+  CLERK_WEBHOOK_SECRET: z.string().optional(),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().default(3001),
   DEFAULT_OBJECT_STORAGE_BUCKET_ID: z.string().optional(),
   PRIVATE_OBJECT_DIR: z.string().optional(),
   PUBLIC_OBJECT_SEARCH_PATHS: z.string().optional(),
   SESSION_SECRET: z.string().optional(),
+  SEED_ADMIN_EMAIL: z.string().email().optional(),
+  SEED_ADMIN_PASSWORD: z.string().optional(),
 });
 
 function validateEnv() {

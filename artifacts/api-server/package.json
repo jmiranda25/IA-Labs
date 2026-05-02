@@ -23,6 +23,7 @@
     "http-proxy-middleware": "^3.0.5",
     "pino": "^9",
     "pino-http": "^10",
+    "svix": "^1.92.2",
     "zod": "catalog:"
   },
   "devDependencies": {

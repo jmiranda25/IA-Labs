@@ -40,7 +40,7 @@ catalogs:
       specifier: ^2.1.1
       version: 2.1.1
     drizzle-orm:
-      specifier: ^0.45.2
+      specifier: 0.45.2
       version: 0.45.2
     framer-motion:
       specifier: ^12.23.24
@@ -205,6 +205,9 @@ importers:
       pino-http:
         specifier: ^10
         version: 10.5.0
+      svix:
+        specifier: ^1.92.2
+        version: 1.92.2
       zod:
         specifier: 'catalog:'
         version: 3.25.76
@@ -679,10 +682,23 @@ importers:
         version: 19.2.14
 
   scripts:
+    dependencies:
+      '@clerk/backend':
+        specifier: ^3.4.4
+        version: 3.4.4
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@types/pg@8.18.0)(pg@8.20.0)
+      pg:
+        specifier: ^8.20.0
+        version: 8.20.0
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 25.3.5
+      '@types/pg':
+        specifier: ^8.11.14
+        version: 8.18.0
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
@@ -780,6 +796,10 @@ packages:
     resolution: {integrity: sha512-U2eVsW3Vs6WPc54NqFbEzZJvkedIPx+81tUxoaHzj7hF2XwWkDC+pBASpbSDplkT2RckS1BMMxzTTVatuIjoNQ==}
     engines: {node: '>=20.9.0'}
 
+  '@clerk/backend@3.4.4':
+    resolution: {integrity: sha512-EGdpxBG1joIYzRBtpzTq2FGyM2ErSSF2UB7FZXrHiSb6V/uRUcvVcX7IWvYeEyg1AG100gJWr0KpbutajVCLMA==}
+    engines: {node: '>=20.9.0'}
+
   '@clerk/express@2.1.11':
     resolution: {integrity: sha512-Zvph94+/Lbm1v1eJfH9yQNdnaJYDt5XoWVMo1w/Li0xXpoOfv8JB4OjUkyToGWR5KirmgsLVU6RFeM4cEZ/psw==}
     engines: {node: '>=20.9.0'}
@@ -807,6 +827,18 @@ packages:
 
   '@clerk/shared@4.8.7':
     resolution: {integrity: sha512-rnQnsYy4Rb4WPEmVCF4CLmIn1359SP17IAH7fDqWc3agaOcEaP/iQPSxmC9PMuzVBA7S+LtfO/dGH2dLOczsTQ==}
+    engines: {node: '>=20.9.0'}
+    peerDependencies:
+      react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+      react-dom: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+
+  '@clerk/shared@4.9.0':
+    resolution: {integrity: sha512-YU9Fv6FK1EwxM7uz1hGPrLpvcHRhHm8Quuh5RL343oXakE+/JHtYy4OhwVgqYVA+j63pw+7lpghL3CYQTgk0hA==}
     engines: {node: '>=20.9.0'}
     peerDependencies:
       react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
@@ -3451,6 +3483,9 @@ packages:
   stubs@3.0.0:
     resolution: {integrity: sha512-PdHt7hHUJKxvTCgbKX9C1V/ftOcjJQgz8BZwNfV5c4B6dcGqlpelTbJ999jBGZ2jYiPAwcX5dP6oBwVlBlUbxw==}
 
+  svix@1.92.2:
+    resolution: {integrity: sha512-ZmuA3UVvlnF9EgxlzmPtF7CKjQb64Z6OFlyfdDfU0sdcC7dJa+3aOYX5B9mA+RS6ch1AxBa4UP/l6KmqfGtWBQ==}
+
   swr@2.3.4:
     resolution: {integrity: sha512-bYd2lrhc+VarcpkgWclcUi92wYCpOgMws9Sd1hG1ntAu0NEy+14CbotuFjshBU2kt9rYj9TSmDcybpxpeTU1fg==}
     peerDependencies:
@@ -3845,6 +3880,15 @@ snapshots:
       - react
       - react-dom
 
+  '@clerk/backend@3.4.4':
+    dependencies:
+      '@clerk/shared': 4.9.0
+      standardwebhooks: 1.0.0
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - react
+      - react-dom
+
   '@clerk/express@2.1.11(express@5.2.1)':
     dependencies:
       '@clerk/backend': 3.4.3
@@ -3884,6 +3928,14 @@ snapshots:
     optionalDependencies:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
+
+  '@clerk/shared@4.9.0':
+    dependencies:
+      '@tanstack/query-core': 5.100.7
+      dequal: 2.0.3
+      glob-to-regexp: 0.4.1
+      js-cookie: 3.0.5
+      std-env: 3.10.0
 
   '@clerk/themes@2.4.57(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
@@ -6608,6 +6660,10 @@ snapshots:
   strnum@2.2.3: {}
 
   stubs@3.0.0: {}
+
+  svix@1.92.2:
+    dependencies:
+      standardwebhooks: 1.0.0
 
   swr@2.3.4(react@19.1.0):
     dependencies:

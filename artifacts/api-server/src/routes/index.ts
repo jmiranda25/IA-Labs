@@ -10,11 +10,13 @@ import adminRouter from "./admin";
 import communityRouter from "./community";
 import landingRouter from "./landing";
 import storageRouter from "./storage";
+import webhooksRouter from "./webhooks";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(communityRouter);
+router.use(webhooksRouter);
 router.use(usersRouter);
 router.use(eventsRouter);
 router.use(forumRouter);

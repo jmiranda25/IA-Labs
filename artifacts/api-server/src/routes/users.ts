@@ -36,9 +36,10 @@ router.get("/users/me", requireAuth, async (req, res) => {
   res.json(user);
 });
 
-// PUT /users/me
+// PUT /users/me  — role field is intentionally excluded; only admins may change roles
 router.put("/users/me", requireAuth, async (req, res) => {
   const clerkId = req.userId!;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { displayName, bio, avatarUrl, skills, location, website } = req.body;
   const [updated] = await db
     .update(usersTable)
