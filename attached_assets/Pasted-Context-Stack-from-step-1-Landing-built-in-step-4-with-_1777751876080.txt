@@ -1,0 +1,48 @@
+Context: Stack from step 1. Landing built in step 4 with verbatim copy
+hardcoded inside the React components. We now want admins to edit
+that copy without redeploying. Everything inside Replit + Agent 4.
+
+Goals:
+
+DB (Drizzle):
+- landing_sections: id, key (text unique — e.g. 'hero', 'about',
+  'benefits', 'who_is_for', 'how_it_works', 'testimonials',
+  'cta_final'), title, subtitle, body (markdown), image_url (text
+  nullable), order_index (int), enabled (bool default true), updated_at
+- landing_faqs: id, question, answer (markdown), order_index,
+  enabled (bool default true), updated_at
+
+Seed (lib/db/scripts/seed-landing.ts):
+- Read the verbatim Spanish copy ALREADY in the repo from the landing
+  components built in step 4 (artifacts/react-vite/src/features/landing/*).
+  Lift the copy out of those files; do NOT retype or reinvent.
+- Insert one row per section (hero, about, benefits, who_is_for,
+  how_it_works, testimonials, cta_final) in that order.
+- Insert each of the 8 FAQs from the FAQ component with their current
+  Q&A verbatim.
+
+Backend (Express + Orval):
+- GET /api/landing/content →
+    { sections: LandingSection[], faqs: LandingFaq[] }
+  In-memory cache for 60s; invalidate on any admin write.
+- All admin endpoints under /api/admin/landing/* with requireAdmin:
+    PATCH /api/admin/landing/sections/:id   → update fields
+    POST  /api/admin/landing/sections/reorder { ids: string[] }
+    PATCH /api/admin/landing/faqs/:id
+    POST  /api/admin/landing/faqs/reorder { ids: string[] }
+    POST  /api/admin/landing/sections/:id/reset → revert to seed value
+
+Frontend (artifacts/react-vite):
+- Refactor the landing from step 4 to fetch from /api/landing/content
+  instead of using hardcoded strings. Show a thin loading skeleton on
+  first render; subsequent visits hit the 60s cache.
+- Support `?preview=1` query param: bypasses cache so admins see edits
+  instantly.
+- /admin/landing: drag-and-drop reorder using dnd-kit (or shadcn pattern),
+  inline edit dialog per section/FAQ with markdown preview, enable/disable
+  switches, "Reset to default" with confirm dialog, "Vista previa" button
+  that opens / in a new tab with `?preview=1`.
+- All edits via RHF + Zod. On save: toast + invalidate the
+  /api/landing/content query key on the client.
+
+Deliverables: dynamic landing fully editable by admins, no redeploy required.
