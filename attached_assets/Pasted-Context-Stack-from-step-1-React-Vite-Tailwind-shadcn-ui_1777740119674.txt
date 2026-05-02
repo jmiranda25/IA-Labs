@@ -1,0 +1,42 @@
+Context: Stack from step 1 (React + Vite + Tailwind + shadcn/ui on the
+frontend; Express 5 + Drizzle + Zod on the backend; Clerk for auth).
+Auth and roles are already wired (steps 2, 3, 5): requireAuth and
+requireAdmin middleware exist on the API; <ProtectedRoute> wrapper exists
+on the frontend; isAdmin(clerkId) helper is available. Roles in the DB:
+'participant' | 'administrator'. Everything inside Replit + Agent 4.
+
+Goals:
+
+Backend (artifacts/api-server):
+- Confirm requireAuth and requireAdmin middleware are mounted on every
+  protected route. Add a small role guard helper for finer-grained checks
+  if any single route needs both.
+- Add to OpenAPI + regenerate with Orval:
+    GET /api/users/me  → returns the joined Clerk profile + our `users`
+                          row (id, email, full_name, username, bio,
+                          avatar_url, role, created_at).
+  Frontend uses this to render the shell without extra calls.
+
+Frontend (artifacts/react-vite):
+- Build an authenticated app shell with shadcn components:
+    * Persistent sidebar (collapsible on mobile via <Sheet>) with items:
+        Dashboard, Miembros, Eventos, Foro, Recursos, Marketplace,
+        Mensajes, Notificaciones — and "Admin" only when role === 'administrator'.
+    * Top bar: brand mark, notification bell (badge placeholder for now),
+      Clerk's <UserButton /> on the right.
+    * Use Clerk's useUser() + GET /api/users/me to render current name + role.
+- Wrap all member-only routes in <ProtectedRoute>:
+    /dashboard, /perfil, /miembros, /eventos, /foro, /recursos,
+    /marketplace, /mensajes, /notificaciones
+- Wrap admin routes (/admin/*) in <ProtectedRoute requireAdmin> that
+  redirects participants to /dashboard with a toast "Acceso restringido".
+- Build /dashboard placeholder: greeting card with the user's full name +
+  4 quick-action tiles (Crear evento [admin only], Iniciar tema en foro,
+  Buscar miembros, Subir recurso).
+
+Deliverables:
+- Authenticated shell renders for any logged-in user.
+- Sidebar conditionally shows "Admin" based on role from /api/users/me.
+- Visiting /admin/* as a participant redirects to /dashboard with toast.
+- All protected routes are gated.
+- /api/admin/* returns 403 for non-admins.

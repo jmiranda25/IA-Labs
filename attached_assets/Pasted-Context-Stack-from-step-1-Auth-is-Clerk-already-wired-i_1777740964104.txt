@@ -1,0 +1,52 @@
+Context: Stack from step 1. Auth is Clerk (already wired in step 2,
+seed admin already created). All work happens INSIDE Replit + Agent 4 — no
+external integrations beyond Clerk itself.
+
+Goals:
+- Mount Clerk's prebuilt components on three Spanish routes:
+    /iniciar-sesion → <SignIn />
+    /registro       → <SignUp />
+    /recuperar      → password reset flow (Clerk handles this within <SignIn />
+                       via the "Forgot password?" link, OR add a dedicated
+                       /recuperar route that uses Clerk's password reset
+                       hooks if you want a separate page).
+
+- Style with Clerk's `appearance` prop so they MATCH the landing:
+    * Use the same Tailwind theme tokens (primary color, fonts, border radii,
+      dark/light tokens already defined for the landing).
+    * Wrap each Clerk component in a branded layout that includes:
+        - Top-left: small logo linking to /
+        - Right side or top: link to switch (e.g., on /iniciar-sesion show
+          "¿No tienes cuenta? Crear cuenta" linking to /registro, and vice versa)
+        - Subtle background gradient or pattern matching the landing aesthetic
+    * Use Spanish localization: pass Clerk's `localization` prop with the
+      Spanish locale (es-ES or es-MX).
+
+- Routing behavior:
+    * After successful sign-in → redirect to /dashboard (placeholder route is
+      fine for now; we'll build the real dashboard in step 7).
+    * After successful sign-up → redirect to /dashboard (the Clerk webhook
+      from step 3 will create the users row automatically; no extra work here).
+    * Logged-in users hitting /iniciar-sesion or /registro → redirect them
+      to /dashboard.
+    * Anonymous users hitting /dashboard → redirect to /iniciar-sesion.
+
+- Header CTAs on the landing:
+    * "Iniciar sesión" → /iniciar-sesion
+    * "Registrarme" → /registro
+    Update both Hero and sticky-header CTAs to point to these new routes
+    (currently they may still be wired to placeholder paths).
+
+- Wrap the SPA in <ClerkProvider> at the root (App.tsx or main.tsx) using
+  VITE_CLERK_PUBLISHABLE_KEY from env.
+
+- Add a tiny <ProtectedRoute> wrapper component for use later in /dashboard,
+  /perfil, /eventos, /foro, /admin/*, etc. — it uses Clerk's <SignedIn> /
+  <SignedOut> components or useAuth() to gate access.
+
+Deliverables:
+- /iniciar-sesion, /registro, /recuperar working end-to-end with Clerk UI.
+- Spanish localization applied.
+- Branded to match the landing.
+- ProtectedRoute helper component ready for use in upcoming steps.
+- Landing CTAs updated to point to the new routes.
