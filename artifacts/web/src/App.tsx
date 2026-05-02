@@ -24,6 +24,9 @@ import EventosPage from "@/pages/eventos";
 import EventoDetallePage from "@/pages/evento-detalle";
 import ForumPage from "@/pages/forum";
 import ForumPostPage from "@/pages/forum-post";
+import ForoPage from "@/pages/foro";
+import ForoCategoriaPage from "@/pages/foro-categoria";
+import ForoHiloPage from "@/pages/foro-hilo";
 import ResourcesPage from "@/pages/resources";
 import MarketplacePage from "@/pages/marketplace";
 import MarketplaceListingPage from "@/pages/marketplace-listing";
@@ -287,6 +290,26 @@ function ClerkProviderWithRoutes() {
               {(params) => (
                 <ProtectedRoute>
                   <ForumPostPage postId={params.postId as string} />
+                </ProtectedRoute>
+              )}
+            </Route>
+            <Route path="/foro">
+              <ProtectedRoute><ForoPage /></ProtectedRoute>
+            </Route>
+            <Route path="/foro/:categoria/:hilo">
+              {(params) => (
+                <ProtectedRoute>
+                  <ForoHiloPage
+                    categorySlug={params.categoria as string}
+                    threadId={params.hilo as string}
+                  />
+                </ProtectedRoute>
+              )}
+            </Route>
+            <Route path="/foro/:categoria">
+              {(params) => (
+                <ProtectedRoute>
+                  <ForoCategoriaPage slug={params.categoria as string} />
                 </ProtectedRoute>
               )}
             </Route>

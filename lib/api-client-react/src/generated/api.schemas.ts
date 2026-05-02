@@ -208,35 +208,29 @@ export interface ForumCategory {
   slug: string;
   description?: string | null;
   color: string;
+  orderIndex: number;
+}
+
+export type ForumCategoryWithCounts = ForumCategory & {
+  threadCount: number;
   postCount: number;
-}
+};
 
-export interface CreateForumCategoryBody {
-  name: string;
-  slug: string;
-  description?: string | null;
-  color: string;
-}
-
-export interface ForumPostSummary {
+export interface ForumThread {
   id: string;
-  title: string;
   categoryId: string;
-  categoryName: string;
+  categorySlug: string;
   authorId: string;
   authorName: string;
   authorAvatar?: string | null;
-  replyCount: number;
-  reactionCount: number;
-  isPinned: boolean;
-  isLocked: boolean;
-  lastActivityAt: string;
+  title: string;
+  slug: string;
+  pinned: boolean;
+  locked: boolean;
+  postCount: number;
   createdAt: string;
+  lastActivityAt: string;
 }
-
-export type ForumPost = ForumPostSummary & {
-  body: string;
-};
 
 export interface ReactionSummary {
   emoji: string;
@@ -244,68 +238,53 @@ export interface ReactionSummary {
   hasReacted: boolean;
 }
 
-export interface ForumReply {
+export interface ForumPostWithAuthor {
   id: string;
-  postId: string;
-  parentReplyId?: string | null;
+  threadId: string;
   authorId: string;
   authorName: string;
   authorAvatar?: string | null;
   body: string;
-  reactions: ReactionSummary[];
-  children: ForumReply[];
+  parentPostId?: string | null;
   createdAt: string;
-  updatedAt: string;
+  editedAt?: string | null;
+  reactions: ReactionSummary[];
 }
 
-export type ForumPostDetail = ForumPost & {
-  replies: ForumReply[];
-  reactions: ReactionSummary[];
+export type ForumThreadDetail = ForumThread & {
+  body: string;
+  posts: ForumPostWithAuthor[];
 };
 
-export interface ForumPostListResponse {
-  posts: ForumPostSummary[];
-  total: number;
+export interface ThreadListPageResponse {
+  items: ForumThread[];
+  nextCursor?: string | null;
+  categoryName: string;
+  categoryColor: string;
 }
 
-export interface CreateForumPostBody {
-  categoryId: string;
+export interface CreateThreadBody {
+  categorySlug: string;
   title: string;
   body: string;
 }
 
-export interface UpdateForumPostBody {
+export interface UpdateThreadBody {
   title?: string;
   body?: string;
-  isPinned?: boolean;
-  isLocked?: boolean;
 }
 
-export interface CreateForumReplyBody {
+export interface CreatePostBody {
   body: string;
-  parentReplyId?: string | null;
+  parentPostId?: string | null;
 }
 
-export interface UpdateForumReplyBody {
+export interface UpdatePostBody {
   body: string;
 }
 
-export type ToggleReactionBodyTargetType =
-  (typeof ToggleReactionBodyTargetType)[keyof typeof ToggleReactionBodyTargetType];
-
-export const ToggleReactionBodyTargetType = {
-  post: "post",
-  reply: "reply",
-} as const;
-
-export interface ToggleReactionBody {
-  targetType: ToggleReactionBodyTargetType;
-  targetId: string;
+export interface ReactBody {
   emoji: string;
-}
-
-export interface ReactionResult {
-  reactions: ReactionSummary[];
 }
 
 export interface Resource {
@@ -637,14 +616,8 @@ export type AdminUploadEventCoverBody = {
   cover: Blob;
 };
 
-export type ListForumPostsParams = {
-  categoryId?: string;
-  search?: string;
-  limit?: number;
-  offset?: number;
-};
-
-export type GetTrendingForumPostsParams = {
+export type ListForumThreadsParams = {
+  cursor?: string;
   limit?: number;
 };
 

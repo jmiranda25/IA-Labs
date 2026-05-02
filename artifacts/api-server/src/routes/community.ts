@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { sql, desc } from "drizzle-orm";
-import { db, usersTable, eventsTable, forumPostsTable, resourcesTable, marketplaceListingsTable } from "@workspace/db";
+import { db, usersTable, eventsTable, forumThreadsTable, resourcesTable, marketplaceListingsTable } from "@workspace/db";
 import { requireAuth } from "../lib/requireAuth";
 
 const router = Router();
@@ -9,7 +9,7 @@ const router = Router();
 router.get("/community/stats", requireAuth, async (_req, res) => {
   const [members] = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
   const [events] = await db.select({ count: sql<number>`count(*)` }).from(eventsTable);
-  const [posts] = await db.select({ count: sql<number>`count(*)` }).from(forumPostsTable);
+  const [posts] = await db.select({ count: sql<number>`count(*)` }).from(forumThreadsTable);
   const [resources] = await db.select({ count: sql<number>`count(*)` }).from(resourcesTable);
   const [listings] = await db.select({ count: sql<number>`count(*)` }).from(marketplaceListingsTable);
   res.json({
@@ -27,7 +27,7 @@ router.get("/activity/feed", requireAuth, async (req, res) => {
   // Aggregate recent activity from multiple tables
   const recentUsers = await db.query.usersTable.findMany({ limit: 5, orderBy: desc(usersTable.joinedAt) });
   const recentEvents = await db.query.eventsTable.findMany({ limit: 5, orderBy: desc(eventsTable.createdAt) });
-  const recentPosts = await db.query.forumPostsTable.findMany({ limit: 5, orderBy: desc(forumPostsTable.createdAt) });
+  const recentPosts = await db.query.forumThreadsTable.findMany({ limit: 5, orderBy: desc(forumThreadsTable.createdAt) });
   const recentResources = await db.query.resourcesTable.findMany({ limit: 5, orderBy: desc(resourcesTable.createdAt) });
   const recentListings = await db.query.marketplaceListingsTable.findMany({ limit: 5, orderBy: desc(marketplaceListingsTable.createdAt) });
 
@@ -40,7 +40,7 @@ router.get("/activity/feed", requireAuth, async (req, res) => {
     items.push({ id: `event_${e.id}`, type: "event_created", actorId: e.createdBy, actorName: "", actorAvatar: null, title: `Nuevo evento: ${e.title}`, link: `/eventos/${e.slug}`, createdAt: e.createdAt.toISOString() });
   }
   for (const p of recentPosts) {
-    items.push({ id: `forum_${p.id}`, type: "forum_post", actorId: p.authorId, actorName: "", actorAvatar: null, title: p.title, link: `/forum/${p.id}`, createdAt: p.createdAt.toISOString() });
+    items.push({ id: `forum_${p.id}`, type: "forum_post", actorId: p.authorId, actorName: "", actorAvatar: null, title: p.title, link: `/foro`, createdAt: p.createdAt.toISOString() });
   }
   for (const r of recentResources) {
     items.push({ id: `resource_${r.id}`, type: "resource_uploaded", actorId: r.authorId, actorName: "", actorAvatar: null, title: `Resource: ${r.title}`, link: `/resources/${r.id}`, createdAt: r.createdAt.toISOString() });

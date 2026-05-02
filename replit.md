@@ -60,7 +60,23 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - Legacy `/events` and `/events/:eventId` redirect to `/eventos`
 - Dependencies added: `react-markdown`, `remark-gfm`
 
+### `/foro` — Forum Module (full implementation)
+- **DB schema**: `forum_categories` (id, name, slug, description, color, orderIndex), `forum_threads` (id, categoryId, authorId, title, slug, body, pinned, locked, createdAt, lastActivityAt), `forum_posts` (id, threadId, authorId, body, parentPostId, createdAt, editedAt), `forum_reactions` (id, postId, userId, emoji, unique per post+user+emoji)
+- **Category list** (`/foro`): color-coded cards with thread/post counts; seeded with 6 Spanish categories
+- **Thread list** (`/foro/:categoria`): pinned threads always first (no pagination), non-pinned cursor-paginated by lastActivityAt DESC; "Nuevo tema" Dialog; infinite scroll
+- **Thread detail** (`/foro/:categoria/:threadId`): thread body, post list with emoji reactions (6 emojis), reply composer, 15-min edit window for author, admin pin/lock toggles in dropdown
+- **Backend** (`artifacts/api-server/src/routes/forum.ts`): `GET /api/forum/categories`, `GET /api/forum/categories/:slug/threads`, `POST /api/forum/threads`, `GET/PATCH/DELETE /api/forum/threads/:id`, `POST /api/forum/threads/:id/posts`, `PATCH/DELETE /api/forum/posts/:id`, `POST /api/forum/posts/:id/reactions` (toggle), `POST /api/admin/forum/threads/:id/pin`, `POST /api/admin/forum/threads/:id/lock`
+- **Reactions**: toggle emoji (add if absent, remove if present); returns full reaction summary with `hasReacted`
+- **Edit window**: 15 minutes for own content; admins can edit/delete anytime
+- **Notifications**: new post notifies thread author (skips if self-reply)
+- Legacy `/forum` and `/forum/:postId` redirect to `/foro`
+- `req.isAdmin` now declared on Express Request and set by `requireAdmin` middleware
+
 ### API Safety
 - All `/api/users` endpoints require Clerk auth (`requireAuth` middleware)
 - `PublicUser` schema excludes: email, clerkId, isBanned, updatedAt
 - Cursor is base64(JSON.stringify({ joinedAt, id })) — opaque to clients
+
+### Schema Migration Notes
+- **Never run `pnpm --filter @workspace/db run push`** — it hangs; always use `psql "$DATABASE_URL"` directly
+- Forum schema renamed: `forum_posts` → `forum_threads` (threads), new `forum_posts` (replies), new `forum_reactions`

@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout";
-import { useGetUserById, useListForumPosts, getGetUserByIdQueryKey } from "@workspace/api-client-react";
+import { useGetUserById, getGetUserByIdQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +13,7 @@ export default function MemberProfilePage({ userId }: { userId: string }) {
     query: { queryKey: getGetUserByIdQueryKey(userId) },
   });
 
-  const { data: postsData } = useListForumPosts({ limit: 5 });
-  const userPosts = ((postsData as any)?.posts ?? []).filter((p: any) => p.authorId === (user as any)?.id);
+  const userPosts: any[] = [];
 
   if (isLoading) {
     return (

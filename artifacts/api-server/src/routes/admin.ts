@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { eq, ilike, sql, desc } from "drizzle-orm";
-import { db, usersTable, eventsTable, forumPostsTable, resourcesTable, marketplaceListingsTable, moderationItemsTable } from "@workspace/db";
+import { db, usersTable, eventsTable, forumThreadsTable, resourcesTable, marketplaceListingsTable, moderationItemsTable } from "@workspace/db";
 import { requireAdmin } from "../lib/requireAuth";
 
 const router = Router();
@@ -12,7 +12,7 @@ router.get("/admin/stats", requireAdmin, async (_req, res) => {
   const [newUsers] = await db.select({ count: sql<number>`count(*)` }).from(usersTable).where(sql`joined_at > ${oneWeekAgo}`);
   const [totalEvents] = await db.select({ count: sql<number>`count(*)` }).from(eventsTable);
   const [upcomingEvents] = await db.select({ count: sql<number>`count(*)` }).from(eventsTable).where(sql`starts_at > now()`);
-  const [totalPosts] = await db.select({ count: sql<number>`count(*)` }).from(forumPostsTable);
+  const [totalPosts] = await db.select({ count: sql<number>`count(*)` }).from(forumThreadsTable);
   const [pendingMod] = await db.select({ count: sql<number>`count(*)` }).from(moderationItemsTable).where(eq(moderationItemsTable.status, "pending"));
   const [totalResources] = await db.select({ count: sql<number>`count(*)` }).from(resourcesTable);
   const [totalListings] = await db.select({ count: sql<number>`count(*)` }).from(marketplaceListingsTable);

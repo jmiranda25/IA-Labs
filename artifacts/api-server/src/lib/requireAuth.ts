@@ -6,6 +6,7 @@ declare global {
     interface Request {
       userId?: string;
       userRole?: string;
+      isAdmin?: boolean;
     }
   }
 }
@@ -66,5 +67,6 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
+  req.isAdmin = true;
   next();
 }

@@ -13,64 +13,62 @@ export const forumCategoriesTable = pgTable("forum_categories", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
-  color: text("color").notNull().default("#7C3AED"),
-  postCount: integer("post_count").notNull().default(0),
+  color: text("color").notNull().default("blue"),
+  orderIndex: integer("order_index").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const forumPostsTable = pgTable("forum_posts", {
+export const forumThreadsTable = pgTable("forum_threads", {
   id: text("id").primaryKey(),
   categoryId: text("category_id").notNull(),
   authorId: text("author_id").notNull(),
   title: text("title").notNull(),
+  slug: text("slug").notNull(),
   body: text("body").notNull(),
-  replyCount: integer("reply_count").notNull().default(0),
-  reactionCount: integer("reaction_count").notNull().default(0),
-  isPinned: boolean("is_pinned").notNull().default(false),
-  isLocked: boolean("is_locked").notNull().default(false),
-  lastActivityAt: timestamp("last_activity_at").notNull().defaultNow(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  pinned: boolean("pinned").notNull().default(false),
+  locked: boolean("locked").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastActivityAt: timestamp("last_activity_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const forumRepliesTable = pgTable("forum_replies", {
+export const forumPostsTable = pgTable("forum_posts", {
   id: text("id").primaryKey(),
-  postId: text("post_id").notNull(),
-  parentReplyId: text("parent_reply_id"),
+  threadId: text("thread_id").notNull(),
   authorId: text("author_id").notNull(),
   body: text("body").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  parentPostId: text("parent_post_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  editedAt: timestamp("edited_at", { withTimezone: true }),
 });
 
 export const forumReactionsTable = pgTable("forum_reactions", {
   id: text("id").primaryKey(),
-  targetType: text("target_type").notNull(), // "post" | "reply"
-  targetId: text("target_id").notNull(),
+  postId: text("post_id").notNull(),
   userId: text("user_id").notNull(),
   emoji: text("emoji").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const insertForumCategorySchema = createInsertSchema(
-  forumCategoriesTable,
-).omit({ postCount: true, createdAt: true });
-export const insertForumPostSchema = createInsertSchema(forumPostsTable).omit({
-  replyCount: true,
-  reactionCount: true,
-  lastActivityAt: true,
+export const insertForumCategorySchema = createInsertSchema(forumCategoriesTable).omit({
   createdAt: true,
-  updatedAt: true,
 });
-export const insertForumReplySchema = createInsertSchema(
-  forumRepliesTable,
-).omit({ createdAt: true, updatedAt: true });
-export const insertForumReactionSchema = createInsertSchema(
-  forumReactionsTable,
-).omit({ createdAt: true });
+export const insertForumThreadSchema = createInsertSchema(forumThreadsTable).omit({
+  createdAt: true,
+  lastActivityAt: true,
+});
+export const insertForumPostSchema = createInsertSchema(forumPostsTable).omit({
+  createdAt: true,
+  editedAt: true,
+});
+export const insertForumReactionSchema = createInsertSchema(forumReactionsTable).omit({
+  createdAt: true,
+});
 
 export type InsertForumCategory = z.infer<typeof insertForumCategorySchema>;
 export type ForumCategory = typeof forumCategoriesTable.$inferSelect;
+export type ForumThread = typeof forumThreadsTable.$inferSelect;
 export type ForumPost = typeof forumPostsTable.$inferSelect;
-export type ForumReply = typeof forumRepliesTable.$inferSelect;
 export type ForumReaction = typeof forumReactionsTable.$inferSelect;
+
+// Legacy aliases (kept so stale imports fail with a clear type error, not silent any)
+export const forumRepliesTable = undefined as never;

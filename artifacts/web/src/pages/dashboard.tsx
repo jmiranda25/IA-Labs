@@ -3,7 +3,7 @@ import {
   useGetCommunityStats,
   useGetActivityFeed,
   useGetUpcomingEvents,
-  useGetTrendingForumPosts,
+  useListForumCategories,
   useGetMe,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,7 +41,7 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: React.ElementType; 
 
 const quickActions = [
   {
-    href: "/forum",
+    href: "/foro",
     icon: MessageSquare,
     label: "Iniciar tema en foro",
     sub: "Comparte con la comunidad",
@@ -68,7 +68,7 @@ export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useGetCommunityStats();
   const { data: feed, isLoading: feedLoading } = useGetActivityFeed({ limit: 10 });
   const { data: upcomingEvents } = useGetUpcomingEvents({ limit: 3 });
-  const { data: trending } = useGetTrendingForumPosts({ limit: 5 });
+  const { data: forumCategories } = useListForumCategories();
   const isAdmin = (me as any)?.role === "administrator";
 
   return (
@@ -216,30 +216,30 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Trending Posts */}
+            {/* Forum Categories */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" aria-hidden="true" />
-                  Tendencias en el foro
+                  <MessageSquare className="h-4 w-4 text-primary" aria-hidden="true" />
+                  Categorías del foro
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {(trending as any[])?.map((post: any) => (
-                  <Link href={`/forum/${post.id}`} key={post.id}>
+                {(forumCategories as any[])?.slice(0, 4).map((cat: any) => (
+                  <Link href={`/foro/${cat.slug}`} key={cat.id}>
                     <div
                       className="p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                      data-testid={`trending-post-${post.id}`}
+                      data-testid={`forum-cat-${cat.id}`}
                     >
-                      <p className="text-sm line-clamp-2">{post.title}</p>
-                      <div className="flex gap-3 mt-1">
-                        <span className="text-xs text-muted-foreground">{post.replyCount} respuestas</span>
-                        <span className="text-xs text-muted-foreground">{post.reactionCount} reacciones</span>
+                      <p className="text-sm font-medium truncate">{cat.name}</p>
+                      <div className="flex gap-3 mt-0.5">
+                        <span className="text-xs text-muted-foreground">{cat.threadCount} temas</span>
+                        <span className="text-xs text-muted-foreground">{cat.postCount} posts</span>
                       </div>
                     </div>
                   </Link>
                 ))}
-                <Link href="/forum" className="flex items-center gap-1 text-xs text-primary hover:underline pt-1">
+                <Link href="/foro" className="flex items-center gap-1 text-xs text-primary hover:underline pt-1">
                   Ir al foro <ArrowRight className="h-3 w-3" aria-hidden="true" />
                 </Link>
               </CardContent>

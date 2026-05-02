@@ -441,45 +441,29 @@ paths:
     get:
       operationId: listForumCategories
       tags: [forum]
-      summary: List forum categories
+      summary: List forum categories with thread/post counts
       responses:
         "200":
-          description: Categories
+          description: Categories with counts
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ForumCategory"
-    post:
-      operationId: createForumCategory
-      tags: [forum]
-      summary: Create a forum category (admin only)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateForumCategoryBody"
-      responses:
-        "201":
-          description: Created category
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ForumCategory"
+                  $ref: "#/components/schemas/ForumCategoryWithCounts"
 
-  /forum/posts:
+  /forum/categories/{slug}/threads:
     get:
-      operationId: listForumPosts
+      operationId: listForumThreads
       tags: [forum]
-      summary: List forum posts
+      summary: List threads in a category (pinned first, then by last_activity_at desc)
       parameters:
-        - name: categoryId
-          in: query
+        - name: slug
+          in: path
+          required: true
           schema:
             type: string
-        - name: search
+        - name: cursor
           in: query
           schema:
             type: string
@@ -488,79 +472,118 @@ paths:
           schema:
             type: integer
             default: 20
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
       responses:
         "200":
-          description: Paginated posts
+          description: Paginated thread list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ForumPostListResponse"
+                $ref: "#/components/schemas/ThreadListPageResponse"
+
+  /forum/threads:
     post:
-      operationId: createForumPost
+      operationId: createForumThread
       tags: [forum]
-      summary: Create a forum post
+      summary: Create a new forum thread
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateForumPostBody"
+              $ref: "#/components/schemas/CreateThreadBody"
+      responses:
+        "201":
+          description: Created thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumThread"
+
+  /forum/threads/{threadId}:
+    get:
+      operationId: getForumThread
+      tags: [forum]
+      summary: Get a thread with all its posts and reactions
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Thread detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumThreadDetail"
+    patch:
+      operationId: updateForumThread
+      tags: [forum]
+      summary: Edit thread body/title (own within 15 min, or admin)
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateThreadBody"
+      responses:
+        "200":
+          description: Updated thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumThread"
+    delete:
+      operationId: deleteForumThread
+      tags: [forum]
+      summary: Delete a thread (author or admin)
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /forum/threads/{threadId}/posts:
+    post:
+      operationId: createForumPost
+      tags: [forum]
+      summary: Post a reply to a thread
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostBody"
       responses:
         "201":
           description: Created post
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ForumPost"
-
-  /forum/posts/trending:
-    get:
-      operationId: getTrendingForumPosts
-      tags: [forum]
-      summary: Get trending forum posts
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 5
-      responses:
-        "200":
-          description: Trending posts
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ForumPostSummary"
+                $ref: "#/components/schemas/ForumPostWithAuthor"
 
   /forum/posts/{postId}:
-    get:
-      operationId: getForumPost
-      tags: [forum]
-      summary: Get a forum post with its replies
-      parameters:
-        - name: postId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Post with replies
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ForumPostDetail"
-    put:
+    patch:
       operationId: updateForumPost
       tags: [forum]
-      summary: Update a forum post (author or admin)
+      summary: Edit a post (own within 15 min, or admin)
       parameters:
         - name: postId
           in: path
@@ -572,18 +595,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateForumPostBody"
+              $ref: "#/components/schemas/UpdatePostBody"
       responses:
         "200":
           description: Updated post
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ForumPost"
+                $ref: "#/components/schemas/ForumPostWithAuthor"
     delete:
       operationId: deleteForumPost
       tags: [forum]
-      summary: Delete a forum post (author or admin)
+      summary: Delete a post (author or admin)
       parameters:
         - name: postId
           in: path
@@ -594,106 +617,70 @@ paths:
         "204":
           description: Deleted
 
-  /forum/posts/{postId}/replies:
-    get:
-      operationId: listForumReplies
+  /forum/posts/{postId}/reactions:
+    post:
+      operationId: toggleForumReaction
       tags: [forum]
-      summary: List replies for a post
+      summary: Toggle an emoji reaction on a post
       parameters:
         - name: postId
           in: path
           required: true
           schema:
             type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactBody"
       responses:
         "200":
-          description: Replies
+          description: Updated reactions
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ForumReply"
-    post:
-      operationId: createForumReply
-      tags: [forum]
-      summary: Create a reply to a post
-      parameters:
-        - name: postId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateForumReplyBody"
-      responses:
-        "201":
-          description: Created reply
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ForumReply"
+                  $ref: "#/components/schemas/ReactionSummary"
 
-  /forum/replies/{replyId}:
-    put:
-      operationId: updateForumReply
+  /admin/forum/threads/{threadId}/pin:
+    post:
+      operationId: adminPinThread
       tags: [forum]
-      summary: Update a reply (author or admin)
+      summary: Toggle pin on a thread (admin only)
       parameters:
-        - name: replyId
+        - name: threadId
           in: path
           required: true
           schema:
             type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateForumReplyBody"
       responses:
         "200":
-          description: Updated reply
+          description: Updated thread
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ForumReply"
-    delete:
-      operationId: deleteForumReply
+                $ref: "#/components/schemas/ForumThread"
+
+  /admin/forum/threads/{threadId}/lock:
+    post:
+      operationId: adminLockThread
       tags: [forum]
-      summary: Delete a reply (author or admin)
+      summary: Toggle lock on a thread (admin only)
       parameters:
-        - name: replyId
+        - name: threadId
           in: path
           required: true
           schema:
             type: string
       responses:
-        "204":
-          description: Deleted
-
-  /forum/reactions:
-    post:
-      operationId: toggleForumReaction
-      tags: [forum]
-      summary: Toggle an emoji reaction on a post or reply
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ToggleReactionBody"
-      responses:
         "200":
-          description: Updated reaction counts
+          description: Updated thread
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReactionResult"
+                $ref: "#/components/schemas/ForumThread"
 
   # ── Resources ────────────────────────────────────────────────────────────────
   /resources:
@@ -1571,34 +1558,29 @@ components:
           nullable: true
         color:
           type: string
-        postCount:
+        orderIndex:
           type: integer
-      required: [id, name, slug, color, postCount]
+      required: [id, name, slug, color, orderIndex]
 
-    CreateForumCategoryBody:
-      type: object
-      properties:
-        name:
-          type: string
-        slug:
-          type: string
-        description:
-          type: string
-          nullable: true
-        color:
-          type: string
-      required: [name, slug, color]
+    ForumCategoryWithCounts:
+      allOf:
+        - $ref: "#/components/schemas/ForumCategory"
+        - type: object
+          properties:
+            threadCount:
+              type: integer
+            postCount:
+              type: integer
+          required: [threadCount, postCount]
 
-    ForumPostSummary:
+    ForumThread:
       type: object
       properties:
         id:
           type: string
-        title:
-          type: string
         categoryId:
           type: string
-        categoryName:
+        categorySlug:
           type: string
         authorId:
           type: string
@@ -1607,90 +1589,44 @@ components:
         authorAvatar:
           type: string
           nullable: true
-        replyCount:
-          type: integer
-        reactionCount:
-          type: integer
-        isPinned:
-          type: boolean
-        isLocked:
-          type: boolean
-        lastActivityAt:
+        title:
           type: string
-          format: date-time
+        slug:
+          type: string
+        pinned:
+          type: boolean
+        locked:
+          type: boolean
+        postCount:
+          type: integer
         createdAt:
           type: string
           format: date-time
-      required: [id, title, categoryId, categoryName, authorId, authorName, replyCount, reactionCount, isPinned, isLocked, lastActivityAt, createdAt]
+        lastActivityAt:
+          type: string
+          format: date-time
+      required: [id, categoryId, categorySlug, authorId, authorName, title, slug, pinned, locked, postCount, createdAt, lastActivityAt]
 
-    ForumPost:
+    ForumThreadDetail:
       allOf:
-        - $ref: "#/components/schemas/ForumPostSummary"
+        - $ref: "#/components/schemas/ForumThread"
         - type: object
           properties:
             body:
               type: string
-          required: [body]
-
-    ForumPostDetail:
-      allOf:
-        - $ref: "#/components/schemas/ForumPost"
-        - type: object
-          properties:
-            replies:
+            posts:
               type: array
               items:
-                $ref: "#/components/schemas/ForumReply"
-            reactions:
-              type: array
-              items:
-                $ref: "#/components/schemas/ReactionSummary"
-          required: [replies, reactions]
+                $ref: "#/components/schemas/ForumPostWithAuthor"
+          required: [body, posts]
 
-    ForumPostListResponse:
-      type: object
-      properties:
-        posts:
-          type: array
-          items:
-            $ref: "#/components/schemas/ForumPostSummary"
-        total:
-          type: integer
-      required: [posts, total]
-
-    CreateForumPostBody:
-      type: object
-      properties:
-        categoryId:
-          type: string
-        title:
-          type: string
-        body:
-          type: string
-      required: [categoryId, title, body]
-
-    UpdateForumPostBody:
-      type: object
-      properties:
-        title:
-          type: string
-        body:
-          type: string
-        isPinned:
-          type: boolean
-        isLocked:
-          type: boolean
-
-    ForumReply:
+    ForumPostWithAuthor:
       type: object
       properties:
         id:
           type: string
-        postId:
+        threadId:
           type: string
-        parentReplyId:
-          type: string
-          nullable: true
         authorId:
           type: string
         authorName:
@@ -1700,38 +1636,80 @@ components:
           nullable: true
         body:
           type: string
+        parentPostId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        editedAt:
+          type: string
+          format: date-time
+          nullable: true
         reactions:
           type: array
           items:
             $ref: "#/components/schemas/ReactionSummary"
-        children:
+      required: [id, threadId, authorId, authorName, body, createdAt, reactions]
+
+    ThreadListPageResponse:
+      type: object
+      properties:
+        items:
           type: array
           items:
-            $ref: "#/components/schemas/ForumReply"
-        createdAt:
+            $ref: "#/components/schemas/ForumThread"
+        nextCursor:
           type: string
-          format: date-time
-        updatedAt:
+          nullable: true
+        categoryName:
           type: string
-          format: date-time
-      required: [id, postId, authorId, authorName, body, reactions, children, createdAt, updatedAt]
+        categoryColor:
+          type: string
+      required: [items, categoryName, categoryColor]
 
-    CreateForumReplyBody:
+    CreateThreadBody:
+      type: object
+      properties:
+        categorySlug:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+      required: [categorySlug, title, body]
+
+    UpdateThreadBody:
+      type: object
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+
+    CreatePostBody:
       type: object
       properties:
         body:
           type: string
-        parentReplyId:
+        parentPostId:
           type: string
           nullable: true
       required: [body]
 
-    UpdateForumReplyBody:
+    UpdatePostBody:
       type: object
       properties:
         body:
           type: string
       required: [body]
+
+    ReactBody:
+      type: object
+      properties:
+        emoji:
+          type: string
+      required: [emoji]
 
     ReactionSummary:
       type: object
@@ -1743,27 +1721,6 @@ components:
         hasReacted:
           type: boolean
       required: [emoji, count, hasReacted]
-
-    ToggleReactionBody:
-      type: object
-      properties:
-        targetType:
-          type: string
-          enum: [post, reply]
-        targetId:
-          type: string
-        emoji:
-          type: string
-      required: [targetType, targetId, emoji]
-
-    ReactionResult:
-      type: object
-      properties:
-        reactions:
-          type: array
-          items:
-            $ref: "#/components/schemas/ReactionSummary"
-      required: [reactions]
 
     # ── Resources ──────────────────────────────────────────────────────────────
     Resource:

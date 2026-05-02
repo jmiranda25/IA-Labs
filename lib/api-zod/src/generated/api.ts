@@ -448,140 +448,110 @@ export const AdminUploadEventCoverResponse = zod.object({
 });
 
 /**
- * @summary List forum categories
+ * @summary List forum categories with thread/post counts
  */
-export const ListForumCategoriesResponseItem = zod.object({
-  id: zod.string(),
-  name: zod.string(),
-  slug: zod.string(),
-  description: zod.string().nullish(),
-  color: zod.string(),
-  postCount: zod.number(),
-});
+export const ListForumCategoriesResponseItem = zod
+  .object({
+    id: zod.string(),
+    name: zod.string(),
+    slug: zod.string(),
+    description: zod.string().nullish(),
+    color: zod.string(),
+    orderIndex: zod.number(),
+  })
+  .and(
+    zod.object({
+      threadCount: zod.number(),
+      postCount: zod.number(),
+    }),
+  );
 export const ListForumCategoriesResponse = zod.array(
   ListForumCategoriesResponseItem,
 );
 
 /**
- * @summary Create a forum category (admin only)
+ * @summary List threads in a category (pinned first, then by last_activity_at desc)
  */
-export const CreateForumCategoryBody = zod.object({
-  name: zod.string(),
-  slug: zod.string(),
-  description: zod.string().nullish(),
-  color: zod.string(),
+export const ListForumThreadsParams = zod.object({
+  slug: zod.coerce.string(),
 });
 
-/**
- * @summary List forum posts
- */
-export const listForumPostsQueryLimitDefault = 20;
-export const listForumPostsQueryOffsetDefault = 0;
+export const listForumThreadsQueryLimitDefault = 20;
 
-export const ListForumPostsQueryParams = zod.object({
-  categoryId: zod.coerce.string().optional(),
-  search: zod.coerce.string().optional(),
-  limit: zod.coerce.number().default(listForumPostsQueryLimitDefault),
-  offset: zod.coerce.number().default(listForumPostsQueryOffsetDefault),
+export const ListForumThreadsQueryParams = zod.object({
+  cursor: zod.coerce.string().optional(),
+  limit: zod.coerce.number().default(listForumThreadsQueryLimitDefault),
 });
 
-export const ListForumPostsResponse = zod.object({
-  posts: zod.array(
+export const ListForumThreadsResponse = zod.object({
+  items: zod.array(
     zod.object({
       id: zod.string(),
-      title: zod.string(),
       categoryId: zod.string(),
-      categoryName: zod.string(),
+      categorySlug: zod.string(),
       authorId: zod.string(),
       authorName: zod.string(),
       authorAvatar: zod.string().nullish(),
-      replyCount: zod.number(),
-      reactionCount: zod.number(),
-      isPinned: zod.boolean(),
-      isLocked: zod.boolean(),
-      lastActivityAt: zod.coerce.date(),
+      title: zod.string(),
+      slug: zod.string(),
+      pinned: zod.boolean(),
+      locked: zod.boolean(),
+      postCount: zod.number(),
       createdAt: zod.coerce.date(),
+      lastActivityAt: zod.coerce.date(),
     }),
   ),
-  total: zod.number(),
+  nextCursor: zod.string().nullish(),
+  categoryName: zod.string(),
+  categoryColor: zod.string(),
 });
 
 /**
- * @summary Create a forum post
+ * @summary Create a new forum thread
  */
-export const CreateForumPostBody = zod.object({
-  categoryId: zod.string(),
+export const CreateForumThreadBody = zod.object({
+  categorySlug: zod.string(),
   title: zod.string(),
   body: zod.string(),
 });
 
 /**
- * @summary Get trending forum posts
+ * @summary Get a thread with all its posts and reactions
  */
-export const getTrendingForumPostsQueryLimitDefault = 5;
-
-export const GetTrendingForumPostsQueryParams = zod.object({
-  limit: zod.coerce.number().default(getTrendingForumPostsQueryLimitDefault),
+export const GetForumThreadParams = zod.object({
+  threadId: zod.coerce.string(),
 });
 
-export const GetTrendingForumPostsResponseItem = zod.object({
-  id: zod.string(),
-  title: zod.string(),
-  categoryId: zod.string(),
-  categoryName: zod.string(),
-  authorId: zod.string(),
-  authorName: zod.string(),
-  authorAvatar: zod.string().nullish(),
-  replyCount: zod.number(),
-  reactionCount: zod.number(),
-  isPinned: zod.boolean(),
-  isLocked: zod.boolean(),
-  lastActivityAt: zod.coerce.date(),
-  createdAt: zod.coerce.date(),
-});
-export const GetTrendingForumPostsResponse = zod.array(
-  GetTrendingForumPostsResponseItem,
-);
-
-/**
- * @summary Get a forum post with its replies
- */
-export const GetForumPostParams = zod.object({
-  postId: zod.coerce.string(),
-});
-
-export const GetForumPostResponse = zod
+export const GetForumThreadResponse = zod
   .object({
     id: zod.string(),
-    title: zod.string(),
     categoryId: zod.string(),
-    categoryName: zod.string(),
+    categorySlug: zod.string(),
     authorId: zod.string(),
     authorName: zod.string(),
     authorAvatar: zod.string().nullish(),
-    replyCount: zod.number(),
-    reactionCount: zod.number(),
-    isPinned: zod.boolean(),
-    isLocked: zod.boolean(),
-    lastActivityAt: zod.coerce.date(),
+    title: zod.string(),
+    slug: zod.string(),
+    pinned: zod.boolean(),
+    locked: zod.boolean(),
+    postCount: zod.number(),
     createdAt: zod.coerce.date(),
+    lastActivityAt: zod.coerce.date(),
   })
   .and(
     zod.object({
       body: zod.string(),
-    }),
-  )
-  .and(
-    zod.object({
-      replies: zod.array(
+      posts: zod.array(
         zod.object({
           id: zod.string(),
-          postId: zod.string(),
-          parentReplyId: zod.string().nullish(),
+          threadId: zod.string(),
           authorId: zod.string(),
           authorName: zod.string(),
           authorAvatar: zod.string().nullish(),
           body: zod.string(),
+          parentPostId: zod.string().nullish(),
+          createdAt: zod.coerce.date(),
+          editedAt: zod.coerce.date().nullish(),
           reactions: zod.array(
             zod.object({
               emoji: zod.string(),
@@ -589,159 +559,159 @@ export const GetForumPostResponse = zod
               hasReacted: zod.boolean(),
             }),
           ),
-          children: zod.array(zod.unknown()),
-          createdAt: zod.coerce.date(),
-          updatedAt: zod.coerce.date(),
-        }),
-      ),
-      reactions: zod.array(
-        zod.object({
-          emoji: zod.string(),
-          count: zod.number(),
-          hasReacted: zod.boolean(),
         }),
       ),
     }),
   );
 
 /**
- * @summary Update a forum post (author or admin)
+ * @summary Edit thread body/title (own within 15 min, or admin)
+ */
+export const UpdateForumThreadParams = zod.object({
+  threadId: zod.coerce.string(),
+});
+
+export const UpdateForumThreadBody = zod.object({
+  title: zod.string().optional(),
+  body: zod.string().optional(),
+});
+
+export const UpdateForumThreadResponse = zod.object({
+  id: zod.string(),
+  categoryId: zod.string(),
+  categorySlug: zod.string(),
+  authorId: zod.string(),
+  authorName: zod.string(),
+  authorAvatar: zod.string().nullish(),
+  title: zod.string(),
+  slug: zod.string(),
+  pinned: zod.boolean(),
+  locked: zod.boolean(),
+  postCount: zod.number(),
+  createdAt: zod.coerce.date(),
+  lastActivityAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a thread (author or admin)
+ */
+export const DeleteForumThreadParams = zod.object({
+  threadId: zod.coerce.string(),
+});
+
+/**
+ * @summary Post a reply to a thread
+ */
+export const CreateForumPostParams = zod.object({
+  threadId: zod.coerce.string(),
+});
+
+export const CreateForumPostBody = zod.object({
+  body: zod.string(),
+  parentPostId: zod.string().nullish(),
+});
+
+/**
+ * @summary Edit a post (own within 15 min, or admin)
  */
 export const UpdateForumPostParams = zod.object({
   postId: zod.coerce.string(),
 });
 
 export const UpdateForumPostBody = zod.object({
-  title: zod.string().optional(),
-  body: zod.string().optional(),
-  isPinned: zod.boolean().optional(),
-  isLocked: zod.boolean().optional(),
+  body: zod.string(),
 });
 
-export const UpdateForumPostResponse = zod
-  .object({
-    id: zod.string(),
-    title: zod.string(),
-    categoryId: zod.string(),
-    categoryName: zod.string(),
-    authorId: zod.string(),
-    authorName: zod.string(),
-    authorAvatar: zod.string().nullish(),
-    replyCount: zod.number(),
-    reactionCount: zod.number(),
-    isPinned: zod.boolean(),
-    isLocked: zod.boolean(),
-    lastActivityAt: zod.coerce.date(),
-    createdAt: zod.coerce.date(),
-  })
-  .and(
+export const UpdateForumPostResponse = zod.object({
+  id: zod.string(),
+  threadId: zod.string(),
+  authorId: zod.string(),
+  authorName: zod.string(),
+  authorAvatar: zod.string().nullish(),
+  body: zod.string(),
+  parentPostId: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  editedAt: zod.coerce.date().nullish(),
+  reactions: zod.array(
     zod.object({
-      body: zod.string(),
+      emoji: zod.string(),
+      count: zod.number(),
+      hasReacted: zod.boolean(),
     }),
-  );
+  ),
+});
 
 /**
- * @summary Delete a forum post (author or admin)
+ * @summary Delete a post (author or admin)
  */
 export const DeleteForumPostParams = zod.object({
   postId: zod.coerce.string(),
 });
 
 /**
- * @summary List replies for a post
+ * @summary Toggle an emoji reaction on a post
  */
-export const ListForumRepliesParams = zod.object({
+export const ToggleForumReactionParams = zod.object({
   postId: zod.coerce.string(),
 });
 
-export const ListForumRepliesResponseItem = zod.object({
-  id: zod.string(),
-  postId: zod.string(),
-  parentReplyId: zod.string().nullish(),
-  authorId: zod.string(),
-  authorName: zod.string(),
-  authorAvatar: zod.string().nullish(),
-  body: zod.string(),
-  reactions: zod.array(
-    zod.object({
-      emoji: zod.string(),
-      count: zod.number(),
-      hasReacted: zod.boolean(),
-    }),
-  ),
-  children: zod.array(zod.unknown()),
-  createdAt: zod.coerce.date(),
-  updatedAt: zod.coerce.date(),
-});
-export const ListForumRepliesResponse = zod.array(ListForumRepliesResponseItem);
-
-/**
- * @summary Create a reply to a post
- */
-export const CreateForumReplyParams = zod.object({
-  postId: zod.coerce.string(),
-});
-
-export const CreateForumReplyBody = zod.object({
-  body: zod.string(),
-  parentReplyId: zod.string().nullish(),
-});
-
-/**
- * @summary Update a reply (author or admin)
- */
-export const UpdateForumReplyParams = zod.object({
-  replyId: zod.coerce.string(),
-});
-
-export const UpdateForumReplyBody = zod.object({
-  body: zod.string(),
-});
-
-export const UpdateForumReplyResponse = zod.object({
-  id: zod.string(),
-  postId: zod.string(),
-  parentReplyId: zod.string().nullish(),
-  authorId: zod.string(),
-  authorName: zod.string(),
-  authorAvatar: zod.string().nullish(),
-  body: zod.string(),
-  reactions: zod.array(
-    zod.object({
-      emoji: zod.string(),
-      count: zod.number(),
-      hasReacted: zod.boolean(),
-    }),
-  ),
-  children: zod.array(zod.unknown()),
-  createdAt: zod.coerce.date(),
-  updatedAt: zod.coerce.date(),
-});
-
-/**
- * @summary Delete a reply (author or admin)
- */
-export const DeleteForumReplyParams = zod.object({
-  replyId: zod.coerce.string(),
-});
-
-/**
- * @summary Toggle an emoji reaction on a post or reply
- */
 export const ToggleForumReactionBody = zod.object({
-  targetType: zod.enum(["post", "reply"]),
-  targetId: zod.string(),
   emoji: zod.string(),
 });
 
-export const ToggleForumReactionResponse = zod.object({
-  reactions: zod.array(
-    zod.object({
-      emoji: zod.string(),
-      count: zod.number(),
-      hasReacted: zod.boolean(),
-    }),
-  ),
+export const ToggleForumReactionResponseItem = zod.object({
+  emoji: zod.string(),
+  count: zod.number(),
+  hasReacted: zod.boolean(),
+});
+export const ToggleForumReactionResponse = zod.array(
+  ToggleForumReactionResponseItem,
+);
+
+/**
+ * @summary Toggle pin on a thread (admin only)
+ */
+export const AdminPinThreadParams = zod.object({
+  threadId: zod.coerce.string(),
+});
+
+export const AdminPinThreadResponse = zod.object({
+  id: zod.string(),
+  categoryId: zod.string(),
+  categorySlug: zod.string(),
+  authorId: zod.string(),
+  authorName: zod.string(),
+  authorAvatar: zod.string().nullish(),
+  title: zod.string(),
+  slug: zod.string(),
+  pinned: zod.boolean(),
+  locked: zod.boolean(),
+  postCount: zod.number(),
+  createdAt: zod.coerce.date(),
+  lastActivityAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Toggle lock on a thread (admin only)
+ */
+export const AdminLockThreadParams = zod.object({
+  threadId: zod.coerce.string(),
+});
+
+export const AdminLockThreadResponse = zod.object({
+  id: zod.string(),
+  categoryId: zod.string(),
+  categorySlug: zod.string(),
+  authorId: zod.string(),
+  authorName: zod.string(),
+  authorAvatar: zod.string().nullish(),
+  title: zod.string(),
+  slug: zod.string(),
+  pinned: zod.boolean(),
+  locked: zod.boolean(),
+  postCount: zod.number(),
+  createdAt: zod.coerce.date(),
+  lastActivityAt: zod.coerce.date(),
 });
 
 /**
