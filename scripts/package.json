@@ -8,12 +8,14 @@
     "seed:admin": "tsx ./src/seedAdmin.ts",
     "seed:demo": "tsx ./src/seedDemo.ts --yes",
     "seed:demo:clean": "tsx ./src/seedDemo.ts --clean",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/pg": "^8.11.14",
-    "tsx": "catalog:"
+    "tsx": "catalog:",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@clerk/backend": "^3.4.4",
