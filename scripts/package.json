@@ -6,6 +6,8 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "seed:admin": "tsx ./src/seedAdmin.ts",
+    "seed:demo": "tsx ./src/seedDemo.ts --yes",
+    "seed:demo:clean": "tsx ./src/seedDemo.ts --clean",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
