@@ -1,0 +1,141 @@
+Contexto: Plataforma de Comunidad de IA en producción (Replit Autoscale). Stack: Clerk (auth), Drizzle + Postgres, Express 5, React + Vite. La tabla `users` tiene id (= Clerk user id), email, username, displayName, bio, avatarUrl, location, website, skills (jsonb), role ("participant" | "administrator"), joinedAt, isBanned, notification_preferences (jsonb), disabled_at. Existe `notify()` helper en artifacts/api-server/src/lib/notify.ts. Categorías de foro ya seeded: anuncios, modelos, automatizaciones, prompts, off-topic. Categorías de marketplace ya seeded.
+
+Objetivo: crear un script `seed:demo` idempotente que pueble la plataforma con usuarios reales de Clerk y contenido realista para que pueda recorrer la app como participante y como admin sin tener que registrar cuentas a mano. Quiero loguearme como cada persona y experimentar el flujo desde su perspectiva, ver cómo cambia el sidebar y las opciones disponibles al cambiar de rol.
+
+═══════════════════════════════════════════════
+1) USUARIOS DEMO (10 total)
+═══════════════════════════════════════════════
+
+Crear los usuarios usando `clerkClient.users.createUser()` con emailAddress + password + skipPasswordChecks: true + skipPasswordRequirement: false. Después del create de Clerk, esperar que el webhook cree la fila en `users`, o insertar directamente con el clerkId devuelto si el webhook tarda. Setear role = "administrator" en publicMetadata de Clerk + en DB para los admins, y "participant" para el resto.
+
+Password compartido para todos los demos: "Demo2026!" (incluir disclaimer en credentials.md de que estos son solo para preview local).
+
+Lista de personas (todos avatares de https://i.pravatar.cc/300?u=<email> para ser determinísticos):
+
+ADMINS (2):
+1. Lucía Mendoza — lucia.demo@aicomunidad.test — admin — "Founder de la comunidad. Builder de agentes en producción para fintech. 10 años en ML." — Lima, Perú — skills: ["LangChain", "RAG", "Vector DBs", "AWS"]
+2. Diego Ramos — diego.demo@aicomunidad.test — admin — "Co-organizer. Speaker en eventos de IA. Antes Data Lead en startup unicornio." — CDMX, México — skills: ["Python", "PyTorch", "MLOps", "Kubernetes"]
+
+PARTICIPANTES (8):
+3. María Fernández — maria.demo@aicomunidad.test — participant — "Frontend dev migrando a AI engineering. Aprendiendo a integrar LLMs en SaaS." — Buenos Aires, Argentina — skills: ["React", "TypeScript", "OpenAI API", "Next.js"]
+4. Carlos Pérez — carlos.demo@aicomunidad.test — participant — "Founder en stealth. Building agente de ventas B2B con voice AI." — Bogotá, Colombia — skills: ["LangGraph", "Twilio", "FastAPI"]
+5. Ana Castro — ana.demo@aicomunidad.test — participant — "Product Manager en SaaS B2B. Investigando casos de uso de IA generativa." — Santiago, Chile — skills: ["Product Strategy", "User Research", "Figma"]
+6. Javier Torres — javier.demo@aicomunidad.test — participant — "Backend engineer. Especializado en agentes con tool calling y workflows." — Madrid, España — skills: ["Node.js", "Drizzle", "Postgres", "Anthropic API"]
+7. Valentina Gómez — valentina.demo@aicomunidad.test — participant — "Data scientist transitioning to AI engineering. Fine-tuning y evaluación." — Medellín, Colombia — skills: ["Python", "HuggingFace", "Weights & Biases"]
+8. Roberto Silva — roberto.demo@aicomunidad.test — participant — "Solo dev shipeando productos con IA. Indie hacker." — São Paulo, Brasil — skills: ["Replit", "Cursor", "Claude", "Vercel"]
+9. Sofia Herrera — sofia.demo@aicomunidad.test — participant — "AI consultant para empresas tradicionales. Casos de uso prácticos." — Quito, Ecuador — skills: ["Strategy", "OpenAI", "Power BI", "Make.com"]
+10. Andrés López — andres.demo@aicomunidad.test — participant — "Ingeniero de ML, doctorando en NLP. Research aplicado." — Caracas, Venezuela — skills: ["Transformers", "PyTorch", "JAX", "Papers"]
+
+═══════════════════════════════════════════════
+2) CONTENIDO DEMO (firmado por las personas anteriores)
+═══════════════════════════════════════════════
+
+EVENTOS (4 — 2 pasados, 2 futuros):
+- "Workshop: Construye tu primer agente con LangGraph" — Lucía — hace 14 días (pasado) — capacidad 30, RSVPs de Carlos, Javier, Valentina, Roberto, Sofia — virtual
+- "AMA con un AI Founder: lecciones de 0 a $1M ARR" — Diego — hace 7 días (pasado) — capacidad 50, RSVPs de María, Ana, Sofia, Andrés — virtual
+- "Office Hours: Code review de tu agente" — Lucía — en 5 días (futuro) — capacidad 10, 3 RSVPs (Carlos, Javier, Valentina) — virtual
+- "Meetup presencial Lima: Builders de IA" — Diego — en 21 días (futuro) — capacidad 40, 1 RSVP (María) — Lima, Perú
+
+RECURSOS (6):
+- "Plantilla: System prompt para agentes de soporte" — type: plantilla — Lucía — tags: ["agentes", "prompts", "soporte"] — link público
+- "Curso: RAG en producción con Pinecone" — type: curso — Diego — tags: ["RAG", "vector-dbs", "producción"]
+- "Artículo: Cuándo usar fine-tuning vs RAG" — type: artículo — Valentina — tags: ["fine-tuning", "RAG", "decisiones"]
+- "Video: Tutorial de LangGraph en español" — type: video — Javier — tags: ["LangGraph", "tutorial"]
+- "Plantilla: Notion template para tracking de prompts" — type: plantilla — Roberto — tags: ["prompts", "Notion", "workflow"]
+- "Artículo: 10 errores comunes al integrar LLMs en SaaS" — type: artículo — María — tags: ["integración", "errores comunes", "SaaS"]
+
+HILOS DE FORO (8 distribuidos en categorías):
+- [anuncios] "Bienvenidos a la comunidad — léeme primero" (pinned) — Lucía — body con onboarding básico
+- [modelos] "¿Claude 3.5 Sonnet vs GPT-4o para coding agents?" — Carlos — 4 respuestas (Diego, Javier, Roberto, Valentina)
+- [automatizaciones] "Mi setup de Make + OpenAI para automatizar leads" — Sofia — 2 respuestas (Ana, María)
+- [prompts] "Compartiendo: prompt para extraer entidades de PDFs" — Andrés — 3 respuestas (Lucía, Valentina, Carlos)
+- [prompts] "¿Alguien tiene un prompt bueno para resumir transcripciones?" — María — 1 respuesta (Roberto)
+- [off-topic] "¿Qué laptop usan para entrenar modelos pequeños?" — Javier — 5 respuestas (variadas)
+- [modelos] "Tutorial: Fine-tuning Llama 3 con QLoRA en Colab" — Valentina — 2 respuestas (Andrés, Diego)
+- [automatizaciones] "Build in public: agente de outreach que me consigue 5 demos/semana" — Carlos — 6 respuestas (alta engagement, locked al final por Diego como admin con razón "Excelente discusión, archivamos para que sea referencia")
+
+Reacciones distribuidas: poner 2-5 reacciones (👍, 🚀, 🎉, 💡) en posts varios para que el feed se vea vivo.
+
+LISTINGS DE MARKETPLACE (6):
+- "Servicio: Construyo tu primer agente de IA en 1 semana" — Carlos — categoría servicios — "Desde $1500 USD" — published — 1 imagen
+- "Plantilla: Workflow de N8N para customer support con IA" — Sofia — categoría plantillas — "$49 USD" — published — 1 imagen
+- "Curso: De 0 a deploy de tu agente — 8 semanas" — Diego — categoría cursos — "$299 USD" — published — 2 imágenes
+- "Servicio: Code review y arquitectura de agentes" — Javier — categoría servicios — "$200 USD/hora" — published — 1 imagen
+- "Agente: SDR automatizado para B2B SaaS" — Roberto — categoría agentes — "$99 USD/mes" — published — 1 imagen
+- "Plantilla: Sistema de evals para LLM apps" — Valentina — categoría plantillas — "$79 USD" — published — 1 imagen
+
+Imágenes: usar https://picsum.photos/seed/<unique-seed>/800/600 como placeholder, descargar al Object Storage del bucket "marketplace".
+
+MENSAJES DE MARKETPLACE (3 conversaciones):
+- María contacta a Carlos sobre el servicio de construcción de agentes (3 mensajes ida y vuelta)
+- Ana contacta a Diego sobre el curso (2 mensajes)
+- Andrés contacta a Valentina sobre la plantilla de evals (4 mensajes con preguntas técnicas)
+
+NOTIFICACIONES (12 — variadas, algunas leídas, otras no):
+Generar notificaciones reales usando el helper notify() o insertando directo en la tabla, distribuidas en los últimos 7 días, mezcla de tipos:
+- 4 sin leer para Lucía: nuevo RSVP en su evento, respuesta en su hilo de bienvenida, nuevo listing publicado pendiente de moderar, nuevo report
+- 3 sin leer para Carlos: nueva respuesta en su hilo de Claude vs GPT, mensaje de María en su listing, nuevo evento de Lucía
+- 2 leídas para María: nueva respuesta en su hilo de transcripciones, recurso destacado por admin
+- 3 mezcla para Diego, Javier, Valentina
+
+═══════════════════════════════════════════════
+3) ESTRUCTURA DEL SCRIPT
+═══════════════════════════════════════════════
+
+Crear `artifacts/api-server/src/scripts/seedDemo.ts`:
+- Leer CLERK_SECRET_KEY de env (mismo que prod o dev — ojo: si corres esto contra prod, los usuarios quedan en prod, así que el script debe imprimir un warning gigante y pedir confirmación con --yes flag)
+- Función `idempotentCreateUser(persona)`: si ya existe en Clerk por email, lo reutiliza; si no, lo crea
+- Función `idempotentInsertContent()`: cada item con un seed key único (ej. event slug "demo:workshop-langgraph"), si ya existe upsert con ON CONFLICT
+- Logs claros en consola con ✅ por cada item creado/skipped
+- Al final, escribir `/tmp/seed-demo-credentials.md` con tabla de email + password + rol + URL del perfil
+- Imprimir resumen en consola: "Created X users, Y events, Z resources, W listings, N notifications"
+
+Agregar a package.json del workspace:
+- `"seed:demo": "tsx artifacts/api-server/src/scripts/seedDemo.ts"`
+- `"seed:demo:clean": "tsx artifacts/api-server/src/scripts/seedDemo.ts --clean"`
+
+Modo --clean:
+- Borrar TODOS los users con email que termine en "@aicomunidad.test" (en Clerk con clerkClient.users.deleteUser y en DB con cascade delete)
+- Borrar el contenido firmado por esos users (cascade debería encargarse, pero verificar listings, events, threads, posts, resources, notifications, listing_messages)
+- NO borrar al admin real mayckolco@gmail.com bajo ninguna circunstancia — guard con check explícito
+- Imprimir resumen "Deleted X demo users + Y content rows"
+
+═══════════════════════════════════════════════
+4) VISUALIZACIÓN DEL CAMBIO DE ROL
+═══════════════════════════════════════════════
+
+Verificar que estos puntos funcionen (NO agregar features, solo confirmar y arreglar si falla):
+- Cuando un admin promueve a un participant a admin desde /admin → Usuarios, al hacer logout y login el usuario nuevo ve el item "Admin" en el sidebar y puede entrar a /admin.
+- Si el usuario afectado está logueado en otra pestaña, idealmente debería ver el cambio sin re-login. Si Clerk requiere refresh del token, agregar un toast con "Tu rol cambió, recarga la página para ver los cambios" usando SSE notification al user afectado cuando se modifique su rol. Si esto requiere mucho cambio, dejarlo como TODO documentado y agregar un mensaje en /admin diciendo "Los cambios de rol toman efecto al recargar la sesión del usuario".
+- Documentar en credentials.md cómo probar el flujo: "Login como Lucía (admin) → ve a /admin → Usuarios → cambia rol de María a administrator → logout → login como María → ahora María ve /admin en sidebar".
+
+═══════════════════════════════════════════════
+5) DEFINITION OF DONE
+═══════════════════════════════════════════════
+
+- `pnpm seed:demo` corre limpio sin errores y es idempotente (correrlo 2 veces no duplica nada).
+- `/tmp/seed-demo-credentials.md` existe con todas las credenciales.
+- En la app:
+  - Directorio /miembros muestra los 10 usuarios con avatares y skills.
+  - /eventos muestra 4 eventos.
+  - /foro muestra 8 hilos distribuidos en categorías, con respuestas y reacciones.
+  - /recursos muestra 6 recursos.
+  - /marketplace muestra 6 listings con imágenes.
+  - Al loguearte como Lucía (admin), el sidebar muestra el ítem "Admin".
+  - Al loguearte como Carlos (participant), el sidebar NO muestra "Admin" pero sí "Mensajes" (porque tiene conversación con María).
+  - La campana de notificaciones muestra el badge con el número correcto al loguearse como cada persona.
+- `pnpm seed:demo:clean` borra todo lo demo y deja la prod limpia para mi cuenta real.
+- README en `artifacts/api-server/src/scripts/README.md` documentando cómo usarlo.
+
+═══════════════════════════════════════════════
+NO HACER
+═══════════════════════════════════════════════
+- NO crear usuarios sin pasar por Clerk (necesito poder loguearme como ellos).
+- NO escribir el password en código fuente sin marcarlo como demo y solo en .md de output.
+- NO romper el flujo del admin real mayckolco@gmail.com.
+- NO agregar features nuevos.
+
+Entregables:
+- Lista de archivos creados/modificados.
+- Output de `pnpm seed:demo` ejecutado.
+- Confirmación de que /miembros, /eventos, /foro, /recursos, /marketplace se ven poblados.
