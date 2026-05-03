@@ -14,6 +14,7 @@ import {
 } from "@workspace/db";
 import { requireAuth, requireAdmin } from "../lib/requireAuth";
 import { notify } from "../lib/notify";
+import { sseClients } from "./notifications";
 import { randomUUID } from "crypto";
 
 const router = Router();
@@ -115,6 +116,16 @@ router.get("/admin/users", requireAdmin, async (req, res) => {
   res.json({ users: page, nextCursor, total: page.length });
 });
 
+function emitRoleChanged(clerkUserId: string, role: string) {
+  const clients = sseClients.get(clerkUserId);
+  if (clients) {
+    const payload = JSON.stringify({ role });
+    for (const client of clients) {
+      client.write(`event: role_changed\ndata: ${payload}\n\n`);
+    }
+  }
+}
+
 // PATCH /admin/users/:id/role — update DB + Clerk publicMetadata
 router.patch("/admin/users/:userId/role", requireAdmin, async (req, res) => {
   const userId = req.params.userId as string;
@@ -147,6 +158,8 @@ router.patch("/admin/users/:userId/role", requireAdmin, async (req, res) => {
   } catch (err) {
     req.log?.warn({ err }, "Clerk updateUser metadata failed");
   }
+
+  emitRoleChanged(userId, role);
 
   res.json(updated);
 });
@@ -183,6 +196,8 @@ router.put("/admin/users/:userId/role", requireAdmin, async (req, res) => {
   } catch (err) {
     req.log?.warn({ err }, "Clerk updateUser metadata failed");
   }
+
+  emitRoleChanged(userId, role);
 
   res.json(updated);
 });

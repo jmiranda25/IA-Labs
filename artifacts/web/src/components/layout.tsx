@@ -8,6 +8,7 @@ import {
   useGetNotificationsUnreadCount,
   getListNotificationsQueryKey,
   getGetNotificationsUnreadCountQueryKey,
+  getGetMeQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,10 @@ function NotificationBell() {
               : undefined,
           });
         } catch { /* ignore malformed */ }
+      });
+
+      es.addEventListener("role_changed", () => {
+        qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
       });
 
       es.onerror = () => {

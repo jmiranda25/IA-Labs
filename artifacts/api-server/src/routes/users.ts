@@ -60,6 +60,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
   });
 
   if (!user) {
+    // New user: seed role from Clerk JWT metadata (set by admin bootstrap or Clerk dashboard)
     const name =
       (claims?.name as string) ||
       (claims?.email as string)?.split("@")[0] ||
@@ -76,15 +77,12 @@ router.get("/users/me", requireAuth, async (req, res) => {
         skills: [],
       })
       .returning();
-  } else if (clerkRole && clerkRole !== user.role) {
-    // Sync role from Clerk JWT → DB (e.g. after admin seed or role change)
-    [user] = await db
-      .update(usersTable)
-      .set({ role: clerkRole, updatedAt: new Date() })
-      .where(eq(usersTable.clerkId, clerkId))
-      .returning();
-    req.log.info({ clerkId, oldRole: user.role, newRole: clerkRole }, "Role synced from Clerk metadata");
   }
+  // For existing users the DB is authoritative for role.
+  // Role changes go through the admin API which updates the DB first, then attempts
+  // to sync Clerk public metadata (best-effort; Clerk failures are logged but do not
+  // roll back the DB update). We intentionally do NOT sync clerkRole → DB here so
+  // that stale session claims cannot overwrite an admin-managed role change.
 
   res.json(user);
 });
