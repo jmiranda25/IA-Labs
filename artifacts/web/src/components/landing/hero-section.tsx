@@ -17,7 +17,7 @@ const into = (delay: number) => ({
 });
 
 const DEFAULT_TITLE_PLAIN = "Construye, aprende y crece con la";
-const DEFAULT_TITLE_GRADIENT = "comunidad de IA más activa.";
+const DEFAULT_TITLE_GRADIENT = "comunidad de IA.";
 const DEFAULT_SUBTITLE =
   "Conéctate con builders, founders y profesionales que están creando con IA todos los días. Eventos, recursos, foro y marketplace en un solo lugar.";
 const DEFAULT_BADGE = "🤝 Comunidad de IA en español";
