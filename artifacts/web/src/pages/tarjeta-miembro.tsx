@@ -354,6 +354,10 @@ export default function TarjetaMiembroPage({ username }: { username: string }) {
                 )}
               </div>
 
+              <p className="text-xs text-muted-foreground mb-1">
+                {isAdmin ? "Administrador" : "Miembro"}
+              </p>
+
               <p className="text-sm text-primary mb-3">@{card.username}</p>
 
               {card.bio && (

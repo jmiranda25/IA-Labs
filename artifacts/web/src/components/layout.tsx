@@ -305,9 +305,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* User area */}
           <div className="flex items-center gap-2 pl-1">
             <Link href="/perfil">
-              <span className="hidden sm:block text-sm font-medium max-w-[120px] truncate text-foreground hover:text-primary transition-colors cursor-pointer">
-                {me?.displayName}
-              </span>
+              <div className="hidden sm:flex flex-col items-end leading-tight cursor-pointer">
+                <span className="text-sm font-medium max-w-[140px] truncate text-foreground hover:text-primary transition-colors">
+                  {me?.displayName}
+                </span>
+                {me && (
+                  <span className="text-[11px] text-muted-foreground">
+                    {me.role === "administrator" ? "Admin" : "Miembro"}
+                  </span>
+                )}
+              </div>
             </Link>
             <UserButton
               userProfileMode="navigation"
