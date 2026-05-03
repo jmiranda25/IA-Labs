@@ -119,7 +119,7 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **forbidden.tsx**: New page for 403/access-denied state
 - **aria-labels**: Added to all icon-only buttons (navigation back-arrows, dropdown triggers, send button, admin edit/delete)
 
-### `/m/:username` — Member Card (public shareable page)
+### `/m/:username` — Member Card (public shareable page, with sharing features)
 - **Public route** — no auth required, accessible without login
 - **DB**: `is_public` boolean column added to `users` table (default `true`)
 - **Backend** (`artifacts/api-server/src/routes/public.ts`):
@@ -132,6 +132,12 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **Miembro profile** (`/miembros/:username`) — "Ver tarjeta" button next to the back link
 - **Members directory** (`/miembros`) — "Ver tarjeta" mini-button on each card that has a username
 - **OpenAPI spec**: new paths `/public/users/{username}`, `/public/users/{username}/stats`, `/users/me/card-visibility`; new schemas `MemberCard`, `MemberStats`, `CardVisibilityBody`, `CardVisibilityResponse`; `UserProfile` extended with `isPublic`
+- **Download as PNG**: "Descargar tarjeta" button uses `html-to-image` `toPng` at `pixelRatio: 2`; iOS Safari fallback opens OG image in new tab with a save hint
+- **Share buttons**: Copy link (Sonner toast), X/Twitter, LinkedIn, WhatsApp — all in header bar; action functions named `onDownloadCard`, `onCopyCardLink`, `onShareTwitter`, `onShareLinkedIn`, `onShareWhatsApp` for future analytics hooks
+- **Dynamic OG image**: `GET /api/og/m/:username` via `satori` + `@resvg/resvg-js` (1200×630 PNG) — shows avatar, name, role badge, bio, location, top 3 skills, decorative orbs and accent line; fonts loaded from jsDelivr fontsource CDN (Inter 400+700 woff, cached in memory); `Cache-Control: public, max-age=3600, s-maxage=86400`; 404 returns 1×1 transparent PNG for private/missing users
+- **OG meta tags**: `og:image` → absolute URL to `/api/og/m/:username`; `og:type=profile`; `og:image:width/height`; `twitter:card=summary_large_image`; canonical `<link>` tag
+- **JSON-LD Person schema**: `@type=Person`, name, image, url, jobTitle, knowsAbout (skills array), memberOf Comunidad IA organization
+- **Build**: `@resvg/resvg-js` added to esbuild externals in `build.mjs` (native NAPI bindings must not be bundled)
 
 ### Schema Migration Notes
 - **Never run `pnpm --filter @workspace/db run push`** — it hangs; always use `psql "$DATABASE_URL"` directly

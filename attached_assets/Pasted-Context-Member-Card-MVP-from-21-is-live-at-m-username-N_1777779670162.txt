@@ -1,0 +1,15 @@
+Context: Member Card MVP from #21 is live at `/m/:username`. Now we want to make it shareable — download as image, share to social, dynamic OG image preview, and JSON-LD for SEO.
+
+Goal: Turn the member card into a viral asset. Users should be able to download a beautiful PNG of their card, share it to X/LinkedIn/WhatsApp with one click, and when they share the URL anywhere, the platform auto-generates a perfect preview image.
+
+Done looks like:
+1. **Download as PNG button** ("Descargar tarjeta") on `/m/:username`. Clicking it renders the card to a 1080×1350px PNG (Instagram story ratio) and triggers a browser download named `tarjeta-<username>.png`. Use `html-to-image` (small, well-maintained library — install it). Show a loading spinner while rendering, success toast on download.
+2. **Copy link button** ("Copiar enlace") that copies the full canonical URL of the card to clipboard and shows a toast "Enlace copiado". Use the Web Clipboard API.
+3. **Share buttons** — small icon buttons next to the copy link button:
+   - X/Twitter: opens `https://twitter.com/intent/tweet?text=Mira+mi+tarjeta+en+Comunidad+IA&url=<encoded>`.
+   - LinkedIn: opens `https://www.linkedin.com/sharing/share-offsite/?url=<encoded>`.
+   - WhatsApp: opens `https://wa.me/?text=<encoded URL>`.
+   All open in a new tab.
+4. **Dynamic OG image** at `GET /api/og/m/:username` returning a 1200×630 PNG generated server-side. Use `@vercel/og` or `satori` + `resvg-js` — pick the one that works on Replit's Node runtime (test both if unsure). The generated image should show: avatar, name, role badge, bio (1 line truncated), location, top 3 skills, and "Comunidad IA" branding. Cache the response with `Cache-Control: public, max-age=3600, s-maxage=86400`. If the user has `is_public=false`, return a 404 PNG with "Tarjeta privada" text.
+5. **Update `<head>` of `/m/:username`** to point `og:image` to `/api/og/m/<username>` (with absolute URL using the deployment domain). Add `twitter:card=summary_large_image`. Verify by pasting the URL into opengraph.xyz after deploy.
+6. **JSON-LD Person schema** in the `<head>` of `/m/:username`:
