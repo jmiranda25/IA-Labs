@@ -74,6 +74,28 @@ function deterministicId(seed: string): string {
 }
 
 // ─── Personas ─────────────────────────────────────────────────────────────────
+//
+// USERNAME CONVENTION — read this before adding new demo users:
+//
+//   Format : firstname_lastname   (snake_case, all lowercase)
+//   Rule   : strip all diacritics before lowercasing
+//              "Lucía"     → "lucia"
+//              "María"     → "maria"
+//              "Andrés"    → "andres"
+//              "Fernández" → "fernandez"
+//   Regex  : must satisfy ^[a-z0-9_]{3,24}$ (DB UNIQUE constraint)
+//            — no spaces, hyphens, or accented characters allowed
+//            — verify the result manually before adding a new persona
+//
+//   Collision rule: if two demo users share a first name, append _demo
+//   to the first-name part:
+//              "maria_garcia"  vs a second María → "maria2_[lastname]"
+//   Practically: just pick a different first+last combination.
+//
+//   Usernames are intentionally STATIC strings in this array — do not
+//   generate them at runtime. Static values are reviewed once and stay
+//   correct across re-runs; generated values silently break if the rule
+//   has an edge case.
 
 const DEMO_PASSWORD = "Demo2026!";
 const DOMAIN = "@aicomunidad.dev";
