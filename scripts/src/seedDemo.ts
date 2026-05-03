@@ -10,7 +10,7 @@
  *   pnpm --filter @workspace/scripts run seed:demo:clean
  *
  * Idempotency: safe to run multiple times. Content uses deterministic IDs.
- * Pass --clean to delete all @aicomunidad.test users and their content.
+ * Pass --clean to delete all @aicomunidad.dev users and their content.
  *
  * ID model: demo users are inserted with users.id = Clerk user ID so that
  * every FK column (resources.author_id, marketplace_listings.seller_id,
@@ -18,7 +18,7 @@
  * (forum_threads.author_id, events.created_by, rsvps.user_id,
  * notifications.user_id) all store the same Clerk user ID.
  * This makes the clean() subquery trivially consistent across all tables:
- *   WHERE col IN (SELECT id FROM users WHERE email LIKE '%@aicomunidad.test')
+ *   WHERE col IN (SELECT id FROM users WHERE email LIKE '%@aicomunidad.dev')
  */
 
 import { createClerkClient } from "@clerk/backend";
@@ -76,7 +76,7 @@ function deterministicId(seed: string): string {
 // ─── Personas ─────────────────────────────────────────────────────────────────
 
 const DEMO_PASSWORD = "Demo2026!";
-const DOMAIN = "@aicomunidad.test";
+const DOMAIN = "@aicomunidad.dev";
 
 const PERSONAS = [
   {
@@ -176,7 +176,7 @@ const PERSONAS = [
 // users.id is set to the Clerk user ID so every content table — regardless of
 // whether it stores the value in an FK column or a plain text column — uses the
 // same identifier.  The clean() helper can therefore use a single pattern:
-//   WHERE col IN (SELECT id FROM users WHERE email LIKE '%@aicomunidad.test')
+//   WHERE col IN (SELECT id FROM users WHERE email LIKE '%@aicomunidad.dev')
 
 interface SeededUser {
   id: string;   // Clerk user ID = users.id for demo users
