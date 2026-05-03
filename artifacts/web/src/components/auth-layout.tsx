@@ -6,6 +6,7 @@ interface AuthLayoutProps {
   switchText: string;
   switchLinkText: string;
   switchHref: string;
+  footer?: React.ReactNode;
 }
 
 export function AuthLayout({
@@ -13,6 +14,7 @@ export function AuthLayout({
   switchText,
   switchLinkText,
   switchHref,
+  footer,
 }: AuthLayoutProps) {
   return (
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4 py-12 overflow-hidden">
@@ -47,6 +49,9 @@ export function AuthLayout({
 
         {/* Clerk card */}
         {children}
+
+        {/* Optional footer slot (e.g. demo banner) */}
+        {footer && <div className="mt-4">{footer}</div>}
       </div>
     </div>
   );
