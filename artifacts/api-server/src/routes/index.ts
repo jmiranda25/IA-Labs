@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import publicRouter from "./public";
 import usersRouter from "./users";
 import eventsRouter from "./events";
 import forumRouter from "./forum";
@@ -18,6 +19,7 @@ const router: IRouter = Router();
 
 router.use(seoRouter);
 router.use(healthRouter);
+router.use(publicRouter);
 router.use(communityRouter);
 router.use(webhooksRouter);
 router.use(usersRouter);

@@ -238,12 +238,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Mi perfil
             </span>
           </Link>
-          <Link href={`/members/${me?.clerkId}`}>
-            <span className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer" data-testid="nav-profile">
-              <User className="h-4 w-4" aria-hidden="true" />
-              Ver perfil público
-            </span>
-          </Link>
+          {me?.username && (
+            <Link href={`/m/${me.username}`}>
+              <span className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer" data-testid="nav-tarjeta">
+                <User className="h-4 w-4" aria-hidden="true" />
+                Ver mi tarjeta
+              </span>
+            </Link>
+          )}
           <Link href="/settings">
             <span className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer" data-testid="nav-settings">
               <Settings className="h-4 w-4" aria-hidden="true" />

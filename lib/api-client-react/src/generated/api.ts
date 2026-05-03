@@ -25,6 +25,8 @@ import type {
   AdminResolveReport200,
   AdminStats,
   AdminUploadEventCoverBody,
+  CardVisibilityBody,
+  CardVisibilityResponse,
   CheckUsernameAvailabilityParams,
   CheckUsernameResponse,
   CommunityStats,
@@ -60,7 +62,9 @@ import type {
   ListingListResponse,
   ListingMessage,
   MarketplaceListing,
+  MemberCard,
   MemberListResponse,
+  MemberStats,
   MessageThread,
   NotificationListResponse,
   NotificationPreferences,
@@ -953,6 +957,267 @@ export function useGetUserById<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetUserByIdQueryOptions(userId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Toggle member card public visibility
+ */
+export const getUpdateCardVisibilityUrl = () => {
+  return `/api/users/me/card-visibility`;
+};
+
+export const updateCardVisibility = async (
+  cardVisibilityBody: CardVisibilityBody,
+  options?: RequestInit,
+): Promise<CardVisibilityResponse> => {
+  return customFetch<CardVisibilityResponse>(getUpdateCardVisibilityUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(cardVisibilityBody),
+  });
+};
+
+export const getUpdateCardVisibilityMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCardVisibility>>,
+    TError,
+    { data: BodyType<CardVisibilityBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCardVisibility>>,
+  TError,
+  { data: BodyType<CardVisibilityBody> },
+  TContext
+> => {
+  const mutationKey = ["updateCardVisibility"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCardVisibility>>,
+    { data: BodyType<CardVisibilityBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateCardVisibility(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCardVisibilityMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCardVisibility>>
+>;
+export type UpdateCardVisibilityMutationBody = BodyType<CardVisibilityBody>;
+export type UpdateCardVisibilityMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Toggle member card public visibility
+ */
+export const useUpdateCardVisibility = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCardVisibility>>,
+    TError,
+    { data: BodyType<CardVisibilityBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCardVisibility>>,
+  TError,
+  { data: BodyType<CardVisibilityBody> },
+  TContext
+> => {
+  return useMutation(getUpdateCardVisibilityMutationOptions(options));
+};
+
+/**
+ * @summary Get public member card by username (no auth required)
+ */
+export const getGetMemberCardUrl = (username: string) => {
+  return `/api/public/users/${username}`;
+};
+
+export const getMemberCard = async (
+  username: string,
+  options?: RequestInit,
+): Promise<MemberCard> => {
+  return customFetch<MemberCard>(getGetMemberCardUrl(username), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMemberCardQueryKey = (username: string) => {
+  return [`/api/public/users/${username}`] as const;
+};
+
+export const getGetMemberCardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMemberCard>>,
+  TError = ErrorType<void>,
+>(
+  username: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMemberCard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMemberCardQueryKey(username);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberCard>>> = ({
+    signal,
+  }) => getMemberCard(username, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!username,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMemberCard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMemberCardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMemberCard>>
+>;
+export type GetMemberCardQueryError = ErrorType<void>;
+
+/**
+ * @summary Get public member card by username (no auth required)
+ */
+
+export function useGetMemberCard<
+  TData = Awaited<ReturnType<typeof getMemberCard>>,
+  TError = ErrorType<void>,
+>(
+  username: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMemberCard>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMemberCardQueryOptions(username, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get member activity stats (no auth required)
+ */
+export const getGetMemberStatsUrl = (username: string) => {
+  return `/api/public/users/${username}/stats`;
+};
+
+export const getMemberStats = async (
+  username: string,
+  options?: RequestInit,
+): Promise<MemberStats> => {
+  return customFetch<MemberStats>(getGetMemberStatsUrl(username), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMemberStatsQueryKey = (username: string) => {
+  return [`/api/public/users/${username}/stats`] as const;
+};
+
+export const getGetMemberStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMemberStats>>,
+  TError = ErrorType<void>,
+>(
+  username: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMemberStats>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetMemberStatsQueryKey(username);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberStats>>> = ({
+    signal,
+  }) => getMemberStats(username, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!username,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMemberStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMemberStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMemberStats>>
+>;
+export type GetMemberStatsQueryError = ErrorType<void>;
+
+/**
+ * @summary Get member activity stats (no auth required)
+ */
+
+export function useGetMemberStats<
+  TData = Awaited<ReturnType<typeof getMemberStats>>,
+  TError = ErrorType<void>,
+>(
+  username: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMemberStats>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMemberStatsQueryOptions(username, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

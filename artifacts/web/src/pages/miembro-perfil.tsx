@@ -13,6 +13,7 @@ import {
   Shield,
   ArrowLeft,
   UserCircle,
+  CreditCard,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -57,12 +58,22 @@ export default function MiembroPerfilPage({ username }: { username: string }) {
     <Layout>
       <div className="max-w-2xl mx-auto p-6 space-y-6">
         {/* Back link */}
-        <Link href="/miembros">
-          <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Directorio
-          </span>
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href="/miembros">
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Directorio
+            </span>
+          </Link>
+          {u.username && (
+            <Link href={`/m/${u.username}`}>
+              <Button variant="outline" size="sm" className="gap-2">
+                <CreditCard className="h-4 w-4" />
+                Ver tarjeta
+              </Button>
+            </Link>
+          )}
+        </div>
 
         {/* Profile card */}
         <Card>

@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listUsers } from "@workspace/api-client-react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Search, Users, Loader2 } from "lucide-react";
+import { Search, Users, Loader2, CreditCard } from "lucide-react";
 
 type RoleFilter = "" | "participant" | "administrator";
 
@@ -150,20 +150,21 @@ export default function MiembrosPage() {
 }
 
 function MemberCard({ user }: { user: any }) {
-  const href = user.username ? `/miembros/${user.username}` : "#";
+  const profileHref = user.username ? `/miembros/${user.username}` : "#";
+  const cardHref = user.username ? `/m/${user.username}` : null;
   const shortBio = user.bio ? user.bio.slice(0, 80) + (user.bio.length > 80 ? "…" : "") : null;
 
   return (
-    <Link href={href}>
-      <Card
-        className={`h-full transition-all hover:-translate-y-0.5 ${
-          user.username
-            ? "hover:border-primary/40 cursor-pointer"
-            : "opacity-70 cursor-default"
-        }`}
-        data-testid={`card-member-${user.id}`}
-      >
-        <CardContent className="p-5 flex flex-col items-center text-center gap-2">
+    <Card
+      className={`h-full transition-all hover:-translate-y-0.5 ${
+        user.username
+          ? "hover:border-primary/40"
+          : "opacity-70"
+      }`}
+      data-testid={`card-member-${user.id}`}
+    >
+      <Link href={profileHref}>
+        <CardContent className="p-5 flex flex-col items-center text-center gap-2 cursor-pointer">
           <Avatar className="h-14 w-14 mt-1">
             <AvatarImage src={user.avatarUrl} />
             <AvatarFallback className="text-lg bg-primary/20 text-primary">
@@ -195,7 +196,17 @@ function MemberCard({ user }: { user: any }) {
             </p>
           )}
         </CardContent>
-      </Card>
-    </Link>
+      </Link>
+      {cardHref && (
+        <div className="px-5 pb-4 pt-0 -mt-1">
+          <Link href={cardHref}>
+            <button className="w-full flex items-center justify-center gap-1.5 rounded-md border border-border/60 py-1 text-xs text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors">
+              <CreditCard className="h-3 w-3" />
+              Ver tarjeta
+            </button>
+          </Link>
+        </div>
+      )}
+    </Card>
   );
 }

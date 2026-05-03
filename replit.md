@@ -119,6 +119,20 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **forbidden.tsx**: New page for 403/access-denied state
 - **aria-labels**: Added to all icon-only buttons (navigation back-arrows, dropdown triggers, send button, admin edit/delete)
 
+### `/m/:username` — Member Card (public shareable page)
+- **Public route** — no auth required, accessible without login
+- **DB**: `is_public` boolean column added to `users` table (default `true`)
+- **Backend** (`artifacts/api-server/src/routes/public.ts`):
+  - `GET /api/public/users/:username` — returns safe card fields (id, username, displayName, bio, avatarUrl, role, location, website, skills, joinedAt); 404 if user not found or `isPublic=false`
+  - `GET /api/public/users/:username/stats` — returns `{ eventsAttended, threadsCreated, resourcesShared, memberSince }` counting RSVPs (going), forum threads, and published resources
+- **Backend** (`artifacts/api-server/src/routes/users.ts`): `PATCH /api/users/me/card-visibility` — toggles `isPublic`, requires auth
+- **Frontend** (`artifacts/web/src/pages/tarjeta-miembro.tsx`): standalone page (no Layout wrapper), gradient dark background, card with avatar-overlapping-header, stats bar, skills badges, copy-link button, CTA to join/directory
+- **Perfil page** — "Tarjeta de miembro" card at bottom: public/private toggle button + link preview with "Ver" button; shows reminder to set username if none set
+- **Sidebar** — "Ver mi tarjeta" link in bottom section (only shown if user has a username)
+- **Miembro profile** (`/miembros/:username`) — "Ver tarjeta" button next to the back link
+- **Members directory** (`/miembros`) — "Ver tarjeta" mini-button on each card that has a username
+- **OpenAPI spec**: new paths `/public/users/{username}`, `/public/users/{username}/stats`, `/users/me/card-visibility`; new schemas `MemberCard`, `MemberStats`, `CardVisibilityBody`, `CardVisibilityResponse`; `UserProfile` extended with `isPublic`
+
 ### Schema Migration Notes
 - **Never run `pnpm --filter @workspace/db run push`** — it hangs; always use `psql "$DATABASE_URL"` directly
 - Forum schema renamed: `forum_posts` → `forum_threads` (threads), new `forum_posts` (replies), new `forum_reactions`

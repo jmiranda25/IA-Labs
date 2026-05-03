@@ -67,6 +67,7 @@ export const GetMeResponse = zod.object({
   location: zod.string().nullish(),
   website: zod.string().nullish(),
   isBanned: zod.boolean(),
+  isPublic: zod.boolean(),
   disabledAt: zod.coerce.date().nullish(),
   joinedAt: zod.coerce.date(),
 });
@@ -96,6 +97,7 @@ export const UpdateMeResponse = zod.object({
   location: zod.string().nullish(),
   website: zod.string().nullish(),
   isBanned: zod.boolean(),
+  isPublic: zod.boolean(),
   disabledAt: zod.coerce.date().nullish(),
   joinedAt: zod.coerce.date(),
 });
@@ -195,8 +197,54 @@ export const GetUserByIdResponse = zod.object({
   location: zod.string().nullish(),
   website: zod.string().nullish(),
   isBanned: zod.boolean(),
+  isPublic: zod.boolean(),
   disabledAt: zod.coerce.date().nullish(),
   joinedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Toggle member card public visibility
+ */
+export const UpdateCardVisibilityBody = zod.object({
+  isPublic: zod.boolean(),
+});
+
+export const UpdateCardVisibilityResponse = zod.object({
+  isPublic: zod.boolean(),
+});
+
+/**
+ * @summary Get public member card by username (no auth required)
+ */
+export const GetMemberCardParams = zod.object({
+  username: zod.coerce.string(),
+});
+
+export const GetMemberCardResponse = zod.object({
+  id: zod.string(),
+  username: zod.string(),
+  displayName: zod.string(),
+  bio: zod.string().nullish(),
+  avatarUrl: zod.string().nullish(),
+  role: zod.enum(["participant", "administrator"]),
+  location: zod.string().nullish(),
+  website: zod.string().nullish(),
+  skills: zod.array(zod.string()),
+  joinedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get member activity stats (no auth required)
+ */
+export const GetMemberStatsParams = zod.object({
+  username: zod.coerce.string(),
+});
+
+export const GetMemberStatsResponse = zod.object({
+  eventsAttended: zod.number(),
+  threadsCreated: zod.number(),
+  resourcesShared: zod.number(),
+  memberSince: zod.coerce.date(),
 });
 
 /**
@@ -1352,6 +1400,7 @@ export const AdminListUsersResponse = zod.object({
       location: zod.string().nullish(),
       website: zod.string().nullish(),
       isBanned: zod.boolean(),
+      isPublic: zod.boolean(),
       disabledAt: zod.coerce.date().nullish(),
       joinedAt: zod.coerce.date(),
     }),
@@ -1382,6 +1431,7 @@ export const AdminUpdateUserRoleResponse = zod.object({
   location: zod.string().nullish(),
   website: zod.string().nullish(),
   isBanned: zod.boolean(),
+  isPublic: zod.boolean(),
   disabledAt: zod.coerce.date().nullish(),
   joinedAt: zod.coerce.date(),
 });
@@ -1412,6 +1462,7 @@ export const AdminDisableUserResponse = zod.object({
   location: zod.string().nullish(),
   website: zod.string().nullish(),
   isBanned: zod.boolean(),
+  isPublic: zod.boolean(),
   disabledAt: zod.coerce.date().nullish(),
   joinedAt: zod.coerce.date(),
 });

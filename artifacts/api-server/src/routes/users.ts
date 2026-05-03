@@ -272,6 +272,22 @@ router.get("/users", requireAuth, async (req, res) => {
   res.json({ items: rows, nextCursor });
 });
 
+// ── PATCH /users/me/card-visibility ──────────────────────────────────────────
+router.patch("/users/me/card-visibility", requireAuth, async (req, res) => {
+  const clerkId = req.userId!;
+  const { isPublic } = req.body;
+  if (typeof isPublic !== "boolean") {
+    res.status(400).json({ error: "isPublic must be a boolean" });
+    return;
+  }
+  const [updated] = await db
+    .update(usersTable)
+    .set({ isPublic, updatedAt: new Date() })
+    .where(eq(usersTable.clerkId, clerkId))
+    .returning({ isPublic: usersTable.isPublic });
+  res.json({ isPublic: updated.isPublic });
+});
+
 // ── GET /users/:userId (legacy — keep for backward compat) ───────────────────
 router.get("/users/:userId", requireAuth, async (req, res) => {
   const userId = req.params.userId as string;

@@ -19,7 +19,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/use-debounce";
-import { CheckCircle, XCircle, Upload, UserCircle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Upload, UserCircle, Loader2, CreditCard, Eye, EyeOff } from "lucide-react";
 
 const USERNAME_RE = /^[a-z0-9_]{3,24}$/;
 
@@ -455,7 +455,105 @@ export default function PerfilPage() {
             )}
           </Button>
         </form>
+
+        {/* Card visibility */}
+        <CardVisibilityToggle username={m?.username} isPublic={m?.isPublic ?? true} />
       </div>
     </Layout>
+  );
+}
+
+function CardVisibilityToggle({ username, isPublic: initialIsPublic }: { username?: string | null; isPublic: boolean }) {
+  const [isPublic, setIsPublic] = useState(initialIsPublic);
+  const [saving, setSaving] = useState(false);
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const qc = useQueryClient();
+
+  const toggle = async () => {
+    const next = !isPublic;
+    setSaving(true);
+    try {
+      const res = await fetch(`${basePath}/api/users/me/card-visibility`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ isPublic: next }),
+      });
+      if (res.ok) {
+        setIsPublic(next);
+        qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
+        toast.success(next ? "Tarjeta pública activada" : "Tarjeta hecha privada");
+      } else {
+        toast.error("Error al actualizar la visibilidad");
+      }
+    } catch {
+      toast.error("Error al actualizar la visibilidad");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <CreditCard className="h-4 w-4 text-primary" />
+          Tarjeta de miembro
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-foreground">Perfil público</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isPublic
+                ? "Tu tarjeta es visible para cualquiera con el enlace."
+                : "Tu tarjeta está oculta — solo tú puedes verla."}
+            </p>
+          </div>
+          <Button
+            variant={isPublic ? "default" : "outline"}
+            size="sm"
+            className="gap-2 shrink-0"
+            onClick={toggle}
+            disabled={saving}
+            data-testid="button-toggle-card-visibility"
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isPublic ? (
+              <Eye className="h-4 w-4" />
+            ) : (
+              <EyeOff className="h-4 w-4" />
+            )}
+            {isPublic ? "Pública" : "Privada"}
+          </Button>
+        </div>
+
+        {username && (
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground">Tu enlace de tarjeta:</p>
+              <p className="text-xs font-mono text-foreground truncate mt-0.5">
+                {window.location.origin}{basePath}/m/{username}
+              </p>
+            </div>
+            <a href={`${basePath}/m/${username}`} target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="sm" className="shrink-0 gap-1.5 text-xs">
+                <Eye className="h-3.5 w-3.5" />
+                Ver
+              </Button>
+            </a>
+          </div>
+        )}
+
+        {!username && (
+          <p className="text-xs text-amber-400/80 flex items-center gap-1.5">
+            <EyeOff className="h-3.5 w-3.5 shrink-0" />
+            Configura un nombre de usuario arriba para activar tu tarjeta.
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

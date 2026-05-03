@@ -229,6 +229,68 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
 
+  /users/me/card-visibility:
+    patch:
+      operationId: updateCardVisibility
+      tags: [users]
+      summary: Toggle member card public visibility
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardVisibilityBody"
+      responses:
+        "200":
+          description: Updated visibility
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardVisibilityResponse"
+
+  # ── Public (no auth) ─────────────────────────────────────────────────────────
+  /public/users/{username}:
+    get:
+      operationId: getMemberCard
+      tags: [users]
+      summary: Get public member card by username (no auth required)
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Member card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberCard"
+        "404":
+          description: User not found or profile is private
+
+  /public/users/{username}/stats:
+    get:
+      operationId: getMemberStats
+      tags: [users]
+      summary: Get member activity stats (no auth required)
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Member stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberStats"
+        "404":
+          description: User not found or profile is private
+
   # ── Events ──────────────────────────────────────────────────────────────────
   /events:
     get:
@@ -1688,6 +1750,67 @@ components:
           nullable: true
       required: [items, nextCursor]
 
+    MemberCard:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        displayName:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [participant, administrator]
+        location:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        skills:
+          type: array
+          items:
+            type: string
+        joinedAt:
+          type: string
+          format: date-time
+      required: [id, username, displayName, role, skills, joinedAt]
+
+    MemberStats:
+      type: object
+      properties:
+        eventsAttended:
+          type: integer
+        threadsCreated:
+          type: integer
+        resourcesShared:
+          type: integer
+        memberSince:
+          type: string
+          format: date-time
+      required: [eventsAttended, threadsCreated, resourcesShared, memberSince]
+
+    CardVisibilityBody:
+      type: object
+      properties:
+        isPublic:
+          type: boolean
+      required: [isPublic]
+
+    CardVisibilityResponse:
+      type: object
+      properties:
+        isPublic:
+          type: boolean
+      required: [isPublic]
+
     UserProfile:
       type: object
       properties:
@@ -1721,6 +1844,8 @@ components:
           nullable: true
         isBanned:
           type: boolean
+        isPublic:
+          type: boolean
         disabledAt:
           type: string
           format: date-time
@@ -1728,7 +1853,7 @@ components:
         joinedAt:
           type: string
           format: date-time
-      required: [id, clerkId, displayName, role, skills, isBanned, joinedAt]
+      required: [id, clerkId, displayName, role, skills, isBanned, isPublic, joinedAt]
 
     UpdateProfileBody:
       type: object

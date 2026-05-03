@@ -14,6 +14,7 @@ export const usersTable = pgTable("users", {
   skills: jsonb("skills").notNull().default([]),
   location: text("location"),
   website: text("website"),
+  isPublic: boolean("is_public").notNull().default(true),
   isBanned: boolean("is_banned").notNull().default(false),
   disabledAt: timestamp("disabled_at"),
   notificationPreferences: jsonb("notification_preferences").notNull().default({

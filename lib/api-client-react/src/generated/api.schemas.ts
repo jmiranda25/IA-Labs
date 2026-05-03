@@ -65,6 +65,42 @@ export interface MemberListResponse {
   nextCursor: string | null;
 }
 
+export type MemberCardRole =
+  (typeof MemberCardRole)[keyof typeof MemberCardRole];
+
+export const MemberCardRole = {
+  participant: "participant",
+  administrator: "administrator",
+} as const;
+
+export interface MemberCard {
+  id: string;
+  username: string;
+  displayName: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
+  role: MemberCardRole;
+  location?: string | null;
+  website?: string | null;
+  skills: string[];
+  joinedAt: string;
+}
+
+export interface MemberStats {
+  eventsAttended: number;
+  threadsCreated: number;
+  resourcesShared: number;
+  memberSince: string;
+}
+
+export interface CardVisibilityBody {
+  isPublic: boolean;
+}
+
+export interface CardVisibilityResponse {
+  isPublic: boolean;
+}
+
 export type UserProfileRole =
   (typeof UserProfileRole)[keyof typeof UserProfileRole];
 
@@ -85,6 +121,7 @@ export interface UserProfile {
   location?: string | null;
   website?: string | null;
   isBanned: boolean;
+  isPublic: boolean;
   disabledAt?: string | null;
   joinedAt: string;
 }

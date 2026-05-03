@@ -1,0 +1,52 @@
+Context: Comunidad de IA platform on Replit. Stack already in production: React + Vite, Tailwind + shadcn/ui, Express 5, Drizzle + Postgres, Clerk auth with `participant`/`administrator` roles. Spanish routes (e.g. `/perfil`, `/miembros/:username`). All 16 modules + #17 self-protection + #18 deploy + #19 polish + #20 seed demo are live. Demo data has 10 users (2 admins, 8 participants).
+
+Goal: Add a public "Member Card" feature — each user gets a shareable, beautifully-designed digital business card at a public URL `/m/:username`. This is meant to be the user's "community passport" — they can share the link on social media, screenshot it for their bio, etc.
+
+Done looks like:
+1. Public route `GET /m/:username` accessible WITHOUT login (no auth required), returns a beautifully-designed card page.
+2. The card displays: large avatar (200px), full display name, role badge (gold crown + "Administrador" label for admins, subtle outlined badge for participants), bio (truncated to 240 chars), location with map-pin icon, skills as colored chips (max 8 visible, "+N more" if exceeded), website link (with external-link icon), member-since date (e.g. "Miembro desde Mayo 2026"), and stats row showing: events attended, threads created, resources shared. Use Tailwind + shadcn/ui components. Animate the card subtly on first load with a fade-up.
+4. If the user has set their profile to private, return a 404 with a friendly "Esta tarjeta no es pública" message instead of the card.
+5. Add a `is_public` boolean column to `users` table (default `true`), with a Drizzle migration. Surface a toggle in `/perfil/preferencias` labeled "Tarjeta de miembro pública" with helper text "Si está activado, cualquier persona con el enlace puede ver tu tarjeta sin iniciar sesión".
+6. Add a "Ver mi tarjeta" / "Compartir mi tarjeta" action in the user dropdown menu (top-right header) and on `/perfil` page that opens `/m/<my-username>` in a new tab.
+7. Add a "Ver tarjeta" button on each member's profile page (`/miembros/:username`) and on each member card in the directory (`/miembros`).
+8. The page must have proper SEO meta tags: `<title>{name} · Comunidad IA</title>`, description with the bio, OG type=profile, OG image pointing to `/api/og/m/<username>` (which we will implement in the next prompt — for now use a placeholder static image at `/og-default.png`).
+9. Add a small unobtrusive "Powered by Comunidad IA" footer with a link to `/` so visitors who land on a card can discover the community.
+
+Backend stats endpoint:
+- Add `GET /api/users/:username/stats` returning `{ events_attended, threads_created, resources_shared, member_since }`. This is consumed by the member card page. No auth required (public endpoint, returns 404 if user is_public=false).
+- Use efficient COUNT queries with proper indexes — don't N+1.
+
+Routing & data:
+- Member card page lives at `client/src/pages/member-card.tsx` (or wherever the existing public pages live in our app — match the convention).
+- Reuse the existing `usersTable` schema. Add the `is_public` column via a new migration in `lib/db/migrations/`.
+- The page reads username from URL, calls `GET /api/users/by-username/:username` (or similar — check existing API). If a public endpoint doesn't exist yet, add `GET /api/public/users/:username` returning ONLY the public-safe fields: displayName, username, avatarUrl, bio, role, location, website, skills, joinedAt. NEVER expose email, clerkId, isBanned, disabled_at, notification_preferences, or any other private field.
+
+Design guidance:
+- The card should feel premium — think Linear's profile cards or Stripe's team page. Generous padding, soft shadows, subtle gradient background (e.g. very light gradient from `from-slate-50 to-white` in light mode).
+- Center the card on the page with max-width ~480px on mobile, ~640px on desktop.
+- Mobile-first responsive: avatar slightly smaller on mobile, stats row wraps if needed.
+- Dark mode supported (we already have it).
+- Admin badge: gold/amber color (`text-amber-500` for crown, `bg-amber-100 text-amber-900` for label). Participant badge: subtle outline.
+- Skills chips use existing shadcn/ui `<Badge variant="secondary">`.
+
+Out of scope (next prompt #22):
+- Download as PNG button.
+- Share buttons (X, LinkedIn, WhatsApp).
+- Copy link button with clipboard feedback.
+- Dynamic OG image generation at `/api/og/m/<username>`.
+- JSON-LD `Person` schema.
+
+Important constraints:
+- Preserve existing sidebar layout, header, and routing conventions. The card page does NOT use the authenticated `<Layout>` wrapper — it's a standalone public page like the landing.
+- Self-protection rules from #17 still apply: a user can only toggle their own `is_public` flag, not others' (admins can override via `/admin/usuarios` if needed — add that toggle there too).
+- Keep i18n in Spanish (route paths, labels, copy).
+- Don't introduce new libraries unless strictly needed. Use only what's already installed.
+
+Deliverables:
+- Migration file applied to add `users.is_public` (default true).
+- Public API endpoints: `GET /api/public/users/:username` and `GET /api/users/:username/stats`.
+- Page: `client/src/pages/member-card.tsx` and route registration.
+- Toggle in `/perfil/preferencias` with form save.
+- Updated user dropdown menu with "Ver mi tarjeta" entry.
+- "Ver tarjeta" button on `/miembros/:username` and on member cards in `/miembros`.
+- Test instructions: log in as Carlos (`carlos.*@aicomunidad.dev`), visit `/m/carlos_<lastname>`, verify card renders without login (open in incognito). Toggle privacy off, verify 404. Log in as Lucía, verify gold admin badge.
