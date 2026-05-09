@@ -101,17 +101,28 @@ export function HeroSection({ data }: HeroSectionProps) {
           <div
             className="relative h-full w-full overflow-hidden rounded-l-[2rem]"
             style={{
-              background:
-                "linear-gradient(135deg, #1a1040 0%, #0d1b4b 50%, #0a0a1a 100%)",
+              backgroundImage:
+                "url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
             }}
           >
-            {/* Subtle inner glow */}
+            {/* Purple/blue tint overlay at ~70% — photo shows through */}
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0"
               style={{
                 background:
-                  "radial-gradient(ellipse 70% 60% at 55% 35%, rgba(139,92,246,0.22) 0%, transparent 70%)",
+                  "linear-gradient(135deg, rgba(26,16,64,0.72) 0%, rgba(13,27,75,0.72) 50%, rgba(10,10,26,0.72) 100%)",
+              }}
+            />
+            {/* Radial glow on top */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(ellipse 70% 60% at 55% 35%, rgba(139,92,246,0.18) 0%, transparent 70%)",
               }}
             />
 
@@ -168,13 +179,13 @@ export function HeroSection({ data }: HeroSectionProps) {
               className="absolute bottom-6 left-6 text-xs font-semibold tracking-[0.2em] text-white/60 uppercase"
               aria-hidden="true"
             >
-              IA Labs Perú
+              AI BUILD
             </span>
             <span
               className="absolute bottom-6 right-6 text-right text-xs font-semibold tracking-[0.15em] text-white/40 uppercase"
               aria-hidden="true"
             >
-              Comunidad de<br />Inteligencia Artificial
+              Comunidad de IA<br />en LATAM
             </span>
           </div>
         </div>
