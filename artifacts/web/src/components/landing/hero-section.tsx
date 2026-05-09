@@ -18,6 +18,7 @@ const into = (delay: number) => ({
 const DEFAULT_TITLE = "Construye, aprende y crece con la comunidad de IA.";
 const DEFAULT_SUBTITLE =
   "Conéctate con builders, founders y profesionales que están creando con IA todos los días. Eventos, recursos, foro y marketplace en un solo lugar.";
+const DEFAULT_BADGE = "@IALABSPERU · Comunidad de IA en español";
 const DEFAULT_CTA_PRIMARY = "Unirme gratis";
 const DEFAULT_CTA_SECONDARY = "Ya tengo cuenta";
 const DEFAULT_STATS = [
@@ -32,6 +33,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ data }: HeroSectionProps) {
   const c = (data?.content ?? {}) as Record<string, unknown>;
+  const badge = (c.badge as string) ?? DEFAULT_BADGE;
   const ctaPrimary = (c.cta_primary as string) ?? DEFAULT_CTA_PRIMARY;
   const ctaSecondary = (c.cta_secondary as string) ?? DEFAULT_CTA_SECONDARY;
   const stats = (c.stats as typeof DEFAULT_STATS) ?? DEFAULT_STATS;
@@ -50,7 +52,7 @@ export function HeroSection({ data }: HeroSectionProps) {
           {/* Pill badge */}
           <motion.div initial={base} animate={into(0)} className="mb-8">
             <span className="inline-flex items-center gap-2 rounded-full border border-secondary px-4 py-1 text-xs text-secondary">
-              @IALABSPERU · Comunidad de IA en español
+              {badge}
             </span>
           </motion.div>
 
