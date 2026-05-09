@@ -41,7 +41,7 @@ export function HeroSection({ data }: HeroSectionProps) {
   const subtitle = data?.subtitle ?? DEFAULT_SUBTITLE;
 
   return (
-    <>
+    <div>
       {/* ── Split hero ── */}
       <section
         aria-labelledby="hero-heading"
@@ -61,8 +61,7 @@ export function HeroSection({ data }: HeroSectionProps) {
             id="hero-heading"
             initial={base}
             animate={into(0.1)}
-            className="mb-8 text-foreground leading-[1.05] font-light"
-            style={{ fontSize: "clamp(2.8rem, 7vw, 5.5rem)" }}
+            className="mb-8 text-6xl font-thin leading-[1.02] tracking-tight text-foreground lg:text-8xl"
           >
             {title}
           </motion.h1>
@@ -97,35 +96,104 @@ export function HeroSection({ data }: HeroSectionProps) {
           </motion.div>
         </div>
 
-        {/* RIGHT — full-bleed image panel */}
+        {/* RIGHT — poster panel */}
         <div className="hidden lg:block lg:w-[45%]">
-          <div className="relative h-full w-full overflow-hidden rounded-l-[2rem]">
-            <img
-              src="/opengraph.jpg"
-              alt="IA Labs Perú — comunidad"
-              className="absolute inset-0 h-full w-full object-cover"
-              style={{ mixBlendMode: "normal" }}
-            />
-            {/* Colour overlay */}
+          <div
+            className="relative h-full w-full overflow-hidden rounded-l-[2rem]"
+            style={{
+              background:
+                "linear-gradient(135deg, #1a1040 0%, #0d1b4b 50%, #0a0a1a 100%)",
+            }}
+          >
+            {/* Subtle inner glow */}
             <div
-              className="absolute inset-0"
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(135deg, hsl(262 80% 30% / 0.65) 0%, hsl(220 80% 30% / 0.55) 100%)",
-                mixBlendMode: "multiply",
+                  "radial-gradient(ellipse 70% 60% at 60% 40%, rgba(139,92,246,0.18) 0%, transparent 70%)",
               }}
             />
-            {/* Dark vignette so labels are readable */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+
+            {/* Decorative — thin rectangle outline */}
+            <div
+              aria-hidden="true"
+              className="absolute"
+              style={{
+                top: "10%",
+                left: "8%",
+                width: "55%",
+                height: "50%",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: "2px",
+              }}
+            />
+
+            {/* Decorative — offset second rectangle */}
+            <div
+              aria-hidden="true"
+              className="absolute"
+              style={{
+                top: "16%",
+                left: "14%",
+                width: "55%",
+                height: "50%",
+                border: "1px solid rgba(139,92,246,0.25)",
+                borderRadius: "2px",
+              }}
+            />
+
+            {/* Decorative — large circle arc (clipped top-right) */}
+            <div
+              aria-hidden="true"
+              className="absolute"
+              style={{
+                bottom: "-15%",
+                right: "-15%",
+                width: "65%",
+                height: "65%",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "50%",
+              }}
+            />
+
+            {/* Decorative — small circle accent */}
+            <div
+              aria-hidden="true"
+              className="absolute"
+              style={{
+                top: "58%",
+                left: "22%",
+                width: "6px",
+                height: "6px",
+                backgroundColor: "rgba(170,255,0,0.7)",
+                borderRadius: "50%",
+              }}
+            />
+
+            {/* Decorative — horizontal thin line */}
+            <div
+              aria-hidden="true"
+              className="absolute"
+              style={{
+                bottom: "28%",
+                left: "8%",
+                width: "40%",
+                height: "1px",
+                background:
+                  "linear-gradient(90deg, rgba(139,92,246,0.6) 0%, transparent 100%)",
+              }}
+            />
+
             {/* Small-caps corner labels */}
             <span
-              className="absolute bottom-6 left-6 text-xs font-semibold tracking-[0.2em] text-white/80 uppercase"
+              className="absolute bottom-6 left-6 text-xs font-semibold tracking-[0.2em] text-white/60 uppercase"
               aria-hidden="true"
             >
               IA Labs Perú
             </span>
             <span
-              className="absolute bottom-6 right-6 text-right text-xs font-semibold tracking-[0.15em] text-white/60 uppercase"
+              className="absolute bottom-6 right-6 text-right text-xs font-semibold tracking-[0.15em] text-white/40 uppercase"
               aria-hidden="true"
             >
               Comunidad de<br />Inteligencia Artificial
@@ -151,6 +219,6 @@ export function HeroSection({ data }: HeroSectionProps) {
           ))}
         </motion.div>
       </section>
-    </>
+    </div>
   );
 }
