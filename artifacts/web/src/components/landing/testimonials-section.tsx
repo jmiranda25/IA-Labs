@@ -84,11 +84,11 @@ export function TestimonialsSection({ data }: TestimonialsSectionProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.1 }}
                 transition={{ duration: 0.5, delay: i * 0.12, ease: "easeOut" }}
-                className="rounded-sm border border-border bg-card p-8 flex flex-col gap-6"
+                className="bg-white/5 border border-white/10 rounded-sm p-6 flex flex-col gap-6"
               >
                 <Quote className="h-5 w-5 text-primary/60 shrink-0" aria-hidden="true" />
                 <blockquote>
-                  <p className="text-foreground/90 leading-relaxed text-sm">"{quote}"</p>
+                  <p className="text-sm text-white/80 leading-relaxed">"{quote}"</p>
                 </blockquote>
                 <figcaption className="flex items-center gap-3 mt-auto">
                   <div

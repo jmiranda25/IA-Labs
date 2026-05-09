@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { useInView } from "./use-in-view";
 import type { LandingSection } from "@workspace/api-client-react";
 
 const REDUCED =
@@ -35,15 +34,15 @@ interface HowItWorksSectionProps {
 }
 
 export function HowItWorksSection({ data }: HowItWorksSectionProps) {
-  const { ref, inView } = useInView();
   const c = (data?.content ?? {}) as Record<string, unknown>;
   const title = data?.title ?? DEFAULT_TITLE;
   const subtitle = data?.subtitle ?? DEFAULT_SUBTITLE;
-  const steps = (c.steps as Step[]) ?? DEFAULT_STEPS;
+  const rawSteps = c.steps as Step[] | undefined;
+  const steps =
+    Array.isArray(rawSteps) && rawSteps.length > 0 ? rawSteps : DEFAULT_STEPS;
 
   return (
     <section
-      ref={ref as React.RefObject<HTMLElement>}
       aria-labelledby="howitworks-heading"
       className="max-w-6xl mx-auto px-4 sm:px-6 py-24"
     >
@@ -68,7 +67,8 @@ export function HowItWorksSection({ data }: HowItWorksSectionProps) {
           <motion.div
             key={n}
             initial={{ opacity: 0, y: REDUCED ? 0 : 24 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.1 }}
             transition={{ duration: 0.5, delay: i * 0.12, ease: "easeOut" }}
             className="flex flex-col items-center text-center gap-4 relative z-10"
           >

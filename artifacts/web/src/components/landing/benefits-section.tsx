@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { GraduationCap, MessageSquare, Bell, type LucideIcon } from "lucide-react";
-import { useInView } from "./use-in-view";
 import type { LandingSection } from "@workspace/api-client-react";
 
 const REDUCED =
@@ -44,15 +43,15 @@ interface BenefitsSectionProps {
 }
 
 export function BenefitsSection({ data }: BenefitsSectionProps) {
-  const { ref, inView } = useInView();
   const c = (data?.content ?? {}) as Record<string, unknown>;
   const title = data?.title ?? DEFAULT_TITLE;
   const subtitle = data?.subtitle ?? DEFAULT_SUBTITLE;
-  const items = (c.items as BenefitItem[]) ?? DEFAULT_ITEMS;
+  const rawItems = c.items as BenefitItem[] | undefined;
+  const items =
+    Array.isArray(rawItems) && rawItems.length > 0 ? rawItems : DEFAULT_ITEMS;
 
   return (
     <section
-      ref={ref as React.RefObject<HTMLElement>}
       aria-labelledby="benefits-heading"
       className="max-w-6xl mx-auto px-4 sm:px-6 pb-24"
     >
@@ -66,25 +65,21 @@ export function BenefitsSection({ data }: BenefitsSectionProps) {
         <p className="text-muted-foreground max-w-xl mx-auto">{subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
         {items.map(({ icon, title: itemTitle, body }, i) => {
           const Icon = ICON_MAP[icon] ?? GraduationCap;
           return (
             <motion.div
               key={itemTitle}
               initial={{ opacity: 0, y: REDUCED ? 0 : 28 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.1 }}
               transition={{ duration: 0.5, delay: i * 0.12, ease: "easeOut" }}
-              className="rounded-2xl border border-border bg-card p-8 flex flex-col gap-4 hover:border-primary/40 transition-colors group"
+              className="flex flex-col gap-4"
             >
-              <div
-                aria-hidden="true"
-                className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors"
-              >
-                <Icon className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">{itemTitle}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+              <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
+              <h3 className="font-medium text-white">{itemTitle}</h3>
+              <p className="text-sm text-white/50 leading-relaxed">{body}</p>
             </motion.div>
           );
         })}

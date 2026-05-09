@@ -48,7 +48,7 @@ export function HeroSection({ data }: HeroSectionProps) {
         className="relative flex min-h-screen overflow-hidden"
       >
         {/* LEFT — editorial content */}
-        <div className="relative z-10 flex w-full flex-col justify-center px-8 py-24 sm:px-12 lg:w-[55%] lg:px-16 lg:py-32">
+        <div className="relative z-10 flex w-full flex-col justify-center px-8 pt-32 pb-24 sm:px-12 lg:w-[55%] lg:px-16 lg:pt-40 lg:pb-32">
           {/* Pill badge */}
           <motion.div initial={base} animate={into(0)} className="mb-8">
             <span className="inline-flex items-center gap-2 rounded-full border border-secondary px-4 py-1 text-xs text-secondary">
@@ -61,7 +61,7 @@ export function HeroSection({ data }: HeroSectionProps) {
             id="hero-heading"
             initial={base}
             animate={into(0.1)}
-            className="mb-8 text-7xl font-extralight leading-none tracking-tight text-white lg:text-9xl"
+            className="mb-8 text-5xl font-extralight leading-none tracking-tight text-white lg:text-7xl"
           >
             {title}
           </motion.h1>
