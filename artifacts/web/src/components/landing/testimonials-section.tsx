@@ -1,17 +1,10 @@
 import { motion } from "framer-motion";
 import { Quote } from "lucide-react";
-import { useInView } from "./use-in-view";
 import type { LandingSection } from "@workspace/api-client-react";
 
 const REDUCED =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-const GRADIENT_COLORS = [
-  "from-primary/30 to-primary/10",
-  "from-[hsl(190_100%_50%)]/30 to-[hsl(190_100%_50%)]/10",
-  "from-primary/30 to-[hsl(190_100%_50%)]/10",
-];
 
 const DEFAULT_TITLE = "Lo que dicen nuestros miembros";
 const DEFAULT_SUBTITLE = "Personas reales, resultados concretos.";
@@ -37,6 +30,12 @@ const DEFAULT_ITEMS = [
   },
 ];
 
+const AVATAR_COLORS = [
+  "from-primary/40 to-primary/10",
+  "from-secondary/40 to-secondary/10",
+  "from-accent/40 to-accent/10",
+];
+
 interface TestimonialItem {
   quote: string;
   name: string;
@@ -49,15 +48,15 @@ interface TestimonialsSectionProps {
 }
 
 export function TestimonialsSection({ data }: TestimonialsSectionProps) {
-  const { ref, inView } = useInView();
   const c = (data?.content ?? {}) as Record<string, unknown>;
   const title = data?.title ?? DEFAULT_TITLE;
   const subtitle = data?.subtitle ?? DEFAULT_SUBTITLE;
-  const items = (c.items as TestimonialItem[]) ?? DEFAULT_ITEMS;
+  const rawItems = c.items as TestimonialItem[] | undefined;
+  const items =
+    Array.isArray(rawItems) && rawItems.length > 0 ? rawItems : DEFAULT_ITEMS;
 
   return (
     <section
-      ref={ref as React.RefObject<HTMLElement>}
       aria-labelledby="testimonials-heading"
       className="bg-card/40 border-y border-border py-24"
     >
@@ -73,32 +72,39 @@ export function TestimonialsSection({ data }: TestimonialsSectionProps) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {items.map(({ quote, name, role, initials }, i) => (
-            <motion.figure
-              key={i}
-              initial={{ opacity: 0, y: REDUCED ? 0 : 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: i * 0.12, ease: "easeOut" }}
-              className="rounded-2xl border border-border bg-card p-8 flex flex-col gap-6"
-            >
-              <Quote className="h-5 w-5 text-primary/60 shrink-0" aria-hidden="true" />
-              <blockquote>
-                <p className="text-foreground/90 leading-relaxed text-sm">"{quote}"</p>
-              </blockquote>
-              <figcaption className="flex items-center gap-3 mt-auto">
-                <div
-                  aria-hidden="true"
-                  className={`h-10 w-10 rounded-full bg-gradient-to-br ${GRADIENT_COLORS[i % GRADIENT_COLORS.length]} flex items-center justify-center shrink-0`}
-                >
-                  <span className="text-xs font-bold text-foreground">{initials}</span>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-foreground">{name}</div>
-                  <div className="text-xs text-muted-foreground">{role}</div>
-                </div>
-              </figcaption>
-            </motion.figure>
-          ))}
+          {items.map((item, i) => {
+            const quote = item.quote ?? "";
+            const name = item.name ?? "Miembro";
+            const role = item.role ?? "";
+            const initials = item.initials ?? name.slice(0, 2).toUpperCase();
+            return (
+              <motion.figure
+                key={i}
+                initial={{ opacity: 0, y: REDUCED ? 0 : 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.1 }}
+                transition={{ duration: 0.5, delay: i * 0.12, ease: "easeOut" }}
+                className="rounded-sm border border-border bg-card p-8 flex flex-col gap-6"
+              >
+                <Quote className="h-5 w-5 text-primary/60 shrink-0" aria-hidden="true" />
+                <blockquote>
+                  <p className="text-foreground/90 leading-relaxed text-sm">"{quote}"</p>
+                </blockquote>
+                <figcaption className="flex items-center gap-3 mt-auto">
+                  <div
+                    aria-hidden="true"
+                    className={`h-10 w-10 rounded-full bg-gradient-to-br ${AVATAR_COLORS[i % AVATAR_COLORS.length]} flex items-center justify-center shrink-0`}
+                  >
+                    <span className="text-xs font-bold text-foreground">{initials}</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-foreground">{name}</div>
+                    <div className="text-xs text-muted-foreground">{role}</div>
+                  </div>
+                </figcaption>
+              </motion.figure>
+            );
+          })}
         </div>
       </div>
     </section>

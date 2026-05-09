@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { useInView } from "./use-in-view";
 import type { LandingSection } from "@workspace/api-client-react";
 
 const REDUCED =
@@ -37,15 +36,17 @@ interface ForWhoSectionProps {
 }
 
 export function ForWhoSection({ data }: ForWhoSectionProps) {
-  const { ref, inView } = useInView();
   const c = (data?.content ?? {}) as Record<string, unknown>;
   const title = data?.title ?? DEFAULT_TITLE;
   const subtitle = data?.subtitle ?? DEFAULT_SUBTITLE;
-  const profiles = (c.profiles as Profile[]) ?? DEFAULT_PROFILES;
+  const rawProfiles = c.profiles as Profile[] | undefined;
+  const profiles =
+    Array.isArray(rawProfiles) && rawProfiles.length > 0
+      ? rawProfiles
+      : DEFAULT_PROFILES;
 
   return (
     <section
-      ref={ref as React.RefObject<HTMLElement>}
       aria-labelledby="forwho-heading"
       className="bg-card/40 border-y border-border py-24"
     >
@@ -65,9 +66,10 @@ export function ForWhoSection({ data }: ForWhoSectionProps) {
             <motion.div
               key={label}
               initial={{ opacity: 0, y: REDUCED ? 0 : 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.1 }}
               transition={{ duration: 0.45, delay: i * 0.12, ease: "easeOut" }}
-              className="rounded-2xl border border-border bg-card p-8 flex flex-col items-center text-center gap-4"
+              className="rounded-sm border border-border bg-card p-8 flex flex-col items-center text-center gap-4"
             >
               <span className="text-4xl" role="img" aria-label={label}>
                 {emoji}

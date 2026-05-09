@@ -61,7 +61,7 @@ export function HeroSection({ data }: HeroSectionProps) {
             id="hero-heading"
             initial={base}
             animate={into(0.1)}
-            className="mb-8 text-6xl font-thin leading-[1.02] tracking-tight text-foreground lg:text-8xl"
+            className="mb-8 text-7xl font-extralight leading-none tracking-tight text-white lg:text-9xl"
           >
             {title}
           </motion.h1>
@@ -111,77 +111,55 @@ export function HeroSection({ data }: HeroSectionProps) {
               className="pointer-events-none absolute inset-0"
               style={{
                 background:
-                  "radial-gradient(ellipse 70% 60% at 60% 40%, rgba(139,92,246,0.18) 0%, transparent 70%)",
+                  "radial-gradient(ellipse 70% 60% at 55% 35%, rgba(139,92,246,0.22) 0%, transparent 70%)",
               }}
             />
 
-            {/* Decorative — thin rectangle outline */}
+            {/* Decorative — main rectangle outline, centered */}
             <div
               aria-hidden="true"
               className="absolute"
               style={{
-                top: "10%",
-                left: "8%",
-                width: "55%",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "40%",
                 height: "50%",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: "2px",
+                border: "1px solid rgba(255,255,255,0.20)",
               }}
             />
 
-            {/* Decorative — offset second rectangle */}
+            {/* Decorative — circle arc inside / bottom-right of rect */}
             <div
               aria-hidden="true"
-              className="absolute"
               style={{
-                top: "16%",
-                left: "14%",
-                width: "55%",
-                height: "50%",
-                border: "1px solid rgba(139,92,246,0.25)",
-                borderRadius: "2px",
-              }}
-            />
-
-            {/* Decorative — large circle arc (clipped top-right) */}
-            <div
-              aria-hidden="true"
-              className="absolute"
-              style={{
-                bottom: "-15%",
-                right: "-15%",
-                width: "65%",
-                height: "65%",
-                border: "1px solid rgba(255,255,255,0.08)",
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-10%, -10%)",
+                width: "128px",
+                height: "128px",
+                border: "2px solid rgba(255,255,255,0.15)",
                 borderRadius: "50%",
               }}
             />
 
-            {/* Decorative — small circle accent */}
-            <div
-              aria-hidden="true"
-              className="absolute"
-              style={{
-                top: "58%",
-                left: "22%",
-                width: "6px",
-                height: "6px",
-                backgroundColor: "rgba(170,255,0,0.7)",
-                borderRadius: "50%",
-              }}
-            />
+            {/* Scattered dots */}
+            <div aria-hidden="true" className="absolute" style={{ top: "22%", left: "18%", width: "4px", height: "4px", borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.30)" }} />
+            <div aria-hidden="true" className="absolute" style={{ top: "38%", right: "16%", width: "4px", height: "4px", borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.30)" }} />
+            <div aria-hidden="true" className="absolute" style={{ bottom: "32%", left: "24%", width: "4px", height: "4px", borderRadius: "50%", backgroundColor: "rgba(170,255,0,0.55)" }} />
+            <div aria-hidden="true" className="absolute" style={{ bottom: "20%", right: "28%", width: "4px", height: "4px", borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.30)" }} />
 
-            {/* Decorative — horizontal thin line */}
+            {/* Decorative — horizontal accent line */}
             <div
               aria-hidden="true"
               className="absolute"
               style={{
                 bottom: "28%",
                 left: "8%",
-                width: "40%",
+                width: "38%",
                 height: "1px",
-                background:
-                  "linear-gradient(90deg, rgba(139,92,246,0.6) 0%, transparent 100%)",
+                background: "linear-gradient(90deg, rgba(139,92,246,0.7) 0%, transparent 100%)",
               }}
             />
 
