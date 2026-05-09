@@ -1,0 +1,67 @@
+I want to redesign the visual identity of the entire app to match 
+an editorial/magazine aesthetic inspired by our brand posters. 
+Please make ALL these changes at once:
+
+━━━ 1. DESIGN TOKENS — edit src/index.css ━━━
+Replace the current :root CSS variables with:
+  --background: 220 20% 4%;        /* near-black with blue tint */
+  --foreground: 0 0% 96%;
+  --card: 220 18% 7%;
+  --card-foreground: 0 0% 96%;
+  --primary: 262 80% 63%;          /* electric purple #8B5CF6 */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 74 100% 50%;        /* yellow-green #AAFF00 */
+  --secondary-foreground: 0 0% 0%;
+  --muted: 220 15% 12%;
+  --muted-foreground: 220 10% 55%;
+  --accent: 220 80% 60%;           /* electric blue */
+  --border: 220 15% 15%;
+  --radius: 0.25rem;               /* sharp corners everywhere */
+
+Add this film grain overlay globally in index.css:
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.35;
+  }
+
+━━━ 2. HERO SECTION — edit hero-section.tsx ━━━
+Redesign to a split layout:
+- Left 55%: large editorial headline, left-aligned, 
+  font-size clamp(3rem, 8vw, 6rem), font-weight 300 (thin/light)
+  + pill badge above headline: "@IALABSPERU · Comunidad de IA en español"
+  styled with border border-secondary text-secondary rounded-full px-4 py-1 text-xs
+  + CTA buttons below, purple primary + ghost secondary
+- Right 45%: full-bleed image panel with:
+  - blue/purple color overlay (mix-blend-mode: multiply, opacity 60%)
+  - rounded-l-[2rem] on the left edge only
+  - "IA LABS PERÚ" small caps label at bottom-left of the image
+  - "COMUNIDAD DE INTELIGENCIA ARTIFICIAL" small caps at bottom-right
+- Overall section: min-h-screen, dark background, no centered layout
+
+━━━ 3. LANDING HEADER — edit landing-header.tsx ━━━
+- Remove any gradient backgrounds
+- Make it fully transparent with backdrop-blur-sm on scroll
+- Logo: increase size, use font-light tracking-widest for text
+- Nav links: text-xs uppercase tracking-widest text-muted-foreground 
+  hover:text-foreground transition
+- CTA button: keep purple but make it sharp corners (rounded-sm)
+
+━━━ 4. STATS ROW (below hero) ━━━
+- Remove card containers, show stats as raw numbers
+- Number: text-5xl font-light text-primary (purple)
+- Label: text-xs uppercase tracking-widest text-muted-foreground
+- Separate with thin vertical dividers border-r border-border/30
+
+━━━ 5. EVENT CARDS — wherever event cards are rendered ━━━
+- Full-bleed image as card background (absolute positioned)
+- Dark gradient overlay from bottom: from-black/80 to-transparent
+- Title: text-2xl font-light text-white overlapping the image, bottom-left
+- Badge for event type (pill, yellow-green bg, black text, sharp corners)
+- Remove all card borders and box shadows
+
+Apply all changes now and show me the result.
