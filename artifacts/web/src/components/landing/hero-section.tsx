@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import type { LandingSection } from "@workspace/api-client-react";
 
 const REDUCED =
@@ -16,11 +15,9 @@ const into = (delay: number) => ({
   transition: { duration: 0.55, delay, ease: "easeOut" as const },
 });
 
-const DEFAULT_TITLE_PLAIN = "Construye, aprende y crece con la";
-const DEFAULT_TITLE_GRADIENT = "comunidad de IA.";
+const DEFAULT_TITLE = "Construye, aprende y crece con la comunidad de IA.";
 const DEFAULT_SUBTITLE =
   "Conéctate con builders, founders y profesionales que están creando con IA todos los días. Eventos, recursos, foro y marketplace en un solo lugar.";
-const DEFAULT_BADGE = "🤝 Comunidad de IA en español";
 const DEFAULT_CTA_PRIMARY = "Unirme gratis";
 const DEFAULT_CTA_SECONDARY = "Ya tengo cuenta";
 const DEFAULT_STATS = [
@@ -35,92 +32,123 @@ interface HeroSectionProps {
 
 export function HeroSection({ data }: HeroSectionProps) {
   const c = (data?.content ?? {}) as Record<string, unknown>;
-  const badge = (c.badge as string) ?? DEFAULT_BADGE;
   const ctaPrimary = (c.cta_primary as string) ?? DEFAULT_CTA_PRIMARY;
   const ctaSecondary = (c.cta_secondary as string) ?? DEFAULT_CTA_SECONDARY;
   const stats = (c.stats as typeof DEFAULT_STATS) ?? DEFAULT_STATS;
+  const title = data?.title ?? DEFAULT_TITLE;
+  const subtitle = data?.subtitle ?? DEFAULT_SUBTITLE;
 
   return (
-    <section
-      aria-labelledby="hero-heading"
-      className="relative overflow-hidden pt-20 pb-24 sm:pt-28 sm:pb-32 text-center px-4"
-    >
-      {/* Radial glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 flex items-start justify-center"
+    <>
+      {/* ── Split hero ── */}
+      <section
+        aria-labelledby="hero-heading"
+        className="relative flex min-h-screen overflow-hidden"
       >
-        <div className="h-[600px] w-[900px] rounded-full bg-primary/10 blur-[120px] -translate-y-1/3" />
-      </div>
-
-      <div className="relative max-w-4xl mx-auto">
-        <motion.div initial={base} animate={into(0)}>
-          <Badge variant="secondary" className="mb-6 gap-1.5 px-3 py-1 text-xs inline-flex">
-            <span aria-hidden="true">{badge.startsWith("🤝") ? badge.slice(0, 2) : "🤝"}</span>
-            {badge.startsWith("🤝") ? badge.slice(2).trim() : badge}
-          </Badge>
-        </motion.div>
-
-        <motion.h1
-          id="hero-heading"
-          initial={base}
-          animate={into(0.1)}
-          className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6"
-        >
-          {data?.title ? (
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-[hsl(190_100%_50%)]">
-              {data.title}
+        {/* LEFT — editorial content */}
+        <div className="relative z-10 flex w-full flex-col justify-center px-8 py-24 sm:px-12 lg:w-[55%] lg:px-16 lg:py-32">
+          {/* Pill badge */}
+          <motion.div initial={base} animate={into(0)} className="mb-8">
+            <span className="inline-flex items-center gap-2 rounded-full border border-secondary px-4 py-1 text-xs text-secondary">
+              @IALABSPERU · Comunidad de IA en español
             </span>
-          ) : (
-            <>
-              {DEFAULT_TITLE_PLAIN}{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-[hsl(190_100%_50%)]">
-                {DEFAULT_TITLE_GRADIENT}
-              </span>
-            </>
-          )}
-        </motion.h1>
+          </motion.div>
 
-        <motion.p
-          initial={base}
-          animate={into(0.2)}
-          className="text-lg sm:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
-        >
-          {data?.subtitle ?? DEFAULT_SUBTITLE}
-        </motion.p>
+          {/* Editorial headline */}
+          <motion.h1
+            id="hero-heading"
+            initial={base}
+            animate={into(0.1)}
+            className="mb-8 text-foreground leading-[1.05] font-light"
+            style={{ fontSize: "clamp(2.8rem, 7vw, 5.5rem)" }}
+          >
+            {title}
+          </motion.h1>
 
+          <motion.p
+            initial={base}
+            animate={into(0.2)}
+            className="mb-10 max-w-lg text-base text-muted-foreground sm:text-lg"
+          >
+            {subtitle}
+          </motion.p>
+
+          <motion.div
+            initial={base}
+            animate={into(0.3)}
+            className="flex flex-col gap-3 sm:flex-row"
+          >
+            <Button size="lg" className="gap-2 rounded-sm text-base" asChild>
+              <Link href="/registro">
+                {ctaPrimary}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+            <Button
+              size="lg"
+              variant="ghost"
+              className="rounded-sm text-base border border-border/40"
+              asChild
+            >
+              <Link href="/iniciar-sesion">{ctaSecondary}</Link>
+            </Button>
+          </motion.div>
+        </div>
+
+        {/* RIGHT — full-bleed image panel */}
+        <div className="hidden lg:block lg:w-[45%]">
+          <div className="relative h-full w-full overflow-hidden rounded-l-[2rem]">
+            <img
+              src="/opengraph.jpg"
+              alt="IA Labs Perú — comunidad"
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{ mixBlendMode: "normal" }}
+            />
+            {/* Colour overlay */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(262 80% 30% / 0.65) 0%, hsl(220 80% 30% / 0.55) 100%)",
+                mixBlendMode: "multiply",
+              }}
+            />
+            {/* Dark vignette so labels are readable */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+            {/* Small-caps corner labels */}
+            <span
+              className="absolute bottom-6 left-6 text-xs font-semibold tracking-[0.2em] text-white/80 uppercase"
+              aria-hidden="true"
+            >
+              IA Labs Perú
+            </span>
+            <span
+              className="absolute bottom-6 right-6 text-right text-xs font-semibold tracking-[0.15em] text-white/60 uppercase"
+              aria-hidden="true"
+            >
+              Comunidad de<br />Inteligencia Artificial
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Stats row ── */}
+      <section aria-label="Estadísticas de la comunidad" className="border-y border-border/30">
         <motion.div
           initial={base}
-          animate={into(0.3)}
-          className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
-        >
-          <Button size="lg" className="gap-2 text-base" asChild>
-            <Link href="/registro">
-              {ctaPrimary}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </Button>
-          <Button size="lg" variant="outline" className="text-base" asChild>
-            <Link href="/iniciar-sesion">{ctaSecondary}</Link>
-          </Button>
-        </motion.div>
-
-        {/* Key stats */}
-        <motion.div
-          initial={base}
-          animate={into(0.4)}
-          className="grid grid-cols-3 gap-6 max-w-lg mx-auto"
+          animate={into(0.45)}
+          className="mx-auto flex max-w-4xl divide-x divide-border/30"
         >
           {stats.map(({ value, label }) => (
-            <div key={label} className="text-center">
-              <div className="text-2xl sm:text-3xl font-extrabold text-primary tabular-nums">
-                {value}
+            <div key={label} className="flex-1 px-6 py-10 text-center sm:px-10">
+              <div className="text-5xl font-light tabular-nums text-primary">{value}</div>
+              <div className="mt-2 text-xs uppercase tracking-widest text-muted-foreground">
+                {label}
               </div>
-              <div className="text-xs sm:text-sm text-muted-foreground mt-1">{label}</div>
             </div>
           ))}
         </motion.div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

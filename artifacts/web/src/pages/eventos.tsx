@@ -3,8 +3,6 @@ import { Helmet } from "react-helmet-async";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { listEvents, getListEventsQueryKey } from "@workspace/api-client-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,93 +30,87 @@ function EventCard({ event }: { event: EventDetail }) {
   const myActive = event.myRsvp && event.myRsvp !== "cancelled";
   return (
     <Link href={`/eventos/${event.slug}`}>
-      <Card
-        className="hover:border-primary/50 transition-all hover:-translate-y-0.5 cursor-pointer h-full"
+      <div
+        className="relative overflow-hidden cursor-pointer h-64 sm:h-72 transition-transform hover:-translate-y-0.5"
         data-testid={`card-event-${event.slug}`}
       >
-        {event.coverUrl && (
-          <div className="h-40 overflow-hidden rounded-t-xl">
-            <img
-              src={event.coverUrl}
-              alt={event.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
+        {/* Full-bleed background */}
+        {event.coverUrl ? (
+          <img
+            src={event.coverUrl}
+            alt={event.title}
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-accent/20 flex items-center justify-center">
+            <Calendar className="h-12 w-12 text-primary/30" />
           </div>
         )}
-        {!event.coverUrl && (
-          <div className="h-32 rounded-t-xl bg-gradient-to-br from-primary/20 to-accent/10 flex items-center justify-center">
-            <Calendar className="h-10 w-10 text-primary/40" />
-          </div>
-        )}
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-foreground line-clamp-2 leading-snug">
-              {event.title}
-            </h3>
-            {event.isOnline ? (
-              <Badge variant="secondary" className="shrink-0 text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/20">
-                Online
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className="shrink-0 text-xs">
-                Presencial
-              </Badge>
-            )}
-          </div>
 
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+        {/* Type badge — top right */}
+        <div className="absolute top-3 right-3">
+          {event.isOnline ? (
+            <span className="inline-block rounded-none bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-secondary-foreground">
+              Online
+            </span>
+          ) : (
+            <span className="inline-block rounded-none bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-secondary-foreground">
+              Presencial
+            </span>
+          )}
+        </div>
+
+        {/* Content — bottom left */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <h3 className="text-2xl font-light text-white leading-snug line-clamp-2 mb-2">
+            {event.title}
+          </h3>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
+            <span className="flex items-center gap-1">
               <Clock className="h-3 w-3 shrink-0" />
-              <span>{formatCardDate(event.startsAt as unknown as string)}</span>
-            </div>
+              {formatCardDate(event.startsAt as unknown as string)}
+            </span>
             {!event.isOnline && event.location && (
-              <div className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate">{event.location}</span>
-              </div>
+                <span className="truncate max-w-[120px]">{event.location}</span>
+              </span>
             )}
             {event.isOnline && (
-              <div className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1">
                 <Video className="h-3 w-3 shrink-0" />
-                <span>Evento online</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5">
-              <Users className="h-3 w-3 shrink-0" />
-              <span>
-                {event.counts.going} van
-                {event.capacity ? ` / ${event.capacity}` : ""}
-                {event.counts.interested > 0 &&
-                  ` · ${event.counts.interested} interesados`}
+                Evento online
               </span>
-            </div>
+            )}
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3 shrink-0" />
+              {event.counts.going} van
+              {event.capacity ? ` / ${event.capacity}` : ""}
+            </span>
           </div>
 
           {myActive && (
-            <Badge
-              variant="secondary"
-              className="text-xs bg-primary/10 text-primary border-primary/20"
-            >
-              {event.myRsvp === "going" ? "✓ Voy" : "★ Me interesa"}
-            </Badge>
+            <div className="mt-2">
+              <span className="text-xs font-medium text-primary">
+                {event.myRsvp === "going" ? "✓ Voy" : "★ Me interesa"}
+              </span>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   );
 }
 
 function EventCardSkeleton() {
   return (
-    <Card>
-      <Skeleton className="h-40 rounded-t-xl rounded-b-none" />
-      <CardContent className="p-4 space-y-3">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
-        <Skeleton className="h-3 w-2/3" />
-      </CardContent>
-    </Card>
+    <div className="relative overflow-hidden h-64 sm:h-72">
+      <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
+    </div>
   );
 }
 
