@@ -48,19 +48,37 @@ const PUBLIC_COLS = {
   joinedAt: true,
 } as const;
 
+// Emails that always receive the administrator role on first sign-up.
+// Comma-separated list in ADMIN_BOOTSTRAP_EMAILS env var.
+const BOOTSTRAP_ADMIN_EMAILS = new Set(
+  (process.env.ADMIN_BOOTSTRAP_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+);
+
 // ── GET /users/me ────────────────────────────────────────────────────────────
 router.get("/users/me", requireAuth, async (req, res) => {
   const clerkId = req.userId!;
   const auth = getAuth(req);
   const claims = auth?.sessionClaims as Record<string, unknown> | null;
   const clerkRole = (claims?.publicMetadata as Record<string, unknown> | null)?.role as string | undefined;
+  const clerkEmail = (claims?.email as string | undefined)?.toLowerCase();
 
   let user = await db.query.usersTable.findFirst({
     where: eq(usersTable.clerkId, clerkId),
   });
 
   if (!user) {
-    // New user: seed role from Clerk JWT metadata (set by admin bootstrap or Clerk dashboard)
+    // Determine role: bootstrap email list takes highest priority,
+    // then Clerk JWT publicMetadata, then default participant.
+    const isBootstrapAdmin = !!clerkEmail && BOOTSTRAP_ADMIN_EMAILS.has(clerkEmail);
+    const effectiveRole: "administrator" | "participant" = isBootstrapAdmin
+      ? "administrator"
+      : clerkRole === "administrator"
+      ? "administrator"
+      : "participant";
+
     const name =
       (claims?.name as string) ||
       (claims?.email as string)?.split("@")[0] ||
@@ -73,7 +91,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
         clerkId,
         displayName: name,
         avatarUrl: avatar,
-        role: clerkRole ?? "participant",
+        role: effectiveRole,
         skills: [],
       })
       .returning();
