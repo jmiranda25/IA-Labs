@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
-import { DemoBanner } from "@/components/demo-banner";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { esES } from "@clerk/localizations";
 import { shadcn } from "@clerk/themes";
@@ -169,7 +168,6 @@ function SignInPage() {
         switchText="¿No tienes cuenta?"
         switchLinkText="Crear cuenta"
         switchHref="/registro"
-        footer={<DemoBanner />}
       >
         <SignIn
           key={demoEmail ?? "default"}

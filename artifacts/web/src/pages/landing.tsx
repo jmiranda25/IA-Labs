@@ -1,6 +1,5 @@
 import { Helmet } from "react-helmet-async";
 import { useLocation } from "wouter";
-import { DemoBanner } from "@/components/demo-banner";
 import { LandingHeader } from "@/components/landing/landing-header";
 import { HeroSection } from "@/components/landing/hero-section";
 import { AboutSection } from "@/components/landing/about-section";
@@ -146,8 +145,6 @@ export default function LandingPage() {
       </a>
 
       <LandingHeader />
-
-      <DemoBanner variant="floating" />
 
       <main id="main-content" tabIndex={-1}>
         <HeroSection data={sections ? findSection(sections, "hero") : null} />
