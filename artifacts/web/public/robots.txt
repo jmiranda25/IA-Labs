@@ -6,4 +6,4 @@ Disallow: /mensajes
 Disallow: /settings
 Disallow: /api/
 
-Sitemap: https://aicommunity.app/api/sitemap.xml
+Sitemap: https://ai-build-community.replit.app/api/sitemap.xml
