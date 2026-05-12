@@ -8,8 +8,6 @@ import { useInView } from "react-intersection-observer";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -52,77 +50,59 @@ function TypeIcon({ type }: { type: string }) {
 function ResourceCard({ r }: { r: any }) {
   return (
     <Link href={`/recursos/${r.slug}`}>
-      <Card className="hover:border-primary/40 transition-all hover:-translate-y-0.5 cursor-pointer h-full group">
-        {r.coverUrl && (
-          <div className="h-32 overflow-hidden rounded-t-lg">
-            <img
-              src={r.coverUrl}
-              alt={r.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
+      <div className="relative overflow-hidden cursor-pointer h-64 sm:h-72 transition-transform hover:-translate-y-0.5">
+        {/* Full-bleed background */}
+        {r.coverUrl ? (
+          <img
+            src={r.coverUrl}
+            alt={r.title}
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-accent/20 flex items-center justify-center">
+            <TypeIcon type={r.type} />
           </div>
         )}
-        <CardContent className={`p-4 ${!r.coverUrl ? "pt-4" : ""}`}>
-          <div className="flex items-start gap-2.5 mb-2.5">
-            <div
-              className={`h-8 w-8 rounded-md flex items-center justify-center shrink-0 border ${TYPE_COLORS[r.type] ?? "bg-muted"}`}
-            >
-              <TypeIcon type={r.type} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm text-foreground line-clamp-2 leading-snug">
-                {r.title}
-              </h3>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <Badge
-                  variant="outline"
-                  className={`text-[10px] px-1.5 py-0 border ${TYPE_COLORS[r.type] ?? ""}`}
-                >
-                  {TYPE_LABELS[r.type] ?? r.type}
-                </Badge>
-                {!r.published && (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] px-1.5 py-0 border-yellow-500/30 text-yellow-400"
-                  >
-                    Pendiente
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
 
-          {r.description && (
-            <p className="text-xs text-muted-foreground line-clamp-2 mb-2.5">
-              {r.description}
-            </p>
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+        {/* Type badge — top right */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          {!r.published && (
+            <span className="inline-block rounded-none bg-yellow-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-black">
+              Pendiente
+            </span>
           )}
+          <span className="inline-flex items-center gap-1 rounded-none bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-secondary-foreground">
+            <TypeIcon type={r.type} />
+            {TYPE_LABELS[r.type] ?? r.type}
+          </span>
+        </div>
 
-          {r.tags?.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-2.5">
-              {r.tags.slice(0, 4).map((t: string) => (
-                <span
-                  key={t}
-                  className="text-[10px] text-muted-foreground flex items-center gap-0.5"
-                >
-                  <TagIcon className="h-2.5 w-2.5" />
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto">
+        {/* Content — bottom left */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <h3 className="text-2xl font-light text-white leading-snug line-clamp-2 mb-2">
+            {r.title}
+          </h3>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
             <span className="truncate">{r.authorName}</span>
-            <span className="shrink-0 ml-2">
+            {r.tags?.length > 0 && (
+              <span className="flex items-center gap-1">
+                <TagIcon className="h-3 w-3 shrink-0" />
+                {r.tags.slice(0, 2).join(", ")}
+              </span>
+            )}
+            <span className="shrink-0">
               {formatDistanceToNow(new Date(r.createdAt), {
                 addSuffix: true,
                 locale: es,
               })}
             </span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   );
 }

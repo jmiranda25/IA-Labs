@@ -7,8 +7,6 @@ import {
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -38,45 +36,62 @@ function ListingCard({ listing }: { listing: any }) {
   const sb = STATUS_BADGE[listing.status];
   return (
     <Link href={`/marketplace/${listing.slug}`}>
-      <Card className="hover:border-primary/40 transition-all hover:-translate-y-0.5 cursor-pointer h-full overflow-hidden">
-        <div className={`h-36 bg-muted flex items-center justify-center overflow-hidden ${firstImage ? "" : "opacity-60"}`}>
-          {firstImage
-            ? <img src={firstImage} alt={listing.title} className="w-full h-full object-cover" />
-            : <ShoppingBag className="h-10 w-10 text-muted-foreground/30" />}
+      <div className="relative overflow-hidden cursor-pointer h-64 sm:h-72 transition-transform hover:-translate-y-0.5">
+        {/* Full-bleed background */}
+        {firstImage ? (
+          <img
+            src={firstImage}
+            alt={listing.title}
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-accent/20 flex items-center justify-center">
+            <ShoppingBag className="h-12 w-12 text-primary/30" />
+          </div>
+        )}
+
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+        {/* Top-right badges: status + price */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          {sb && listing.status !== "active" && (
+            <span className={`inline-block rounded-none px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${sb.class}`}>
+              {sb.label}
+            </span>
+          )}
+          {listing.price != null ? (
+            <span className="inline-block rounded-none bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-secondary-foreground">
+              {listing.currency} {Number(listing.price).toLocaleString("es")}
+            </span>
+          ) : (
+            <span className="inline-block rounded-none bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-secondary-foreground">
+              A convenir
+            </span>
+          )}
         </div>
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="font-semibold text-sm line-clamp-2 flex-1">{listing.title}</h3>
-            {sb && (
-              <Badge variant="outline" className={`shrink-0 text-[10px] px-1.5 py-0 ${sb.class}`}>
-                {sb.label}
-              </Badge>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{listing.description}</p>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Avatar className="h-5 w-5">
+
+        {/* Content — bottom left */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <h3 className="text-2xl font-light text-white leading-snug line-clamp-2 mb-2">
+            {listing.title}
+          </h3>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
+            <span className="flex items-center gap-1">
+              <Avatar className="h-4 w-4">
                 <AvatarImage src={listing.sellerAvatar} />
-                <AvatarFallback className="text-[9px]">{listing.sellerName?.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="text-[8px]">{listing.sellerName?.charAt(0)}</AvatarFallback>
               </Avatar>
-              <span className="text-xs text-muted-foreground truncate max-w-24">{listing.sellerName}</span>
-            </div>
-            {listing.price != null ? (
-              <span className="text-sm font-semibold text-primary">
-                {listing.currency} {Number(listing.price).toLocaleString("es")}
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground italic">Precio a convenir</span>
-            )}
+              <span className="truncate max-w-28">{listing.sellerName}</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <Tag className="h-3 w-3 shrink-0" />
+              {listing.category}
+            </span>
           </div>
-          <div className="mt-2">
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-              <Tag className="h-2.5 w-2.5 mr-1" />{listing.category}
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   );
 }
