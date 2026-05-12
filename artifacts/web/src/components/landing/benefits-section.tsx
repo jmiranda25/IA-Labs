@@ -53,19 +53,26 @@ export function BenefitsSection({ data }: BenefitsSectionProps) {
   return (
     <section
       aria-labelledby="benefits-heading"
-      className="max-w-6xl mx-auto px-4 sm:px-6 pb-24"
+      className="border-t border-border/30 max-w-7xl mx-auto px-8 sm:px-12 lg:px-16 py-24"
     >
-      <div className="text-center mb-12">
-        <h2
-          id="benefits-heading"
-          className="text-3xl sm:text-4xl font-bold text-foreground mb-4"
-        >
-          {title}
-        </h2>
-        <p className="text-muted-foreground max-w-xl mx-auto">{subtitle}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-10 lg:gap-20 mb-16">
+        <div>
+          <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+            Beneficios
+          </span>
+        </div>
+        <div>
+          <h2
+            id="benefits-heading"
+            className="text-4xl sm:text-5xl font-extralight leading-none tracking-tight text-white mb-4"
+          >
+            {title}
+          </h2>
+          <p className="text-muted-foreground max-w-lg">{subtitle}</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-t border-border/30">
         {items.map(({ icon, title: itemTitle, body }, i) => {
           const Icon = ICON_MAP[icon] ?? GraduationCap;
           return (
@@ -75,11 +82,15 @@ export function BenefitsSection({ data }: BenefitsSectionProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.1 }}
               transition={{ duration: 0.5, delay: i * 0.12, ease: "easeOut" }}
-              className="flex flex-col gap-4"
+              className="border-b md:border-b-0 md:border-r border-border/30 last:border-0 pt-10 pr-0 md:pr-10 pb-10 flex flex-col gap-6"
             >
-              <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
-              <h3 className="font-medium text-white">{itemTitle}</h3>
-              <p className="text-sm text-white/50 leading-relaxed">{body}</p>
+              <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+              <div>
+                <h3 className="text-sm font-medium text-white uppercase tracking-widest mb-3">
+                  {itemTitle}
+                </h3>
+                <p className="text-sm text-white/50 leading-relaxed">{body}</p>
+              </div>
             </motion.div>
           );
         })}

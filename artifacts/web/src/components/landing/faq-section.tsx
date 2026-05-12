@@ -58,39 +58,53 @@ export function FaqSection({ faqs }: FaqSectionProps) {
     <section
       ref={ref as React.RefObject<HTMLElement>}
       aria-labelledby="faq-heading"
-      className="max-w-3xl mx-auto px-4 sm:px-6 py-24"
+      className="border-t border-border/30"
     >
-      <div className="text-center mb-12">
-        <h2
-          id="faq-heading"
-          className="text-3xl sm:text-4xl font-bold text-foreground mb-4"
-        >
-          Preguntas frecuentes
-        </h2>
-        <p className="text-muted-foreground">
-          ¿No encuentras tu respuesta? Escríbenos desde tu perfil.
-        </p>
-      </div>
+      <div className="max-w-7xl mx-auto px-8 sm:px-12 lg:px-16 py-24">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-10 lg:gap-20">
+          <div className="lg:pt-1">
+            <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground block mb-4">
+              FAQ
+            </span>
+            <h2
+              id="faq-heading"
+              className="text-4xl sm:text-5xl font-extralight leading-none tracking-tight text-white mb-4"
+            >
+              Preguntas frecuentes
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              ¿No encuentras tu respuesta?{" "}
+              <span className="text-muted-foreground/70">
+                Escríbenos desde tu perfil.
+              </span>
+            </p>
+          </div>
 
-      <div
-        style={{
-          opacity: inView ? 1 : 0,
-          transform: inView ? "none" : "translateY(16px)",
-          transition: "opacity 0.5s ease, transform 0.5s ease",
-        }}
-      >
-        <Accordion type="single" collapsible className="w-full">
-          {items.map(({ q, a }, i) => (
-            <AccordionItem key={i} value={`faq-${i}`}>
-              <AccordionTrigger className="text-left text-base font-medium text-foreground hover:no-underline hover:text-primary transition-colors py-5">
-                {q}
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground leading-relaxed pb-5">
-                {a}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+          <div
+            style={{
+              opacity: inView ? 1 : 0,
+              transform: inView ? "none" : "translateY(16px)",
+              transition: "opacity 0.5s ease, transform 0.5s ease",
+            }}
+          >
+            <Accordion type="single" collapsible className="w-full">
+              {items.map(({ q, a }, i) => (
+                <AccordionItem
+                  key={i}
+                  value={`faq-${i}`}
+                  className="border-b border-border/30"
+                >
+                  <AccordionTrigger className="text-left text-sm font-light text-white/80 hover:no-underline hover:text-white transition-colors py-6 [&>svg]:text-muted-foreground">
+                    {q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-6 font-light">
+                    {a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </div>
       </div>
     </section>
   );

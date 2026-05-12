@@ -44,46 +44,51 @@ export function HowItWorksSection({ data }: HowItWorksSectionProps) {
   return (
     <section
       aria-labelledby="howitworks-heading"
-      className="max-w-6xl mx-auto px-4 sm:px-6 py-24"
+      className="border-t border-border/30"
     >
-      <div className="text-center mb-14">
-        <h2
-          id="howitworks-heading"
-          className="text-3xl sm:text-4xl font-bold text-foreground mb-4"
-        >
-          {title}
-        </h2>
-        <p className="text-muted-foreground max-w-xl mx-auto">{subtitle}</p>
-      </div>
-
-      <div className="relative grid grid-cols-1 md:grid-cols-4 gap-8">
-        {/* Connector line on desktop */}
-        <div
-          aria-hidden="true"
-          className="hidden md:block absolute top-7 left-[12.5%] right-[12.5%] h-px bg-border"
-        />
-
-        {steps.map(({ n, title: stepTitle, body }, i) => (
-          <motion.div
-            key={n}
-            initial={{ opacity: 0, y: REDUCED ? 0 : 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.1 }}
-            transition={{ duration: 0.5, delay: i * 0.12, ease: "easeOut" }}
-            className="flex flex-col items-center text-center gap-4 relative z-10"
-          >
-            <div
-              className="h-14 w-14 rounded-full border-2 border-primary bg-background flex items-center justify-center"
-              aria-hidden="true"
+      <div className="max-w-7xl mx-auto px-8 sm:px-12 lg:px-16 py-24">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-10 lg:gap-20 mb-16">
+          <div>
+            <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+              Proceso
+            </span>
+          </div>
+          <div>
+            <h2
+              id="howitworks-heading"
+              className="text-4xl sm:text-5xl font-extralight leading-none tracking-tight text-white mb-4"
             >
-              <span className="text-sm font-bold text-primary tabular-nums">{n}</span>
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground mb-1">{stepTitle}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
-            </div>
-          </motion.div>
-        ))}
+              {title}
+            </h2>
+            <p className="text-muted-foreground max-w-lg">{subtitle}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 border-t border-border/30">
+          {steps.map(({ n, title: stepTitle, body }, i) => (
+            <motion.div
+              key={n}
+              initial={{ opacity: 0, y: REDUCED ? 0 : 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.1 }}
+              transition={{ duration: 0.5, delay: i * 0.12, ease: "easeOut" }}
+              className="border-b md:border-b-0 md:border-r border-border/30 last:border-0 pt-10 pr-0 md:pr-8 pb-10 flex flex-col gap-8"
+            >
+              <span
+                className="text-6xl font-extralight tabular-nums text-white/10 leading-none select-none"
+                aria-hidden="true"
+              >
+                {n}
+              </span>
+              <div>
+                <h3 className="text-sm font-medium text-white uppercase tracking-widest mb-3">
+                  {stepTitle}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );

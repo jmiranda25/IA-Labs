@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useInView } from "./use-in-view";
 import type { LandingSection } from "@workspace/api-client-react";
 
@@ -30,38 +29,39 @@ export function CtaSection({ data }: CtaSectionProps) {
     <section
       ref={ref as React.RefObject<HTMLElement>}
       aria-labelledby="cta-heading"
-      className="max-w-6xl mx-auto px-4 sm:px-6 pb-24"
+      className="border-t border-border/30 bg-white/[0.02]"
     >
       <motion.div
-        initial={{ opacity: 0, scale: REDUCED ? 1 : 0.97 }}
-        animate={inView ? { opacity: 1, scale: 1 } : {}}
+        initial={{ opacity: 0, y: REDUCED ? 0 : 20 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.55, ease: "easeOut" }}
-        className="relative overflow-hidden rounded-3xl border border-primary/25 bg-gradient-to-br from-primary/20 via-[hsl(190_100%_50%)]/8 to-primary/5 p-12 sm:p-16 text-center"
+        className="max-w-7xl mx-auto px-8 sm:px-12 lg:px-16 py-28 sm:py-36"
       >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-20 -left-20 h-64 w-64 rounded-full bg-primary/15 blur-3xl"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-[hsl(190_100%_50%)]/15 blur-3xl"
-        />
-
-        <div className="relative">
-          <h2
-            id="cta-heading"
-            className="text-3xl sm:text-4xl font-extrabold text-foreground mb-4"
-          >
-            {title}
-          </h2>
-          <p className="text-muted-foreground mb-8 max-w-lg mx-auto text-lg">{subtitle}</p>
-          <Button size="lg" className="gap-2 text-base px-8" asChild>
-            <Link href="/registro">
-              {ctaText}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </Button>
-          <p className="mt-4 text-xs text-muted-foreground/70">{finePrint}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-10 lg:gap-20 items-end">
+          <div>
+            <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+              Únete
+            </span>
+          </div>
+          <div>
+            <h2
+              id="cta-heading"
+              className="text-5xl sm:text-6xl lg:text-7xl font-extralight leading-none tracking-tight text-white mb-8"
+            >
+              {title}
+            </h2>
+            <p className="text-muted-foreground mb-10 max-w-lg text-base">{subtitle}</p>
+            <div className="flex flex-col sm:flex-row items-start gap-6">
+              <Link
+                href="/registro"
+                className="inline-flex items-center gap-2 rounded-none bg-primary text-white text-[10px] tracking-[0.2em] uppercase px-8 py-4 hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                {ctaText}
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+              <span className="text-xs text-muted-foreground/50 self-center">{finePrint}</span>
+            </div>
+          </div>
         </div>
       </motion.div>
     </section>
