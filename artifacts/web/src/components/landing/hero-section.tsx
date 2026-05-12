@@ -101,8 +101,7 @@ export function HeroSection({ data }: HeroSectionProps) {
           <div
             className="relative h-full w-full overflow-hidden rounded-l-[2rem]"
             style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80')",
+              backgroundImage: "url('/hero-poster.webp')",
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
