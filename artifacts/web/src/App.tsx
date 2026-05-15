@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { esES } from "@clerk/localizations";
 import { shadcn } from "@clerk/themes";
@@ -183,7 +183,43 @@ function SignInPage() {
   );
 }
 
+function ReferralRedeemer() {
+  const { isSignedIn, getToken } = useAuth();
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const code = sessionStorage.getItem("referral_pending");
+    if (!code) return;
+
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch("/api/referrals/use", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ code }),
+        });
+        if (res.ok || res.status === 400) {
+          sessionStorage.removeItem("referral_pending");
+        }
+      } catch {
+        // fail silently, will retry on next load
+      }
+    })();
+  }, [isSignedIn, getToken]);
+
+  return null;
+}
+
 function SignUpPage() {
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) sessionStorage.setItem("referral_pending", ref);
+  }, []);
+
   return (
     <GuestOnlyPage>
       <AuthLayout
@@ -254,6 +290,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <ReferralRedeemer />
         <TooltipProvider>
           <ErrorBoundary>
             <Suspense fallback={<PageSpinner />}>
