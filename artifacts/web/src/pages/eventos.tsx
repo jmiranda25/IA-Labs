@@ -1,17 +1,37 @@
 import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
-import { listEvents, getListEventsQueryKey } from "@workspace/api-client-react";
+import {
+  listEvents,
+  getListEventsQueryKey,
+  useGetMe,
+  useAdminCreateEvent,
+  getAdminListEventsQueryKey,
+} from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Link } from "wouter";
 import { useInView } from "react-intersection-observer";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Calendar, MapPin, Video, Users, Clock, Search } from "lucide-react";
+import { Calendar, MapPin, Video, Users, Clock, Search, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
 import type { EventDetail, EventListPageResponse } from "@workspace/api-client-react";
 
 type TabStatus = "upcoming" | "past";
@@ -64,40 +84,42 @@ function EventCard({ event }: { event: EventDetail }) {
           )}
         </div>
 
-        {/* Content — bottom left */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <h3 className="text-2xl font-light text-white leading-snug line-clamp-2 mb-2">
+        {/* RSVP badge */}
+        {myActive && (
+          <div className="absolute top-3 left-3">
+            <span className="inline-block rounded-none bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-primary-foreground">
+              {event.myRsvp === "going" ? "Voy" : "Interesado"}
+            </span>
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1.5">
+          <h3 className="font-bold text-white text-base leading-tight line-clamp-2">
             {event.title}
           </h3>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
+          <div className="flex items-center gap-3 text-white/70 text-xs">
             <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3 shrink-0" />
+              <Clock className="h-3 w-3" />
               {formatCardDate(event.startsAt as unknown as string)}
             </span>
             {!event.isOnline && event.location && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 truncate">
                 <MapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate max-w-[120px]">{event.location}</span>
+                <span className="truncate">{event.location}</span>
               </span>
             )}
             {event.isOnline && (
               <span className="flex items-center gap-1">
-                <Video className="h-3 w-3 shrink-0" />
-                Evento online
+                <Video className="h-3 w-3" />
+                Online
               </span>
             )}
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3 shrink-0" />
-              {event.counts.going} van
-              {event.capacity ? ` / ${event.capacity}` : ""}
-            </span>
           </div>
-
-          {myActive && (
-            <div className="mt-2">
-              <span className="text-xs font-medium text-primary">
-                {event.myRsvp === "going" ? "✓ Voy" : "★ Me interesa"}
-              </span>
+          {event.capacity != null && (
+            <div className="flex items-center gap-1 text-white/70 text-xs">
+              <Users className="h-3 w-3" />
+              {event.counts?.going ?? 0} van / {event.capacity}
             </div>
           )}
         </div>
@@ -114,11 +136,148 @@ function EventCardSkeleton() {
   );
 }
 
+const createEventSchema = z.object({
+  title: z.string().min(1, "El título es requerido"),
+  description: z.string().default(""),
+  startsAt: z.string().min(1, "La fecha de inicio es requerida"),
+  endsAt: z.string().min(1, "La fecha de fin es requerida"),
+  isOnline: z.boolean().default(false),
+  location: z.string().default(""),
+  capacity: z.string().default(""),
+  meetingUrl: z.string().default(""),
+});
+type CreateEventValues = z.infer<typeof createEventSchema>;
+
+function CreateEventDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const createMutation = useAdminCreateEvent();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateEventValues>({ resolver: zodResolver(createEventSchema) });
+
+  const isOnlineVal = watch("isOnline");
+
+  useEffect(() => {
+    if (open) {
+      reset({
+        title: "",
+        description: "",
+        startsAt: "",
+        endsAt: "",
+        isOnline: false,
+        location: "",
+        capacity: "",
+        meetingUrl: "",
+      });
+    }
+  }, [open, reset]);
+
+  const onSubmit = async (vals: CreateEventValues) => {
+    const body = {
+      title: vals.title,
+      description: vals.description,
+      startsAt: new Date(vals.startsAt).toISOString(),
+      endsAt: new Date(vals.endsAt).toISOString(),
+      location: vals.location || undefined,
+      capacity: vals.capacity ? parseInt(vals.capacity) : undefined,
+      isOnline: vals.isOnline,
+      meetingUrl: vals.meetingUrl || undefined,
+    };
+    try {
+      await createMutation.mutateAsync({ data: body });
+      toast.success("Evento creado");
+      onCreated();
+      onClose();
+    } catch {
+      toast.error("Error al crear el evento. Revisa los campos e intenta de nuevo.");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Nuevo evento</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="ev-title">Título *</Label>
+            <Input id="ev-title" {...register("title")} data-testid="input-event-title" />
+            {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="ev-starts">Inicio *</Label>
+              <Input id="ev-starts" type="datetime-local" {...register("startsAt")} data-testid="input-event-starts" />
+              {errors.startsAt && <p className="text-xs text-destructive">{errors.startsAt.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ev-ends">Fin *</Label>
+              <Input id="ev-ends" type="datetime-local" {...register("endsAt")} data-testid="input-event-ends" />
+              {errors.endsAt && <p className="text-xs text-destructive">{errors.endsAt.message}</p>}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="ev-desc">Descripción</Label>
+            <Textarea id="ev-desc" {...register("description")} rows={4} data-testid="input-event-description" />
+          </div>
+          <div className="flex items-center gap-3">
+            <Switch
+              id="ev-online"
+              checked={isOnlineVal}
+              onCheckedChange={(v) => setValue("isOnline", v)}
+            />
+            <Label htmlFor="ev-online">Evento online</Label>
+          </div>
+          {!isOnlineVal && (
+            <div className="space-y-1.5">
+              <Label htmlFor="ev-location">Ubicación</Label>
+              <Input id="ev-location" {...register("location")} data-testid="input-event-location" />
+            </div>
+          )}
+          {isOnlineVal && (
+            <div className="space-y-1.5">
+              <Label htmlFor="ev-url">URL del evento</Label>
+              <Input id="ev-url" {...register("meetingUrl")} type="url" data-testid="input-event-meeting-url" />
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label htmlFor="ev-capacity">Capacidad máxima</Label>
+            <Input id="ev-capacity" type="number" min={1} {...register("capacity")} data-testid="input-event-capacity" />
+          </div>
+          <DialogFooter className="pt-2">
+            <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
+            <Button type="submit" disabled={isSubmitting} data-testid="btn-save-event">
+              {isSubmitting ? "Creando…" : "Crear evento"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function EventosPage() {
   const [tab, setTab] = useState<TabStatus>("upcoming");
   const [mode, setMode] = useState<EventMode | undefined>(undefined);
   const [search, setSearch] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
   const q = useDebounce(search, 300);
+  const qc = useQueryClient();
+  const { data: me } = useGetMe();
+  const isAdmin = (me as any)?.role === "administrator";
 
   const queryKey = [
     ...getListEventsQueryKey({ status: tab, mode, q }),
@@ -151,6 +310,11 @@ export default function EventosPage() {
     setTab(value as TabStatus);
   };
 
+  const handleEventCreated = () => {
+    qc.invalidateQueries({ queryKey: getListEventsQueryKey({ status: tab, mode, q }) });
+    qc.invalidateQueries({ queryKey: getAdminListEventsQueryKey() });
+  };
+
   return (
     <Layout>
       <Helmet>
@@ -160,14 +324,22 @@ export default function EventosPage() {
         <meta property="og:description" content="Meetups, talleres y conferencias de la comunidad hispanohablante de IA." />
       </Helmet>
       <div className="max-w-6xl mx-auto p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="h-6 w-6 text-primary" />
-            Eventos
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Meetups, talleres y conferencias de la comunidad.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Calendar className="h-6 w-6 text-primary" />
+              Eventos
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Meetups, talleres y conferencias de la comunidad.
+            </p>
+          </div>
+          {isAdmin && (
+            <Button size="sm" onClick={() => setCreateOpen(true)} data-testid="btn-nuevo-evento">
+              <Plus className="h-4 w-4 mr-1.5" />
+              Nuevo evento
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -229,6 +401,17 @@ export default function EventosPage() {
                       ? "No hay eventos próximos."
                       : "No hay eventos pasados."}
                 </p>
+                {isAdmin && tab === "upcoming" && !q && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => setCreateOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    Crear el primer evento
+                  </Button>
+                )}
               </div>
             ) : (
               <>
@@ -251,6 +434,12 @@ export default function EventosPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <CreateEventDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={handleEventCreated}
+      />
     </Layout>
   );
 }

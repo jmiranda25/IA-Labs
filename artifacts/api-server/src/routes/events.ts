@@ -295,39 +295,49 @@ router.get("/admin/events", requireAdmin, async (req, res) => {
 
 // POST /admin/events
 router.post("/admin/events", requireAdmin, async (req, res) => {
-  const {
-    title,
-    description,
-    startsAt,
-    endsAt,
-    location,
-    capacity,
-    isOnline,
-    meetingUrl,
-    coverUrl,
-  } = req.body;
-
-  const slug = await uniqueSlug(title);
-
-  const [event] = await db
-    .insert(eventsTable)
-    .values({
-      id: randomUUID(),
+  try {
+    const {
       title,
-      slug,
-      description: description ?? "",
-      startsAt: new Date(startsAt),
-      endsAt: new Date(endsAt),
-      location: location ?? null,
-      capacity: capacity ?? null,
-      isOnline: isOnline ?? false,
-      meetingUrl: meetingUrl ?? null,
-      coverUrl: coverUrl ?? null,
-      createdBy: req.userId!,
-    })
-    .returning();
+      description,
+      startsAt,
+      endsAt,
+      location,
+      capacity,
+      isOnline,
+      meetingUrl,
+      coverUrl,
+    } = req.body;
 
-  res.status(201).json(await enrichEvent(event, req.userId));
+    if (!title || !startsAt || !endsAt) {
+      res.status(400).json({ error: "title, startsAt y endsAt son requeridos" });
+      return;
+    }
+
+    const slug = await uniqueSlug(title);
+
+    const [event] = await db
+      .insert(eventsTable)
+      .values({
+        id: randomUUID(),
+        title,
+        slug,
+        description: description ?? "",
+        startsAt: new Date(startsAt),
+        endsAt: new Date(endsAt),
+        location: location ?? null,
+        capacity: capacity != null ? Number(capacity) : null,
+        isOnline: isOnline ?? false,
+        meetingUrl: meetingUrl ?? null,
+        coverUrl: coverUrl ?? null,
+        createdBy: req.userId!,
+      })
+      .returning();
+
+    res.status(201).json(await enrichEvent(event, req.userId));
+  } catch (err) {
+    req.log.error(err, "Failed to create event");
+    res.status(500).json({ error: "Error al crear el evento" });
+  }
 });
 
 // PATCH /admin/events/:slug
