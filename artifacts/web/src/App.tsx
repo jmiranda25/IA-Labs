@@ -13,6 +13,7 @@ import { AuthLayout } from "@/components/auth-layout";
 import { ProtectedRoute, RequireAdmin } from "@/components/protected-route";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { queryClient } from "@/lib/queryClient";
+import { ViewModeProvider } from "@/contexts/view-mode";
 
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
@@ -289,6 +290,7 @@ function ClerkProviderWithRoutes() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <QueryClientProvider client={queryClient}>
+        <ViewModeProvider>
         <ClerkQueryClientCacheInvalidator />
         <ReferralRedeemer />
         <TooltipProvider>
@@ -463,6 +465,7 @@ function ClerkProviderWithRoutes() {
           <Toaster />
           <SonnerToaster position="top-right" richColors theme="dark" />
         </TooltipProvider>
+        </ViewModeProvider>
       </QueryClientProvider>
     </ClerkProvider>
   );

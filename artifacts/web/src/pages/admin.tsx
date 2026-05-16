@@ -80,7 +80,9 @@ import {
   TrendingDown, Minus, Flag, MessageSquare, UserX, Copy,
 } from "lucide-react";
 import { useAuth } from "@clerk/react";
+import { useLocation } from "wouter";
 import { LandingEditor } from "@/components/admin/landing-editor";
+import { useViewMode } from "@/contexts/view-mode";
 
 // ── KPI Dashboard ─────────────────────────────────────────────────────────────
 
@@ -1199,18 +1201,38 @@ function ReferralLinksTab() {
 export default function AdminPage() {
   const { data: me, isLoading } = useGetMe();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { viewAsUser, toggleViewMode } = useViewMode();
+  const [, navigate] = useLocation();
 
   if (isLoading) return <Layout><Skeleton className="m-6 h-64 rounded-xl" /></Layout>;
   if ((me as any)?.role !== "administrator") return <Redirect to="/dashboard" />;
 
+  const handleToggleUserView = () => {
+    toggleViewMode();
+    if (!viewAsUser) {
+      navigate("/dashboard");
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />Centro de Control
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">Gestión de la comunidad, usuarios y moderación.</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Shield className="h-6 w-6 text-primary" />Centro de Control
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">Gestión de la comunidad, usuarios y moderación.</p>
+          </div>
+          <Button
+            variant={viewAsUser ? "default" : "outline"}
+            size="sm"
+            onClick={handleToggleUserView}
+            className={viewAsUser ? "bg-amber-500 hover:bg-amber-600 text-black border-0" : ""}
+          >
+            <Eye className="h-4 w-4 mr-1.5" />
+            {viewAsUser ? "Salir del modo usuario" : "Ver como usuario"}
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>

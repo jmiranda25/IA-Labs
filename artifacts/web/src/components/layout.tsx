@@ -18,11 +18,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Bell, Menu, LayoutDashboard, Users, Calendar, MessageSquare,
   BookOpen, ShoppingBag, MessageCircle, Settings, Shield, Zap, X,
-  BellRing, User,
+  BellRing, User, Eye,
 } from "lucide-react";
 import { useEffect, useRef, useCallback } from "react";
 import { useUser } from "@clerk/react";
 import { toast } from "sonner";
+import { useViewMode } from "@/contexts/view-mode";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -181,6 +182,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { data: me } = useGetMe();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { viewAsUser, exitUserView } = useViewMode();
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
     <nav className="space-y-1">
@@ -202,7 +204,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
         );
       })}
-      {me?.role === "administrator" && (
+      {me?.role === "administrator" && !viewAsUser && (
         <Link href="/admin" onClick={onClick}>
           <span
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
@@ -311,7 +313,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </span>
                 {me && (
                   <span className="text-[11px] text-muted-foreground">
-                    {me.role === "administrator" ? "Admin" : "Miembro"}
+                    {me.role === "administrator" && !viewAsUser ? "Admin" : "Miembro"}
                   </span>
                 )}
               </div>
@@ -325,6 +327,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
             />
           </div>
         </header>
+
+        {/* View-as-user banner */}
+        {viewAsUser && (
+          <div className="flex items-center justify-between gap-2 px-4 py-2 bg-amber-500/10 border-b border-amber-500/25 shrink-0">
+            <div className="flex items-center gap-1.5 text-amber-400 text-xs">
+              <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>Estás viendo la plataforma como usuario regular</span>
+            </div>
+            <button
+              onClick={exitUserView}
+              className="text-xs font-medium text-amber-400 hover:text-amber-300 underline underline-offset-2 shrink-0"
+            >
+              Salir del modo usuario
+            </button>
+          </div>
+        )}
 
         {/* Main content */}
         <main className="flex-1 overflow-y-auto">
