@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq, ilike, or, sql, and, ne, lt, desc } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
-import { getAuth } from "@clerk/express";
+import { getAuth, clerkClient } from "@clerk/express";
 import { requireAuth } from "../lib/requireAuth";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { randomUUID } from "crypto";
@@ -63,7 +63,20 @@ router.get("/users/me", requireAuth, async (req, res) => {
   const auth = getAuth(req);
   const claims = auth?.sessionClaims as Record<string, unknown> | null;
   const clerkRole = (claims?.publicMetadata as Record<string, unknown> | null)?.role as string | undefined;
-  const clerkEmail = (claims?.email as string | undefined)?.toLowerCase();
+  // Email from JWT (requires a Clerk JWT template that includes it).
+  // We always fall back to the Clerk backend API when the JWT claim is absent.
+  let clerkEmail = (claims?.email as string | undefined)?.toLowerCase() ?? null;
+
+  // If the JWT doesn't carry an email, fetch it from the Clerk API (live keys
+  // may have a different JWT template than dev keys).
+  if (!clerkEmail) {
+    try {
+      const clerkUser = await clerkClient.users.getUser(clerkId);
+      clerkEmail = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase() ?? null;
+    } catch {
+      // non-fatal; bootstrap will just rely on DB email if available
+    }
+  }
 
   let user = await db.query.usersTable.findFirst({
     where: eq(usersTable.clerkId, clerkId),
@@ -81,7 +94,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
 
     const name =
       (claims?.name as string) ||
-      (claims?.email as string)?.split("@")[0] ||
+      clerkEmail?.split("@")[0] ||
       "Member";
     const avatar = (claims?.picture as string) || null;
     [user] = await db
@@ -89,18 +102,37 @@ router.get("/users/me", requireAuth, async (req, res) => {
       .values({
         id: randomUUID(),
         clerkId,
+        email: clerkEmail,   // always store so future bootstrap checks can use DB
         displayName: name,
         avatarUrl: avatar,
         role: effectiveRole,
         skills: [],
       })
       .returning();
+  } else {
+    // For existing users the DB is authoritative for role.
+    // Exception: ADMIN_BOOTSTRAP_EMAILS are auto-upgraded on every login so that
+    // admins who signed up before the list was configured are corrected automatically.
+    const storedEmail = user.email?.toLowerCase() ?? null;
+    const effectiveEmail = clerkEmail ?? storedEmail;
+
+    if (effectiveEmail && BOOTSTRAP_ADMIN_EMAILS.has(effectiveEmail) && user.role !== "administrator") {
+      const updates: { role: string; email?: string } = { role: "administrator" };
+      if (clerkEmail && !user.email) updates.email = clerkEmail;
+      [user] = await db
+        .update(usersTable)
+        .set(updates)
+        .where(eq(usersTable.clerkId, clerkId))
+        .returning();
+    } else if (clerkEmail && !user.email) {
+      // Store missing email for future bootstrap checks
+      [user] = await db
+        .update(usersTable)
+        .set({ email: clerkEmail })
+        .where(eq(usersTable.clerkId, clerkId))
+        .returning();
+    }
   }
-  // For existing users the DB is authoritative for role.
-  // Role changes go through the admin API which updates the DB first, then attempts
-  // to sync Clerk public metadata (best-effort; Clerk failures are logged but do not
-  // roll back the DB update). We intentionally do NOT sync clerkRole → DB here so
-  // that stale session claims cannot overwrite an admin-managed role change.
 
   res.json(user);
 });
