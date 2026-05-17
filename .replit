@@ -39,7 +39,7 @@ externalPort = 3000
 
 [userenv.shared]
 VITE_CLERK_PUBLISHABLE_KEY = "pk_test_aGFyZHktYWtpdGEtODcuY2xlcmsuYWNjb3VudHMuZGV2JA"
-ADMIN_BOOTSTRAP_EMAILS = "mayckolco@gmail.com,jhon@circulapp.la"
+ADMIN_BOOTSTRAP_EMAILS = "mayckolco@gmail.com,jhon@circulapp.la,hola@jhonmiranda.com"
 
 [nix]
 channel = "stable-25_05"

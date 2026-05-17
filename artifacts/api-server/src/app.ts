@@ -36,6 +36,8 @@ app.use(
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
 app.use(cors({ credentials: true, origin: true }));
+// Capture raw body for Clerk webhook signature verification BEFORE express.json() parses it
+app.use("/api/webhooks/clerk", express.raw({ type: "application/json" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

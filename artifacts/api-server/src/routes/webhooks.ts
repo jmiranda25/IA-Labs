@@ -33,6 +33,10 @@ router.post(
   async (req, res) => {
     const webhookSecret = env.CLERK_WEBHOOK_SECRET;
 
+    // req.body is a Buffer here because express.raw() is applied to this route
+    // before express.json() in app.ts
+    const rawBody = req.body as Buffer;
+
     if (webhookSecret) {
       const svixId = req.headers["svix-id"] as string | undefined;
       const svixTs = req.headers["svix-timestamp"] as string | undefined;
@@ -45,7 +49,8 @@ router.post(
 
       try {
         const wh = new Webhook(webhookSecret);
-        wh.verify(JSON.stringify(req.body), {
+        // Use the raw Buffer — required for valid signature verification
+        wh.verify(rawBody, {
           "svix-id": svixId,
           "svix-timestamp": svixTs,
           "svix-signature": svixSig,
@@ -56,18 +61,25 @@ router.post(
       }
     }
 
-    const { type, data } = req.body as {
-      type: string;
-      data: {
-        id: string;
-        email_addresses?: Array<{ email_address: string; id: string }>;
-        primary_email_address_id?: string;
-        username?: string | null;
-        first_name?: string | null;
-        last_name?: string | null;
-        image_url?: string | null;
-      };
-    };
+    // Parse the JSON payload from the raw body
+    let parsed: { type: string; data: {
+      id: string;
+      email_addresses?: Array<{ email_address: string; id: string }>;
+      primary_email_address_id?: string;
+      username?: string | null;
+      first_name?: string | null;
+      last_name?: string | null;
+      image_url?: string | null;
+    } };
+
+    try {
+      parsed = JSON.parse(rawBody.toString("utf8"));
+    } catch {
+      res.status(400).json({ error: "Invalid JSON body" });
+      return;
+    }
+
+    const { type, data } = parsed;
 
     if (type === "user.created") {
       const primaryEmail = data.email_addresses?.find(
