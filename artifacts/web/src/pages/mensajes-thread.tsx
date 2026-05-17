@@ -90,7 +90,7 @@ export default function MensajesThreadPage({
   const otherName = otherUserMsg?.fromName ?? "Vendedor";
   const otherAvatar = otherUserMsg?.fromAvatar ?? null;
 
-  const thread = threads.find((t: any) => t.listingId === listingId);
+  const thread = threads.find((t: any) => t.listingId === listingId && t.otherUserId === otherUserId);
   const listingTitle = thread?.listingTitle ?? "";
   const listingSlug = thread?.listingSlug ?? "";
 
