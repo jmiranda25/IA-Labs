@@ -140,7 +140,7 @@ export default function EventoDetalle({ slug }: EventoDetalleProps) {
   return (
     <Layout>
       <Helmet>
-        <title>{event.title} — AI Community</title>
+        <title>{event.title} — IA Labs</title>
         <meta name="description" content={event.description?.slice(0, 155) ?? `Evento de la comunidad hispanohablante de IA: ${event.title}`} />
         <meta property="og:title" content={event.title} />
         <meta property="og:description" content={event.description?.slice(0, 155) ?? ""} />
@@ -161,7 +161,7 @@ export default function EventoDetalle({ slug }: EventoDetalleProps) {
           location: event.isOnline
             ? { "@type": "VirtualLocation", url: event.meetingUrl ?? undefined }
             : { "@type": "Place", name: event.location ?? undefined },
-          organizer: { "@type": "Organization", name: "AI Community", url: "https://aicommunity.app" },
+          organizer: { "@type": "Organization", name: "IA Labs", url: "https://ialabs.tech" },
         })}</script>
       </Helmet>
       <div className="max-w-3xl mx-auto p-6 space-y-6">

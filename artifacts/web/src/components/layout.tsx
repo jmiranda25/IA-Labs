@@ -223,7 +223,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-border/60 bg-muted/20">
         <div className="flex h-14 items-center px-4 border-b border-border/60">
-          <span className="text-xs font-light tracking-[0.2em] text-foreground uppercase">✦ AI Community</span>
+          <span className="text-xs font-light tracking-[0.2em] text-foreground uppercase">✦ IA LABS</span>
         </div>
         <div className="flex-1 overflow-y-auto py-4 px-1">
           <NavLinks />
@@ -263,7 +263,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0 flex flex-col bg-muted/20">
               <div className="flex h-14 items-center px-4 border-b border-border/60 shrink-0">
-                <span className="text-xs font-light tracking-[0.2em] text-foreground uppercase">✦ AI Community</span>
+                <span className="text-xs font-light tracking-[0.2em] text-foreground uppercase">✦ IA LABS</span>
                 <button className="ml-auto" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú" data-testid="button-close-menu">
                   <X className="h-4 w-4" />
                 </button>
@@ -290,7 +290,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Brand mark (mobile only) */}
           <div className="flex items-center gap-2 lg:hidden">
-            <span className="text-[11px] font-light tracking-[0.2em] text-foreground uppercase">✦ AI Community</span>
+            <span className="text-[11px] font-light tracking-[0.2em] text-foreground uppercase">✦ IA LABS</span>
           </div>
 
           <div className="flex-1" />

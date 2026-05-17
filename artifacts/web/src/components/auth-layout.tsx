@@ -29,11 +29,11 @@ export function AuthLayout({
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/"
-            aria-label="AI Community — inicio"
+            aria-label="IA Labs — inicio"
             className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
           >
             <Zap className="h-5 w-5 text-primary" aria-hidden="true" />
-            <span className="font-bold text-foreground text-sm">AI Community</span>
+            <span className="font-bold text-foreground text-sm">IA Labs</span>
           </Link>
 
           <p className="text-sm text-muted-foreground">

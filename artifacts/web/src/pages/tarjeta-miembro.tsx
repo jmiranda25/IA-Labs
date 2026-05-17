@@ -167,11 +167,11 @@ export default function TarjetaMiembroPage({ username }: { username: string }) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[hsl(224_71%_4%)] via-[hsl(224_71%_6%)] to-[hsl(270_50%_10%)] flex flex-col items-center justify-center gap-6 p-6 text-center">
         <Helmet>
-          <title>Perfil no encontrado — AI Community</title>
+          <title>Perfil no encontrado — IA Labs</title>
         </Helmet>
         <div className="flex items-center gap-2 mb-4">
           <Zap className="h-6 w-6 text-primary" />
-          <span className="font-bold text-foreground text-lg tracking-tight">AI Community</span>
+          <span className="font-bold text-foreground text-lg tracking-tight">IA Labs</span>
         </div>
         <div className="flex flex-col items-center gap-3">
           <Lock className="h-14 w-14 text-muted-foreground/30" />
@@ -182,7 +182,7 @@ export default function TarjetaMiembroPage({ username }: { username: string }) {
         </div>
         <Link href={`${basePath}/`}>
           <Button variant="outline" size="sm">
-            Conoce AI Community
+            Conoce IA Labs
           </Button>
         </Link>
       </div>
@@ -192,7 +192,7 @@ export default function TarjetaMiembroPage({ username }: { username: string }) {
   if (!card) return null;
 
   const isAdmin = card.role === "administrator";
-  const ogTitle = `${card.displayName} en AI Community`;
+  const ogTitle = `${card.displayName} en IA Labs`;
   const ogDescription =
     card.bio ??
     `Mira la tarjeta de miembro de @${card.username} en la comunidad hispana de IA.`;
@@ -226,7 +226,7 @@ export default function TarjetaMiembroPage({ username }: { username: string }) {
           <meta property="og:image:width" content="1200" />
           <meta property="og:image:height" content="630" />
           <meta property="og:image:alt" content={`Tarjeta de miembro de ${card.displayName}`} />
-          <meta property="og:site_name" content="AI Community" />
+          <meta property="og:site_name" content="IA Labs" />
 
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={ogTitle} />
@@ -243,7 +243,7 @@ export default function TarjetaMiembroPage({ username }: { username: string }) {
               <span className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
                 <Zap className="h-5 w-5 text-primary" />
                 <span className="font-bold text-foreground tracking-tight text-sm">
-                  AI Community
+                  IA Labs
                 </span>
               </span>
             </Link>
@@ -481,7 +481,7 @@ export default function TarjetaMiembroPage({ username }: { username: string }) {
             Tarjeta generada por{" "}
             <Link href={`${basePath}/`}>
               <span className="text-primary/60 hover:text-primary cursor-pointer transition-colors">
-                AI Community
+                IA Labs
               </span>
             </Link>
           </p>

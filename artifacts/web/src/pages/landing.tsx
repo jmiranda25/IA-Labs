@@ -22,8 +22,8 @@ const JSON_LD = JSON.stringify({
   "@graph": [
     {
       "@type": "Organization",
-      name: "AI Community",
-      url: "https://aicommunity.app",
+      name: "IA Labs",
+      url: "https://ialabs.tech",
       description:
         "Comunidad hispanohablante de IA para builders, founders y profesionales.",
       sameAs: [],

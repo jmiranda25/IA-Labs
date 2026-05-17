@@ -1,0 +1,65 @@
+Make these changes across the entire app:
+
+1. BRANDING - Replace all text instances:
+   - "AI Community" → "IA Labs"
+   - "AI COMMUNITY" → "IA LABS" 
+   - "Community" → "Comunidad" (where it means the community)
+   - Update: navbar logo, sidebar logo, page titles, 
+     footer, landing page, email templates, meta tags,
+     favicon alt text, and any hardcoded strings in 
+     all .tsx and .ts files
+   - Search ALL files for "AI Community" and "Community"
+
+2. LANDING PAGE fixes:
+   - Hero headline: reduce font size slightly, 
+     make sure it fits on 2-3 lines max
+   - "Para quién es" section: all 3 cards must be visible 
+     (Builders, Founders, Profesionales) — currently only 
+     1-2 show
+   - Testimonials: quotes need real placeholder text, 
+     names should be "María G." style not "NOMBRE APELLIDO"
+   - Stats: +500 miembros, +20 workshops, +100 recursos 
+     — verify these show correctly
+   - CTA section at bottom: "Tu próximo proyecto con IA 
+     empieza aquí" — button should say "Crear mi cuenta →"
+
+3. APPROVAL EMAIL - When admin approves a member, 
+   send this email:
+   Subject: "¡Bienvenido/a a IA Labs! 🚀"
+   Body:
+   "Hola [nombre],
+   
+   Tu solicitud ha sido aprobada. Ya puedes acceder a 
+   la comunidad de IA Labs.
+   
+   Encuentra eventos, recursos, el foro y mucho más en:
+   https://ialabs.tech
+   
+   Nos vemos dentro,
+   El equipo de IA Labs"
+
+4. REJECTION EMAIL - When admin rejects a member:
+   Subject: "Actualización sobre tu solicitud en IA Labs"
+   Body:
+   "Hola [nombre],
+   
+   Revisamos tu solicitud y por el momento no podemos 
+   aprobarla.
+   
+   Motivo: [reason]
+   
+   Si tienes preguntas escríbenos a hola@ialabs.tech
+   
+   El equipo de IA Labs"
+
+5. WELCOME EMAIL - When user first registers (pending):
+   Subject: "Solicitud recibida — IA Labs"
+   Body:
+   "Hola [nombre],
+   
+   Recibimos tu solicitud para unirte a IA Labs.
+   La revisaremos pronto y te notificaremos por correo.
+   
+   El equipo de IA Labs"
+
+Apply all changes and republish.

@@ -14,6 +14,7 @@ import {
 } from "@workspace/db";
 import { requireAuth, requireAdmin } from "../lib/requireAuth";
 import { notify } from "../lib/notify";
+import { sendEmail } from "../lib/sendEmail";
 import { sseClients } from "./notifications";
 import { randomUUID } from "crypto";
 
@@ -281,7 +282,7 @@ router.post("/admin/users/:userId/approve", requireAdmin, async (req, res) => {
     return;
   }
 
-  // Notify the approved user
+  // Notify the approved user (in-app + email)
   await notify({
     recipientId: updated.id,
     type: "admin_action",
@@ -289,6 +290,14 @@ router.post("/admin/users/:userId/approve", requireAdmin, async (req, res) => {
     body: "Tu cuenta ha sido activada. ¡Bienvenido/a a la comunidad!",
     link: "/dashboard",
   });
+
+  if (updated.clerkId) {
+    void sendEmail({
+      clerkId: updated.clerkId,
+      subject: "¡Bienvenido/a a IA Labs! 🚀",
+      body: `Hola ${updated.displayName},\n\n¡Tu solicitud para unirte a IA Labs fue aprobada!\n\nYa puedes acceder a todos los beneficios de la comunidad: eventos, foro, recursos y marketplace.\n\nEntra aquí: https://ialabs.tech/dashboard\n\nNos alegra tenerte en la comunidad,\nEl equipo de IA Labs`,
+    });
+  }
 
   // Notify all administrators
   const admins = await db.query.usersTable.findMany({
@@ -330,13 +339,21 @@ router.post("/admin/users/:userId/reject", requireAdmin, async (req, res) => {
     return;
   }
 
-  // Notify the rejected user (stored for if they ever regain access)
+  // Notify the rejected user (in-app + email)
   await notify({
     recipientId: updated.id,
     type: "admin_action",
     title: "Solicitud no aprobada",
     body: `Tu solicitud no fue aprobada. Razón: ${reason}`,
   });
+
+  if (updated.clerkId) {
+    void sendEmail({
+      clerkId: updated.clerkId,
+      subject: "Actualización sobre tu solicitud en IA Labs",
+      body: `Hola ${updated.displayName},\n\nGracias por tu interés en unirte a IA Labs.\n\nLuego de revisar tu solicitud, no pudimos aprobarla en este momento.\n\nMotivo: ${reason}\n\nSi tienes preguntas, puedes responder a este correo o escribirnos.\n\nEl equipo de IA Labs`,
+    });
+  }
 
   // Notify all administrators
   const admins = await db.query.usersTable.findMany({

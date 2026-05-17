@@ -25,9 +25,9 @@ export default function ForoPage() {
   return (
     <Layout>
       <Helmet>
-        <title>Foro — AI Community</title>
+        <title>Foro — IA Labs</title>
         <meta name="description" content="Discusiones, preguntas y debate sobre inteligencia artificial en español. Únete a la comunidad hispanohablante de IA." />
-        <meta property="og:title" content="Foro — AI Community" />
+        <meta property="og:title" content="Foro — IA Labs" />
         <meta property="og:description" content="Discusiones y debate sobre IA en español." />
       </Helmet>
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">

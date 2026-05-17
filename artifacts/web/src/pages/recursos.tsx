@@ -181,9 +181,9 @@ export default function RecursosPage() {
   return (
     <Layout>
       <Helmet>
-        <title>Recursos de IA — AI Community</title>
+        <title>Recursos de IA — IA Labs</title>
         <meta name="description" content="Tutoriales, herramientas y cursos de inteligencia artificial compartidos por la comunidad hispanohablante." />
-        <meta property="og:title" content="Recursos de IA — AI Community" />
+        <meta property="og:title" content="Recursos de IA — IA Labs" />
         <meta property="og:description" content="Tutoriales, herramientas y cursos de IA compartidos por la comunidad." />
       </Helmet>
       <div className="max-w-6xl mx-auto p-6">

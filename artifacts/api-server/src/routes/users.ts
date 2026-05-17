@@ -3,6 +3,7 @@ import { eq, ilike, or, sql, and, ne, lt, desc } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
 import { getAuth, clerkClient } from "@clerk/express";
 import { requireAuth } from "../lib/requireAuth";
+import { sendEmail } from "../lib/sendEmail";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { randomUUID } from "crypto";
 import multer from "multer";
@@ -110,6 +111,15 @@ router.get("/users/me", requireAuth, async (req, res) => {
         skills: [],
       })
       .returning();
+
+    // Welcome email for new non-admin registrations
+    if (!isBootstrapAdmin) {
+      void sendEmail({
+        clerkId,
+        subject: "Solicitud recibida — IA Labs",
+        body: `Hola ${name},\n\nRecibimos tu solicitud para unirte a IA Labs, la comunidad hispanohablante de IA.\n\nUn administrador revisará tu solicitud pronto. Te notificaremos por correo cuando tu cuenta sea activada.\n\nMientras tanto, si tienes alguna pregunta, no dudes en escribirnos.\n\nEl equipo de IA Labs`,
+      });
+    }
   } else {
     // For existing users the DB is authoritative for role.
     // Exception: ADMIN_BOOTSTRAP_EMAILS are corrected on every login so that

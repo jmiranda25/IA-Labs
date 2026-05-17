@@ -318,9 +318,9 @@ export default function EventosPage() {
   return (
     <Layout>
       <Helmet>
-        <title>Eventos y workshops — AI Community</title>
+        <title>Eventos y workshops — IA Labs</title>
         <meta name="description" content="Meetups, talleres y conferencias de la comunidad hispanohablante de IA. Regístrate y asiste." />
-        <meta property="og:title" content="Eventos y workshops — AI Community" />
+        <meta property="og:title" content="Eventos y workshops — IA Labs" />
         <meta property="og:description" content="Meetups, talleres y conferencias de la comunidad hispanohablante de IA." />
       </Helmet>
       <div className="max-w-6xl mx-auto p-6 space-y-6">

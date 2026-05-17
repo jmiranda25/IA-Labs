@@ -122,8 +122,8 @@ export default function MarketplaceListingPage({ slug }: { slug: string }) {
   return (
     <Layout>
       <Helmet>
-        <title>{l.title} — Marketplace · AI Community</title>
-        <meta name="description" content={l.description?.slice(0, 155) ?? `${l.title} — disponible en el marketplace de AI Community`} />
+        <title>{l.title} — Marketplace · IA Labs</title>
+        <meta name="description" content={l.description?.slice(0, 155) ?? `${l.title} — disponible en el marketplace de IA Labs`} />
         <meta property="og:title" content={l.title} />
         <meta property="og:description" content={l.description?.slice(0, 155) ?? ""} />
         {l.images?.[0]?.url && <meta property="og:image" content={l.images[0].url} />}

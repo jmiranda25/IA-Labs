@@ -121,9 +121,9 @@ export default function MarketplacePage() {
   return (
     <Layout>
       <Helmet>
-        <title>Marketplace de IA — AI Community</title>
+        <title>Marketplace de IA — IA Labs</title>
         <meta name="description" content="Servicios, herramientas y oportunidades de inteligencia artificial. Compra, vende y conecta con la comunidad." />
-        <meta property="og:title" content="Marketplace de IA — AI Community" />
+        <meta property="og:title" content="Marketplace de IA — IA Labs" />
         <meta property="og:description" content="Servicios, herramientas y oportunidades de IA en la comunidad hispanohablante." />
       </Helmet>
       <div className="max-w-7xl mx-auto p-6">

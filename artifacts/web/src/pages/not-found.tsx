@@ -7,7 +7,7 @@ export default function NotFound() {
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background text-foreground px-4 text-center gap-6">
       <div className="flex items-center gap-2">
         <Zap className="h-6 w-6 text-primary" aria-hidden="true" />
-        <span className="font-bold text-lg tracking-tight">AI Community</span>
+        <span className="font-bold text-lg tracking-tight">IA Labs</span>
       </div>
 
       <div className="space-y-3">

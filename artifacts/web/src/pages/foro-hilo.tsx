@@ -383,7 +383,7 @@ export default function ForoHiloPage({ categorySlug, threadId }: Props) {
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-5">
       {thread && (
         <Helmet>
-          <title>{thread.title} — Foro · AI Community</title>
+          <title>{thread.title} — Foro · IA Labs</title>
           <meta name="description" content={`${thread.title} — debate en el foro de la comunidad hispanohablante de IA.`} />
         </Helmet>
       )}

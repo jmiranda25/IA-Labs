@@ -44,11 +44,11 @@ export function LandingFooter() {
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-8 mb-14">
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
-            <Link href="/" aria-label="AI Community — inicio">
+            <Link href="/" aria-label="IA Labs — inicio">
               <span className="flex items-center gap-2 mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm w-fit">
                 <span className="text-primary text-sm leading-none" aria-hidden="true">✦</span>
                 <span className="text-[10px] font-light tracking-[0.3em] text-white uppercase">
-                  AI Community
+                  IA Labs
                 </span>
               </span>
             </Link>
@@ -82,7 +82,7 @@ export function LandingFooter() {
         {/* Bottom: copyright */}
         <div className="border-t border-border/30 pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/40">
-            © {new Date().getFullYear()} AI Community — Todos los derechos reservados
+            © {new Date().getFullYear()} IA Labs — Todos los derechos reservados
           </p>
           <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/30">
             Hecho para la comunidad hispanohablante de IA

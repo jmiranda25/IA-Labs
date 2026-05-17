@@ -61,7 +61,7 @@ export function HeroSection({ data }: HeroSectionProps) {
             id="hero-heading"
             initial={base}
             animate={into(0.1)}
-            className="mb-8 text-5xl font-extralight leading-none tracking-tight text-white lg:text-7xl"
+            className="mb-8 text-[2.6rem] sm:text-5xl font-extralight leading-[1.08] tracking-tight text-white lg:text-6xl"
           >
             {title}
           </motion.h1>

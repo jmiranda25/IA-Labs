@@ -82,7 +82,7 @@ export default function RecursoDetallePage({ slug }: { slug: string }) {
   return (
     <Layout>
       <Helmet>
-        <title>{r.title} — Recursos · AI Community</title>
+        <title>{r.title} — Recursos · IA Labs</title>
         <meta name="description" content={r.description?.slice(0, 155) ?? `Recurso de IA: ${r.title}`} />
         <meta property="og:title" content={r.title} />
         <meta property="og:description" content={r.description?.slice(0, 155) ?? ""} />

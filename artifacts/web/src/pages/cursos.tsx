@@ -81,7 +81,7 @@ export default function CursosPage() {
   return (
     <Layout>
       <Helmet>
-        <title>Cursos · AI Community</title>
+        <title>Cursos · IA Labs</title>
         <meta name="description" content="Aprende con los mejores cursos de IA de nuestra comunidad." />
       </Helmet>
 

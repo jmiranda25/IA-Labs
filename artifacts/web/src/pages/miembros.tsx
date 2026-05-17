@@ -52,9 +52,9 @@ export default function MiembrosPage() {
   return (
     <Layout>
       <Helmet>
-        <title>Directorio de miembros — AI Community</title>
+        <title>Directorio de miembros — IA Labs</title>
         <meta name="description" content="Conecta con builders, founders y profesionales de IA de toda la comunidad hispanohablante." />
-        <meta property="og:title" content="Directorio de miembros — AI Community" />
+        <meta property="og:title" content="Directorio de miembros — IA Labs" />
         <meta property="og:description" content="Conecta con practicantes de IA de toda la comunidad hispanohablante." />
       </Helmet>
       <div className="max-w-6xl mx-auto p-6 space-y-8">

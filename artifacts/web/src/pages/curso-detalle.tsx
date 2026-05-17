@@ -241,7 +241,7 @@ export default function CursoDetalle({ slug }: CursoDetalleProps) {
     <Layout>
       {course && (
         <Helmet>
-          <title>{course.title} · Cursos · AI Community</title>
+          <title>{course.title} · Cursos · IA Labs</title>
           <meta name="description" content={course.description || `Curso: ${course.title}`} />
         </Helmet>
       )}

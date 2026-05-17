@@ -8,7 +8,7 @@ export default function CuentaPage() {
   return (
     <Layout>
       <Helmet>
-        <title>Mi Cuenta — AI Community</title>
+        <title>Mi Cuenta — IA Labs</title>
       </Helmet>
       <div className="max-w-4xl mx-auto px-4 py-8">
         <UserProfile

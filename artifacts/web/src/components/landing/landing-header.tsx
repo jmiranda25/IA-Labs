@@ -31,11 +31,11 @@ export function LandingHeader() {
       <div className="max-w-7xl mx-auto px-6 sm:px-8 h-16 flex items-center justify-between gap-8">
 
         {/* Logo */}
-        <Link href="/" aria-label="AI Community – inicio">
+        <Link href="/" aria-label="IA Labs – inicio">
           <span className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm">
             <span className="text-primary text-base leading-none">✦</span>
             <span className="text-[11px] font-light tracking-[0.3em] text-white uppercase">
-              AI Community
+              IA Labs
             </span>
           </span>
         </Link>

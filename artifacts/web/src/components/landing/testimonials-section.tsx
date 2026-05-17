@@ -11,21 +11,21 @@ const DEFAULT_ITEMS = [
   {
     quote:
       "Aquí encontré la comunidad que no sabía que necesitaba para empezar a construir agentes en serio.",
-    name: "Nombre Apellido",
-    role: "Founder en [Empresa]",
-    initials: "NA",
+    name: "María G.",
+    role: "Founder & CEO",
+    initials: "MG",
   },
   {
     quote: "Los workshops valen oro. Aprendí más en un mes que en seis meses solo.",
-    name: "Nombre Apellido",
+    name: "Carlos R.",
     role: "AI Engineer",
-    initials: "NA",
+    initials: "CR",
   },
   {
     quote: "El marketplace me trajo mis primeros tres clientes consultando con IA.",
-    name: "Nombre Apellido",
-    role: "Consultor independiente",
-    initials: "NA",
+    name: "Andrea M.",
+    role: "Consultora independiente",
+    initials: "AM",
   },
 ];
 
