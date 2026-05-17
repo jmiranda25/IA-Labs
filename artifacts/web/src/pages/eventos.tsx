@@ -51,7 +51,7 @@ function EventCard({ event }: { event: EventDetail }) {
   return (
     <Link href={`/eventos/${event.slug}`}>
       <div
-        className="relative overflow-hidden cursor-pointer h-64 sm:h-72 transition-transform hover:-translate-y-0.5"
+        className="relative overflow-hidden cursor-pointer h-64 sm:h-72 transition-transform hover:scale-[1.03] duration-300"
         data-testid={`card-event-${event.slug}`}
       >
         {/* Full-bleed background */}
@@ -95,7 +95,7 @@ function EventCard({ event }: { event: EventDetail }) {
 
         {/* Content */}
         <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1.5">
-          <h3 className="font-bold text-white text-base leading-tight line-clamp-2">
+          <h3 className="font-light text-white text-lg leading-tight line-clamp-2">
             {event.title}
           </h3>
           <div className="flex items-center gap-3 text-white/70 text-xs">
@@ -326,12 +326,12 @@ export default function EventosPage() {
       <div className="max-w-6xl mx-auto p-6 space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Calendar className="h-6 w-6 text-primary" />
+            <h1 className="text-3xl font-light tracking-tight text-foreground flex items-center gap-3">
+              <Calendar className="h-7 w-7 text-primary" />
               Eventos
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Meetups, talleres y conferencias de la comunidad.
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground mt-2">
+              Meetups, talleres y conferencias de la comunidad
             </p>
           </div>
           {isAdmin && (

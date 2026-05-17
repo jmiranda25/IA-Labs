@@ -1,62 +1,68 @@
 import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout";
 import { useListCourses } from "@workspace/api-client-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { BookOpen, Lock, CheckCircle, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { CourseDetail } from "@workspace/api-client-react";
 
 function CourseCard({ course }: { course: CourseDetail }) {
   const hasPurchase = !!course.purchase;
   const purchaseStatus = course.purchase?.status;
 
+  const statusBadge = course.hasAccess ? (
+    <span className="inline-flex items-center gap-1 rounded-none bg-green-500 text-black text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">
+      <CheckCircle className="h-2.5 w-2.5" />
+      Acceso
+    </span>
+  ) : hasPurchase && purchaseStatus === "pending" ? (
+    <span className="inline-flex items-center gap-1 rounded-none bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">
+      <Clock className="h-2.5 w-2.5" />
+      Pendiente
+    </span>
+  ) : (
+    <span className="rounded-none bg-[#c8f135] text-black text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">
+      S/ {Number(course.pricePen).toFixed(0)}
+    </span>
+  );
+
   return (
     <Link href={`/cursos/${course.slug}`}>
-      <div className="group rounded-xl border border-border bg-card overflow-hidden hover:border-primary/50 hover:shadow-md transition-all cursor-pointer">
+      <div className="group relative overflow-hidden cursor-pointer h-60 transition-transform hover:scale-[1.03] duration-300">
+        {/* Full-bleed cover */}
         {course.coverUrl ? (
           <img
             src={course.coverUrl}
             alt={course.title}
-            className="w-full h-40 object-cover"
+            className="absolute inset-0 h-full w-full object-cover"
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-40 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-            <BookOpen className="h-12 w-12 text-primary/40" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-accent/10 flex items-center justify-center">
+            <BookOpen className="h-14 w-14 text-primary/20" />
           </div>
         )}
-        <div className="p-4 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
-              {course.title}
-            </h3>
-            {course.hasAccess ? (
-              <Badge className="shrink-0 bg-green-600 text-white">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Acceso
-              </Badge>
-            ) : hasPurchase && purchaseStatus === "pending" ? (
-              <Badge variant="secondary" className="shrink-0">
-                <Clock className="h-3 w-3 mr-1" />
-                Pendiente
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="shrink-0 text-primary border-primary/40">
-                S/ {Number(course.pricePen).toFixed(2)}
-              </Badge>
-            )}
-          </div>
-          {course.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {course.description}
-            </p>
-          )}
-          <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-            <span>{course.moduleCount} módulo{course.moduleCount !== 1 ? "s" : ""}</span>
-            <span>Por {course.creatorName}</span>
+
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+        {/* Price / status badge — top right */}
+        <div className="absolute top-3 right-3">
+          {statusBadge}
+        </div>
+
+        {/* Title + meta — bottom left */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-1">
+          <h3 className="font-light text-white text-base leading-snug line-clamp-2">
+            {course.title}
+          </h3>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-widest text-white/50">
+              {course.moduleCount} módulo{course.moduleCount !== 1 ? "s" : ""}
+            </span>
+            <span className="text-[10px] uppercase tracking-widest text-white/50">
+              {course.creatorName}
+            </span>
           </div>
         </div>
       </div>
@@ -65,16 +71,7 @@ function CourseCard({ course }: { course: CourseDetail }) {
 }
 
 function CourseCardSkeleton() {
-  return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <Skeleton className="w-full h-40" />
-      <div className="p-4 space-y-3">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-1/2" />
-      </div>
-    </div>
-  );
+  return <Skeleton className="h-60 w-full" />;
 }
 
 export default function CursosPage() {
@@ -88,17 +85,17 @@ export default function CursosPage() {
         <meta name="description" content="Aprende con los mejores cursos de IA de nuestra comunidad." />
       </Helmet>
 
-      <div className="max-w-5xl mx-auto py-6 px-4 space-y-6">
+      <div className="max-w-5xl mx-auto py-8 px-6 space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Cursos</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Cursos creados y curados por el equipo de IA Labs. Paga con Yape y activamos tu acceso.
+            <h1 className="text-3xl font-light tracking-tight text-foreground">Cursos</h1>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground mt-2">
+              Curados por el equipo · Paga con Yape
             </p>
           </div>
-          <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground bg-muted/60 rounded-lg px-3 py-2">
-            <Lock className="h-3.5 w-3.5" />
-            Pago validado manualmente
+          <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground border border-border/50 px-3 py-2">
+            <Lock className="h-3 w-3" />
+            Validado manualmente
           </div>
         </div>
 
@@ -110,9 +107,9 @@ export default function CursosPage() {
           </div>
         ) : courses.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <BookOpen className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <p className="text-muted-foreground font-medium">No hay cursos disponibles aún</p>
-            <p className="text-muted-foreground/60 text-sm mt-1">Vuelve pronto, estamos preparando contenido increíble.</p>
+            <BookOpen className="h-12 w-12 text-muted-foreground/20 mb-4" />
+            <p className="text-muted-foreground font-light text-lg">No hay cursos disponibles aún</p>
+            <p className="text-white/30 text-[11px] uppercase tracking-widest mt-2">Vuelve pronto</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

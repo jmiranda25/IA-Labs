@@ -1,0 +1,59 @@
+Visual polish pass — apply editorial magazine aesthetic 
+to all inner pages (not just landing). Match the style 
+of the hero section we already built.
+
+1. DASHBOARD redesign:
+   - Remove card borders, use borderless stat blocks
+   - Quick actions: horizontal strip, minimal icons, 
+     no heavy card boxes
+   - Activity feed: full width, timeline style with 
+     thin left border accent in purple
+   - Upcoming events: slim cards, date prominent in purple
+   - Overall: more whitespace, less cramped
+
+2. SIDEBAR redesign:
+   - Background: slightly lighter than main bg (bg-muted/30)
+   - Nav items: text-xs uppercase tracking-widest
+   - Active item: left border accent border-l-2 border-primary
+     + text-white, no background highlight box
+   - Logo: "✦ AI COMMUNITY" font-light tracking-widest
+   - Bottom links (Mi perfil, Configuración): text-xs muted
+
+3. EVENT CARDS (/eventos):
+   - Full bleed cover image as background
+   - Dark gradient overlay bottom to top
+   - Title: large font-light text-white overlapping image
+   - Badge: yellow-green bg, black text, sharp corners
+   - No card borders or shadows
+   - Hover: slight scale-up (scale-105 transition)
+
+4. MEMBER CARDS (/miembros):
+   - Remove rounded avatars → keep circular but add 
+     purple ring on hover
+   - Card: borderless, bg-white/5 subtle
+   - Name: font-light text-lg
+   - Role badge: sharp corners, purple for admin, 
+     muted for participant
+   - "Ver tarjeta" link: text-xs uppercase tracking-widest
+
+5. COURSE CARDS (/cursos):
+   - Full bleed cover image
+   - Price badge: top-right, yellow-green bg "S/ 97" 
+     black text sharp corners
+   - Title: bottom-left overlapping image, font-light white
+   - Hover: scale-105 transition
+
+6. FORUM categories (/foro):
+   - Remove colored dots → use thin left border color accent
+   - Category name: text-lg font-light
+   - Stats (threads/posts): text-xs uppercase muted, right-aligned
+   - Hover: bg-white/5 transition
+
+7. GLOBAL typography:
+   - All page titles (h1): font-light text-3xl tracking-tight
+   - Section headers: text-xs uppercase tracking-widest 
+     text-muted-foreground mb-6
+   - Body text: text-white/70 for secondary content
+
+Apply all changes, no backend needed.
+Republish when done.

@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Bell, Menu, LayoutDashboard, Users, Calendar, MessageSquare,
-  BookOpen, ShoppingBag, MessageCircle, Settings, Shield, Zap, X,
+  BookOpen, ShoppingBag, MessageCircle, Settings, Shield, X,
   BellRing, User, Eye, GraduationCap,
 } from "lucide-react";
 import { useEffect, useRef, useCallback } from "react";
@@ -121,7 +121,6 @@ function NotificationBell() {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
-        {/* Header */}
         <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
           <span className="text-sm font-semibold">Notificaciones</span>
           {unread > 0 && (
@@ -141,8 +140,6 @@ function NotificationBell() {
             </button>
           )}
         </div>
-
-        {/* Notification list */}
         <ScrollArea className="max-h-[360px]">
           {notifications.length === 0 ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
@@ -165,8 +162,6 @@ function NotificationBell() {
             </div>
           )}
         </ScrollArea>
-
-        {/* Footer */}
         <div className="border-t border-border px-3 py-2">
           <Link href="/notificaciones" onClick={() => setOpen(false)}>
             <span className="text-xs text-primary hover:underline cursor-pointer">
@@ -186,20 +181,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { viewAsUser, exitUserView } = useViewMode();
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
-    <nav className="space-y-1">
+    <nav className="space-y-0.5">
       {navItems.map(({ href, label, icon: Icon }) => {
         const active = location === href || location.startsWith(href + "/");
         return (
           <Link key={href} href={href} onClick={onClick}>
             <span
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-3 px-3 py-2 text-[11px] font-medium uppercase tracking-widest transition-colors cursor-pointer ${
                 active
-                  ? "bg-primary/15 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "border-l-2 border-primary text-white pl-[10px]"
+                  : "text-muted-foreground hover:text-foreground border-l-2 border-transparent pl-[10px]"
               }`}
               data-testid={`nav-${label.toLowerCase()}`}
             >
-              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {label}
             </span>
           </Link>
@@ -208,14 +203,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {me?.role === "administrator" && !viewAsUser && (
         <Link href="/admin" onClick={onClick}>
           <span
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
+            className={`flex items-center gap-3 px-3 py-2 text-[11px] font-medium uppercase tracking-widest transition-colors cursor-pointer ${
               location === "/admin" || location.startsWith("/admin/")
-                ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "border-l-2 border-primary text-white pl-[10px]"
+                : "text-muted-foreground hover:text-foreground border-l-2 border-transparent pl-[10px]"
             }`}
             data-testid="nav-admin"
           >
-            <Shield className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <Shield className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             Admin
           </span>
         </Link>
@@ -226,32 +221,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-border bg-sidebar">
-        <div className="flex h-14 items-center gap-2 px-4 border-b border-border">
-          <Zap className="h-5 w-5 text-primary" aria-hidden="true" />
-          <span className="font-bold text-foreground tracking-tight">AI Community</span>
+      <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-border/60 bg-muted/20">
+        <div className="flex h-14 items-center px-4 border-b border-border/60">
+          <span className="text-xs font-light tracking-[0.2em] text-foreground uppercase">✦ AI Community</span>
         </div>
-        <div className="flex-1 overflow-y-auto p-3">
+        <div className="flex-1 overflow-y-auto py-4 px-1">
           <NavLinks />
         </div>
-        <div className="border-t border-border p-3 space-y-1">
+        <div className="border-t border-border/60 py-3 px-1 space-y-0.5">
           <Link href="/perfil">
-            <span className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors cursor-pointer ${location === "/perfil" ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="nav-perfil">
-              <User className="h-4 w-4" aria-hidden="true" />
+            <span className={`flex items-center gap-3 px-3 py-2 text-[10px] uppercase tracking-widest transition-colors cursor-pointer ${location === "/perfil" ? "border-l-2 border-primary text-white pl-[10px]" : "text-muted-foreground hover:text-foreground border-l-2 border-transparent pl-[10px]"}`} data-testid="nav-perfil">
+              <User className="h-3.5 w-3.5" aria-hidden="true" />
               Mi perfil
             </span>
           </Link>
           {me?.username && (
             <Link href={`/m/${me.username}`}>
-              <span className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer" data-testid="nav-tarjeta">
-                <User className="h-4 w-4" aria-hidden="true" />
+              <span className="flex items-center gap-3 px-3 py-2 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors cursor-pointer border-l-2 border-transparent pl-[10px]" data-testid="nav-tarjeta">
+                <User className="h-3.5 w-3.5" aria-hidden="true" />
                 Ver mi tarjeta
               </span>
             </Link>
           )}
           <Link href="/settings">
-            <span className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer" data-testid="nav-settings">
-              <Settings className="h-4 w-4" aria-hidden="true" />
+            <span className="flex items-center gap-3 px-3 py-2 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors cursor-pointer border-l-2 border-transparent pl-[10px]" data-testid="nav-settings">
+              <Settings className="h-3.5 w-3.5" aria-hidden="true" />
               Configuración
             </span>
           </Link>
@@ -260,34 +254,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-1 flex-col min-w-0">
         {/* Header */}
-        <header className="flex h-14 items-center gap-3 border-b border-border bg-background/95 backdrop-blur px-4 sticky top-0 z-40">
+        <header className="flex h-14 items-center gap-3 border-b border-border/60 bg-background/95 backdrop-blur px-4 sticky top-0 z-40">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menú" data-testid="button-mobile-menu">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0 flex flex-col">
-              <div className="flex h-14 items-center gap-2 px-4 border-b border-border shrink-0">
-                <Zap className="h-5 w-5 text-primary" aria-hidden="true" />
-                <span className="font-bold tracking-tight">AI Community</span>
+            <SheetContent side="left" className="w-64 p-0 flex flex-col bg-muted/20">
+              <div className="flex h-14 items-center px-4 border-b border-border/60 shrink-0">
+                <span className="text-xs font-light tracking-[0.2em] text-foreground uppercase">✦ AI Community</span>
                 <button className="ml-auto" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú" data-testid="button-close-menu">
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-3">
+              <div className="flex-1 overflow-y-auto py-4 px-1">
                 <NavLinks onClick={() => setMobileOpen(false)} />
               </div>
-              <div className="border-t border-border p-3 space-y-1 shrink-0">
+              <div className="border-t border-border/60 py-3 px-1 space-y-0.5 shrink-0">
                 <Link href="/perfil" onClick={() => setMobileOpen(false)}>
-                  <span className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors cursor-pointer ${location === "/perfil" ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-                    <User className="h-4 w-4" aria-hidden="true" />
+                  <span className={`flex items-center gap-3 px-3 py-2 text-[10px] uppercase tracking-widest transition-colors cursor-pointer ${location === "/perfil" ? "border-l-2 border-primary text-white pl-[10px]" : "text-muted-foreground hover:text-foreground border-l-2 border-transparent pl-[10px]"}`}>
+                    <User className="h-3.5 w-3.5" aria-hidden="true" />
                     Mi perfil
                   </span>
                 </Link>
                 <Link href="/settings" onClick={() => setMobileOpen(false)}>
-                  <span className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors cursor-pointer ${location === "/settings" ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-                    <Settings className="h-4 w-4" aria-hidden="true" />
+                  <span className={`flex items-center gap-3 px-3 py-2 text-[10px] uppercase tracking-widest transition-colors cursor-pointer ${location === "/settings" ? "border-l-2 border-primary text-white pl-[10px]" : "text-muted-foreground hover:text-foreground border-l-2 border-transparent pl-[10px]"}`}>
+                    <Settings className="h-3.5 w-3.5" aria-hidden="true" />
                     Configuración
                   </span>
                 </Link>
@@ -297,8 +290,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Brand mark (mobile only) */}
           <div className="flex items-center gap-2 lg:hidden">
-            <Zap className="h-5 w-5 text-primary" aria-hidden="true" />
-            <span className="font-bold text-sm tracking-tight">AI Community</span>
+            <span className="text-[11px] font-light tracking-[0.2em] text-foreground uppercase">✦ AI Community</span>
           </div>
 
           <div className="flex-1" />

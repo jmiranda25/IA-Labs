@@ -6,20 +6,13 @@ import { Link } from "wouter";
 import { Layout } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listUsers } from "@workspace/api-client-react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Search, Users, Loader2, CreditCard } from "lucide-react";
+import { Search, Users, Loader2 } from "lucide-react";
 
 type RoleFilter = "" | "participant" | "administrator";
-
-const ROLE_LABELS: Record<string, string> = {
-  participant: "Participante",
-  administrator: "Administrador",
-};
 
 export default function MiembrosPage() {
   const [search, setSearch] = useState("");
@@ -64,18 +57,16 @@ export default function MiembrosPage() {
         <meta property="og:title" content="Directorio de miembros — AI Community" />
         <meta property="og:description" content="Conecta con practicantes de IA de toda la comunidad hispanohablante." />
       </Helmet>
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="max-w-6xl mx-auto p-6 space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Users className="h-6 w-6 text-primary" />
-              Directorio de Miembros
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Conecta con practicantes de IA de toda la comunidad
-            </p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-light tracking-tight text-foreground flex items-center gap-3">
+            <Users className="h-7 w-7 text-primary" />
+            Directorio
+          </h1>
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground mt-2">
+            Conecta con practicantes de IA de toda la comunidad
+          </p>
         </div>
 
         {/* Controls */}
@@ -107,16 +98,16 @@ export default function MiembrosPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 12 }).map((_, i) => (
-              <Skeleton key={i} className="h-56 rounded-xl" />
+              <Skeleton key={i} className="h-56" />
             ))}
           </div>
         ) : allUsers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-3">
             <Users className="h-14 w-14 opacity-20" />
-            <p className="text-base">No se encontraron miembros</p>
+            <p className="text-base font-light">No se encontraron miembros</p>
             {(debouncedSearch || role) && (
               <button
-                className="text-sm text-primary hover:underline"
+                className="text-[11px] uppercase tracking-widest text-primary hover:text-primary/70 transition-colors"
                 onClick={() => { setSearch(""); setRole(""); }}
               >
                 Limpiar filtros
@@ -131,13 +122,12 @@ export default function MiembrosPage() {
               ))}
             </div>
 
-            {/* Infinite scroll sentinel */}
             <div ref={sentinelRef} className="flex justify-center py-6">
               {isFetchingNextPage && (
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
               )}
               {!hasNextPage && allUsers.length > 0 && !isFetching && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
                   {allUsers.length} miembro{allUsers.length !== 1 ? "s" : ""} en total
                 </p>
               )}
@@ -153,60 +143,59 @@ function MemberCard({ user }: { user: any }) {
   const profileHref = user.username ? `/miembros/${user.username}` : "#";
   const cardHref = user.username ? `/m/${user.username}` : null;
   const shortBio = user.bio ? user.bio.slice(0, 80) + (user.bio.length > 80 ? "…" : "") : null;
+  const isAdmin = user.role === "administrator";
 
   return (
-    <Card
-      className={`h-full transition-all hover:-translate-y-0.5 ${
-        user.username
-          ? "hover:border-primary/40"
-          : "opacity-70"
-      }`}
+    <div
+      className={`group bg-white/5 hover:bg-white/8 transition-all ${user.username ? "" : "opacity-70"}`}
       data-testid={`card-member-${user.id}`}
     >
       <Link href={profileHref}>
-        <CardContent className="p-5 flex flex-col items-center text-center gap-2 cursor-pointer">
-          <Avatar className="h-14 w-14 mt-1">
-            <AvatarImage src={user.avatarUrl} />
-            <AvatarFallback className="text-lg bg-primary/20 text-primary">
-              {user.displayName?.charAt(0)?.toUpperCase() ?? "?"}
-            </AvatarFallback>
-          </Avatar>
+        <div className="p-5 flex flex-col items-center text-center gap-3 cursor-pointer">
+          <div className="relative">
+            <Avatar className="h-14 w-14 mt-1 ring-2 ring-transparent group-hover:ring-primary transition-all duration-200">
+              <AvatarImage src={user.avatarUrl} />
+              <AvatarFallback className="text-lg bg-primary/20 text-primary">
+                {user.displayName?.charAt(0)?.toUpperCase() ?? "?"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
 
           <div className="w-full min-w-0">
-            <p className="font-semibold text-sm text-foreground truncate">
+            <p className="font-light text-lg text-foreground truncate leading-tight">
               {user.displayName}
             </p>
             {user.username && (
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-[11px] text-muted-foreground truncate mt-0.5">
                 @{user.username}
               </p>
             )}
           </div>
 
-          <Badge
-            variant={user.role === "administrator" ? "default" : "secondary"}
-            className="text-[10px] px-1.5 py-0 shrink-0"
-          >
-            {ROLE_LABELS[user.role] ?? user.role}
-          </Badge>
+          <span className={`text-[10px] px-2 py-0.5 rounded-none font-medium uppercase tracking-widest ${
+            isAdmin
+              ? "bg-primary/20 text-primary"
+              : "bg-muted/60 text-muted-foreground"
+          }`}>
+            {isAdmin ? "Admin" : "Miembro"}
+          </span>
 
           {shortBio && (
-            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 w-full">
+            <p className="text-xs text-white/50 leading-relaxed line-clamp-2 w-full">
               {shortBio}
             </p>
           )}
-        </CardContent>
+        </div>
       </Link>
       {cardHref && (
         <div className="px-5 pb-4 pt-0 -mt-1">
           <Link href={cardHref}>
-            <button className="w-full flex items-center justify-center gap-1.5 rounded-md border border-border/60 py-1 text-xs text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors">
-              <CreditCard className="h-3 w-3" />
+            <button className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-primary border-t border-border/30 transition-colors">
               Ver tarjeta
             </button>
           </Link>
         </div>
       )}
-    </Card>
+    </div>
   );
 }

@@ -6,61 +6,34 @@ import {
   useListForumCategories,
   useGetMe,
 } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import {
-  Users, Calendar, MessageSquare, BookOpen, Clock, TrendingUp,
-  Zap, Plus, ArrowRight,
+  Users, Calendar, MessageSquare, BookOpen, Clock,
+  Plus, ArrowRight,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
-function StatCard({ icon: Icon, label, value, sub }: { icon: React.ElementType; label: string; value: number; sub?: string }) {
+function StatBlock({ label, value, sub }: { label: string; value: number; sub?: string }) {
   return (
-    <Card>
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">{label}</p>
-            <p className="text-2xl font-bold tabular-nums" data-testid={`stat-${label.toLowerCase().replace(/\s/g, "-")}`}>
-              {value.toLocaleString("es")}
-            </p>
-            {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
-          </div>
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-1 py-4 px-2">
+      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="text-3xl font-light tabular-nums text-foreground" data-testid={`stat-${label.toLowerCase().replace(/\s/g, "-")}`}>
+        {value.toLocaleString("es")}
+      </p>
+      {sub && <p className="text-xs text-muted-foreground/60">{sub}</p>}
+    </div>
   );
 }
 
 const quickActions = [
-  {
-    href: "/foro",
-    icon: MessageSquare,
-    label: "Iniciar tema en foro",
-    sub: "Comparte con la comunidad",
-    adminOnly: false,
-  },
-  {
-    href: "/members",
-    icon: Users,
-    label: "Buscar miembros",
-    sub: "Conecta con la comunidad",
-    adminOnly: false,
-  },
-  {
-    href: "/resources",
-    icon: BookOpen,
-    label: "Subir recurso",
-    sub: "Comparte conocimiento",
-    adminOnly: false,
-  },
+  { href: "/foro",      icon: MessageSquare, label: "Nuevo tema" },
+  { href: "/miembros",  icon: Users,         label: "Miembros" },
+  { href: "/recursos",  icon: BookOpen,       label: "Subir recurso" },
+  { href: "/eventos",   icon: Calendar,       label: "Ver eventos" },
 ];
 
 export default function DashboardPage() {
@@ -73,177 +46,154 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Welcome */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground">
-            Bienvenido de vuelta{me?.displayName ? `, ${me.displayName}` : ""}
+        <div className="mb-10">
+          <h1 className="text-3xl font-light tracking-tight text-foreground">
+            Bienvenido{me?.displayName ? `, ${me.displayName}` : ""}
             {isAdmin && (
-              <Badge variant="secondary" className="ml-2 text-xs align-middle">Admin</Badge>
+              <Badge variant="secondary" className="ml-3 text-xs align-middle">Admin</Badge>
             )}
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Esto es lo que está pasando en la comunidad.
+          <p className="text-white/50 text-sm mt-2 uppercase tracking-widest text-[11px]">
+            Lo que está pasando en la comunidad
           </p>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        {/* Quick Actions — horizontal strip */}
+        <div className="flex items-center gap-8 border-y border-border/50 py-5 mb-10 overflow-x-auto">
           {isAdmin && (
-            <Link href="/events">
-              <Card className="hover:border-primary/40 cursor-pointer transition-colors group h-full" data-testid="quick-action-crear-evento">
-                <CardContent className="p-5 flex flex-col items-start gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <Plus className="h-5 w-5 text-primary" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Crear evento</p>
-                    <p className="text-xs text-muted-foreground">Solo administradores</p>
-                  </div>
-                </CardContent>
-              </Card>
+            <Link href="/eventos">
+              <div className="flex items-center gap-2.5 cursor-pointer group shrink-0" data-testid="quick-action-crear-evento">
+                <Plus className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors whitespace-nowrap">
+                  Crear evento
+                </span>
+              </div>
             </Link>
           )}
-          {quickActions.map(({ href, icon: Icon, label, sub }) => (
+          {quickActions.map(({ href, icon: Icon, label }) => (
             <Link key={href} href={href}>
-              <Card className="hover:border-primary/40 cursor-pointer transition-colors group h-full" data-testid={`quick-action-${label.toLowerCase().replace(/\s/g, "-")}`}>
-                <CardContent className="p-5 flex flex-col items-start gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{label}</p>
-                    <p className="text-xs text-muted-foreground">{sub}</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex items-center gap-2.5 cursor-pointer group shrink-0" data-testid={`quick-action-${label.toLowerCase().replace(/\s/g, "-")}`}>
+                <Icon className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors whitespace-nowrap">
+                  {label}
+                </span>
+              </div>
             </Link>
           ))}
         </div>
 
-        {/* Community Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Community Stats — borderless blocks */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-border/50 border border-border/50 mb-10">
           {statsLoading ? (
-            Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)
+            Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)
           ) : stats ? (
             <>
-              <StatCard icon={Users}         label="Miembros"      value={stats.memberCount} />
-              <StatCard icon={Calendar}      label="Eventos"       value={stats.eventCount} />
-              <StatCard icon={MessageSquare} label="Publicaciones" value={stats.forumPostCount} />
-              <StatCard icon={BookOpen}      label="Recursos"      value={stats.resourceCount} />
+              <StatBlock label="Miembros"      value={stats.memberCount} />
+              <StatBlock label="Eventos"       value={stats.eventCount} />
+              <StatBlock label="Publicaciones" value={stats.forumPostCount} />
+              <StatBlock label="Recursos"      value={stats.resourceCount} />
             </>
           ) : null}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Activity Feed */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Activity Feed — timeline style */}
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-primary" aria-hidden="true" />
-                  Actividad reciente
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {feedLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)
-                ) : (feed as any[])?.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-6">
-                    Aún no hay actividad — ¡sé el primero!
-                  </p>
-                ) : (
-                  (feed as any[])?.map((item: any) => (
-                    <Link href={item.link ?? "#"} key={item.id}>
-                      <div
-                        className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                        data-testid={`activity-item-${item.id}`}
-                      >
-                        <Avatar className="h-7 w-7 shrink-0">
-                          <AvatarImage src={item.actorAvatar} />
-                          <AvatarFallback className="text-xs">{item.actorName?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground truncate">{item.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: es })}
-                          </p>
-                        </div>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-6">Actividad reciente</p>
+            <div className="space-y-0">
+              {feedLoading ? (
+                Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 mb-3" />)
+              ) : (feed as any[])?.length === 0 ? (
+                <p className="text-sm text-white/40 py-6">
+                  Aún no hay actividad — ¡sé el primero!
+                </p>
+              ) : (
+                (feed as any[])?.map((item: any) => (
+                  <Link href={item.link ?? "#"} key={item.id}>
+                    <div
+                      className="flex items-start gap-4 py-3.5 border-l-2 border-primary/25 pl-4 hover:border-primary/60 transition-colors cursor-pointer group"
+                      data-testid={`activity-item-${item.id}`}
+                    >
+                      <Avatar className="h-7 w-7 shrink-0 mt-0.5">
+                        <AvatarImage src={item.actorAvatar} />
+                        <AvatarFallback className="text-xs">{item.actorName?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground group-hover:text-primary transition-colors truncate">{item.title}</p>
+                        <p className="text-[11px] text-white/40 mt-0.5">
+                          {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: es })}
+                        </p>
                       </div>
-                    </Link>
-                  ))
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Upcoming Events */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-primary" aria-hidden="true" />
-                  Próximos eventos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-6">Próximos eventos</p>
+              <div className="space-y-0">
                 {(upcomingEvents as any[])?.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">No hay eventos próximos</p>
+                  <p className="text-sm text-white/40 py-4">No hay eventos próximos</p>
                 ) : (
                   (upcomingEvents as any[])?.map((event: any) => (
                     <Link href={`/eventos/${event.slug}`} key={event.id}>
                       <div
-                        className="p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                        className="flex items-start gap-3 py-3 border-b border-border/40 hover:border-border/80 transition-colors cursor-pointer group"
                         data-testid={`event-upcoming-${event.id}`}
                       >
-                        <p className="text-sm font-medium truncate">{event.title}</p>
-                        <div className="flex items-center gap-1 mt-1">
-                          <Clock className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(event.startsAt).toLocaleDateString("es", { month: "short", day: "numeric" })}
-                          </span>
-                          {event.isOnline && (
-                            <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 ml-1">Online</Badge>
-                          )}
+                        <div className="shrink-0 text-center w-10">
+                          <p className="text-lg font-light text-primary leading-none">
+                            {new Date(event.startsAt).toLocaleDateString("es", { day: "numeric" })}
+                          </p>
+                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                            {new Date(event.startsAt).toLocaleDateString("es", { month: "short" })}
+                          </p>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-light text-foreground group-hover:text-primary transition-colors truncate">{event.title}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Clock className="h-2.5 w-2.5 text-muted-foreground" aria-hidden="true" />
+                            <span className="text-[11px] text-white/40">
+                              {new Date(event.startsAt).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </Link>
                   ))
                 )}
-                <Link href="/eventos" className="flex items-center gap-1 text-xs text-primary hover:underline pt-1">
-                  Ver todos los eventos <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                <Link href="/eventos" className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-primary hover:text-primary/70 transition-colors pt-3">
+                  Ver todos <ArrowRight className="h-3 w-3" aria-hidden="true" />
                 </Link>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Forum Categories */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-primary" aria-hidden="true" />
-                  Categorías del foro
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-6">Categorías del foro</p>
+              <div className="space-y-0">
                 {(forumCategories as any[])?.slice(0, 4).map((cat: any) => (
                   <Link href={`/foro/${cat.slug}`} key={cat.id}>
                     <div
-                      className="p-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="flex items-center justify-between py-3 border-b border-border/40 hover:border-border/80 transition-colors cursor-pointer group"
                       data-testid={`forum-cat-${cat.id}`}
                     >
-                      <p className="text-sm font-medium truncate">{cat.name}</p>
-                      <div className="flex gap-3 mt-0.5">
-                        <span className="text-xs text-muted-foreground">{cat.threadCount} temas</span>
-                        <span className="text-xs text-muted-foreground">{cat.postCount} posts</span>
-                      </div>
+                      <p className="text-sm font-light text-foreground group-hover:text-primary transition-colors truncate">{cat.name}</p>
+                      <span className="text-[10px] uppercase tracking-widest text-muted-foreground shrink-0 ml-3">{cat.threadCount} temas</span>
                     </div>
                   </Link>
                 ))}
-                <Link href="/foro" className="flex items-center gap-1 text-xs text-primary hover:underline pt-1">
+                <Link href="/foro" className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-primary hover:text-primary/70 transition-colors pt-3">
                   Ir al foro <ArrowRight className="h-3 w-3" aria-hidden="true" />
                 </Link>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
       </div>
