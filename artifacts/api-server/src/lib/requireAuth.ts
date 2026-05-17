@@ -19,6 +19,13 @@ type ClerkClaims = {
   [key: string]: unknown;
 };
 
+const BOOTSTRAP_ADMIN_EMAILS = new Set(
+  (process.env.ADMIN_BOOTSTRAP_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+);
+
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const auth = getAuth(req);
   const claims = auth?.sessionClaims as ClerkClaims | null;
@@ -33,8 +40,24 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   // Brand-new users (no row yet) are allowed through so GET /users/me can create their row.
   const user = await db.query.usersTable.findFirst({
     where: eq(usersTable.clerkId, userId),
-    columns: { status: true },
+    columns: { status: true, email: true },
   });
+
+  // Bootstrap admins must always be active regardless of DB state.
+  // This self-heals production rows that were reset to "pending" by a new
+  // deployment or schema migration — it fires on the very first API call so
+  // admins are never locked out of their own app.
+  if (user && (user.status === "pending" || user.status === "rejected")) {
+    const email = user.email?.toLowerCase() ?? null;
+    if (email && BOOTSTRAP_ADMIN_EMAILS.has(email)) {
+      await db
+        .update(usersTable)
+        .set({ status: "active", role: "administrator", updatedAt: new Date() })
+        .where(eq(usersTable.clerkId, userId));
+      next();
+      return;
+    }
+  }
 
   if (user?.status === "pending") {
     res.status(403).json({ error: "Account pending approval", code: "PENDING_APPROVAL" });
