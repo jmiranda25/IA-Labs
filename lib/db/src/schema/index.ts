@@ -8,3 +8,4 @@ export * from "./moderation";
 export * from "./reports";
 export * from "./landing";
 export * from "./referrals";
+export * from "./courses";

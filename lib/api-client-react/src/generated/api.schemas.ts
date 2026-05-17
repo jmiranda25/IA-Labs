@@ -468,6 +468,148 @@ export interface SendMessageBody {
   toId: string;
 }
 
+export interface CourseModule {
+  id: string;
+  courseId: string;
+  title: string;
+  description: string;
+  videoUrl?: string | null;
+  orderIndex: number;
+  createdAt: string;
+}
+
+export type CoursePurchaseStatus =
+  (typeof CoursePurchaseStatus)[keyof typeof CoursePurchaseStatus];
+
+export const CoursePurchaseStatus = {
+  pending: "pending",
+  approved: "approved",
+  rejected: "rejected",
+} as const;
+
+export interface CoursePurchase {
+  id: string;
+  courseId: string;
+  userId: string;
+  yapeOperationCode: string;
+  status: CoursePurchaseStatus;
+  adminNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CourseDetailStatus =
+  (typeof CourseDetailStatus)[keyof typeof CourseDetailStatus];
+
+export const CourseDetailStatus = {
+  draft: "draft",
+  published: "published",
+} as const;
+
+export type CourseDetailPurchase = {
+  id: string;
+  status: "pending" | "approved" | "rejected";
+  adminNotes?: string | null;
+  yapeOperationCode: string;
+  createdAt: string;
+} | null;
+
+export interface CourseDetail {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  pricePen: string;
+  coverUrl?: string | null;
+  status: CourseDetailStatus;
+  createdBy: string;
+  creatorName: string;
+  moduleCount: number;
+  modules: CourseModule[];
+  hasAccess: boolean;
+  purchase?: CourseDetailPurchase;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AdminCoursePurchaseStatus =
+  (typeof AdminCoursePurchaseStatus)[keyof typeof AdminCoursePurchaseStatus];
+
+export const AdminCoursePurchaseStatus = {
+  pending: "pending",
+  approved: "approved",
+  rejected: "rejected",
+} as const;
+
+export interface AdminCoursePurchase {
+  id: string;
+  courseId: string;
+  userId: string;
+  yapeOperationCode: string;
+  status: AdminCoursePurchaseStatus;
+  adminNotes?: string | null;
+  courseTitle: string;
+  courseSlug: string;
+  pricePen: string;
+  buyerName: string;
+  buyerEmail: string;
+  buyerAvatar?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CoursePurchaseBody {
+  yapeOperationCode: string;
+}
+
+export type CreateCourseBodyStatus =
+  (typeof CreateCourseBodyStatus)[keyof typeof CreateCourseBodyStatus];
+
+export const CreateCourseBodyStatus = {
+  draft: "draft",
+  published: "published",
+} as const;
+
+export interface CreateCourseBody {
+  title: string;
+  description?: string;
+  pricePen: string;
+  status?: CreateCourseBodyStatus;
+}
+
+export type UpdateCourseBodyStatus =
+  (typeof UpdateCourseBodyStatus)[keyof typeof UpdateCourseBodyStatus];
+
+export const UpdateCourseBodyStatus = {
+  draft: "draft",
+  published: "published",
+} as const;
+
+export interface UpdateCourseBody {
+  title?: string;
+  description?: string;
+  pricePen?: string;
+  status?: UpdateCourseBodyStatus;
+}
+
+export interface CreateCourseModuleBody {
+  title: string;
+  description?: string;
+  videoUrl?: string | null;
+  orderIndex?: number;
+}
+
+export interface UpdateCourseModuleBody {
+  title?: string;
+  description?: string;
+  videoUrl?: string | null;
+  orderIndex?: number;
+}
+
+export interface RejectCoursePurchaseBody {
+  reason: string;
+}
+
 export type NotificationType =
   (typeof NotificationType)[keyof typeof NotificationType];
 
@@ -819,6 +961,10 @@ export type ListMarketplaceListingsParams = {
 
 export type UploadListingImagesBody = {
   images?: Blob[];
+};
+
+export type AdminUploadCourseCoverBody = {
+  cover: Blob;
 };
 
 export type ListNotificationsParams = {

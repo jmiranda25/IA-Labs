@@ -16,6 +16,7 @@ import storageRouter from "./storage";
 import webhooksRouter from "./webhooks";
 import seoRouter from "./seo";
 import referralsRouter from "./referrals";
+import coursesRouter from "./courses";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(reportsRouter);
 router.use(landingRouter);
 router.use(storageRouter);
 router.use(referralsRouter);
+router.use(coursesRouter);
 
 export default router;

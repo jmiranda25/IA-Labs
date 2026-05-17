@@ -18,7 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Bell, Menu, LayoutDashboard, Users, Calendar, MessageSquare,
   BookOpen, ShoppingBag, MessageCircle, Settings, Shield, Zap, X,
-  BellRing, User, Eye,
+  BellRing, User, Eye, GraduationCap,
 } from "lucide-react";
 import { useEffect, useRef, useCallback } from "react";
 import { useUser } from "@clerk/react";
@@ -33,6 +33,7 @@ const navItems = [
   { href: "/eventos",         label: "Eventos",         icon: Calendar },
   { href: "/foro",            label: "Foro",            icon: MessageSquare },
   { href: "/recursos",        label: "Recursos",        icon: BookOpen },
+  { href: "/cursos",          label: "Cursos",          icon: GraduationCap },
   { href: "/marketplace",     label: "Marketplace",     icon: ShoppingBag },
   { href: "/mensajes",        label: "Mensajes",        icon: MessageCircle },
   { href: "/notificaciones",  label: "Notificaciones",  icon: BellRing },

@@ -1287,6 +1287,362 @@ export const GetMessageThreadResponseItem = zod.object({
 export const GetMessageThreadResponse = zod.array(GetMessageThreadResponseItem);
 
 /**
+ * @summary List published courses
+ */
+export const ListCoursesResponseItem = zod.object({
+  id: zod.string(),
+  title: zod.string(),
+  slug: zod.string(),
+  description: zod.string(),
+  pricePen: zod.string(),
+  coverUrl: zod.string().nullish(),
+  status: zod.enum(["draft", "published"]),
+  createdBy: zod.string(),
+  creatorName: zod.string(),
+  moduleCount: zod.number(),
+  modules: zod.array(
+    zod.object({
+      id: zod.string(),
+      courseId: zod.string(),
+      title: zod.string(),
+      description: zod.string(),
+      videoUrl: zod.string().nullish(),
+      orderIndex: zod.number(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  hasAccess: zod.boolean(),
+  purchase: zod
+    .object({
+      id: zod.string(),
+      status: zod.enum(["pending", "approved", "rejected"]),
+      adminNotes: zod.string().nullish(),
+      yapeOperationCode: zod.string(),
+      createdAt: zod.coerce.date(),
+    })
+    .nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListCoursesResponse = zod.array(ListCoursesResponseItem);
+
+/**
+ * @summary Get course by slug with viewer purchase state
+ */
+export const GetCourseParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const GetCourseResponse = zod.object({
+  id: zod.string(),
+  title: zod.string(),
+  slug: zod.string(),
+  description: zod.string(),
+  pricePen: zod.string(),
+  coverUrl: zod.string().nullish(),
+  status: zod.enum(["draft", "published"]),
+  createdBy: zod.string(),
+  creatorName: zod.string(),
+  moduleCount: zod.number(),
+  modules: zod.array(
+    zod.object({
+      id: zod.string(),
+      courseId: zod.string(),
+      title: zod.string(),
+      description: zod.string(),
+      videoUrl: zod.string().nullish(),
+      orderIndex: zod.number(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  hasAccess: zod.boolean(),
+  purchase: zod
+    .object({
+      id: zod.string(),
+      status: zod.enum(["pending", "approved", "rejected"]),
+      adminNotes: zod.string().nullish(),
+      yapeOperationCode: zod.string(),
+      createdAt: zod.coerce.date(),
+    })
+    .nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Submit Yape operation code to buy a course
+ */
+export const SubmitCoursePurchaseParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const SubmitCoursePurchaseBody = zod.object({
+  yapeOperationCode: zod.string(),
+});
+
+/**
+ * @summary List all courses (admin)
+ */
+export const AdminListCoursesResponseItem = zod.object({
+  id: zod.string(),
+  title: zod.string(),
+  slug: zod.string(),
+  description: zod.string(),
+  pricePen: zod.string(),
+  coverUrl: zod.string().nullish(),
+  status: zod.enum(["draft", "published"]),
+  createdBy: zod.string(),
+  creatorName: zod.string(),
+  moduleCount: zod.number(),
+  modules: zod.array(
+    zod.object({
+      id: zod.string(),
+      courseId: zod.string(),
+      title: zod.string(),
+      description: zod.string(),
+      videoUrl: zod.string().nullish(),
+      orderIndex: zod.number(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  hasAccess: zod.boolean(),
+  purchase: zod
+    .object({
+      id: zod.string(),
+      status: zod.enum(["pending", "approved", "rejected"]),
+      adminNotes: zod.string().nullish(),
+      yapeOperationCode: zod.string(),
+      createdAt: zod.coerce.date(),
+    })
+    .nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const AdminListCoursesResponse = zod.array(AdminListCoursesResponseItem);
+
+/**
+ * @summary Create a course (admin)
+ */
+export const AdminCreateCourseBody = zod.object({
+  title: zod.string(),
+  description: zod.string().optional(),
+  pricePen: zod.string(),
+  status: zod.enum(["draft", "published"]).optional(),
+});
+
+/**
+ * @summary Update a course (admin)
+ */
+export const AdminUpdateCourseParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const AdminUpdateCourseBody = zod.object({
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  pricePen: zod.string().optional(),
+  status: zod.enum(["draft", "published"]).optional(),
+});
+
+export const AdminUpdateCourseResponse = zod.object({
+  id: zod.string(),
+  title: zod.string(),
+  slug: zod.string(),
+  description: zod.string(),
+  pricePen: zod.string(),
+  coverUrl: zod.string().nullish(),
+  status: zod.enum(["draft", "published"]),
+  createdBy: zod.string(),
+  creatorName: zod.string(),
+  moduleCount: zod.number(),
+  modules: zod.array(
+    zod.object({
+      id: zod.string(),
+      courseId: zod.string(),
+      title: zod.string(),
+      description: zod.string(),
+      videoUrl: zod.string().nullish(),
+      orderIndex: zod.number(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  hasAccess: zod.boolean(),
+  purchase: zod
+    .object({
+      id: zod.string(),
+      status: zod.enum(["pending", "approved", "rejected"]),
+      adminNotes: zod.string().nullish(),
+      yapeOperationCode: zod.string(),
+      createdAt: zod.coerce.date(),
+    })
+    .nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a course (admin)
+ */
+export const AdminDeleteCourseParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * @summary Upload course cover image (admin)
+ */
+export const AdminUploadCourseCoverParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const AdminUploadCourseCoverBody = zod.object({
+  cover: zod.instanceof(File),
+});
+
+export const AdminUploadCourseCoverResponse = zod.object({
+  id: zod.string(),
+  title: zod.string(),
+  slug: zod.string(),
+  description: zod.string(),
+  pricePen: zod.string(),
+  coverUrl: zod.string().nullish(),
+  status: zod.enum(["draft", "published"]),
+  createdBy: zod.string(),
+  creatorName: zod.string(),
+  moduleCount: zod.number(),
+  modules: zod.array(
+    zod.object({
+      id: zod.string(),
+      courseId: zod.string(),
+      title: zod.string(),
+      description: zod.string(),
+      videoUrl: zod.string().nullish(),
+      orderIndex: zod.number(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  hasAccess: zod.boolean(),
+  purchase: zod
+    .object({
+      id: zod.string(),
+      status: zod.enum(["pending", "approved", "rejected"]),
+      adminNotes: zod.string().nullish(),
+      yapeOperationCode: zod.string(),
+      createdAt: zod.coerce.date(),
+    })
+    .nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Add a module to a course (admin)
+ */
+export const AdminCreateCourseModuleParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const AdminCreateCourseModuleBody = zod.object({
+  title: zod.string(),
+  description: zod.string().optional(),
+  videoUrl: zod.string().nullish(),
+  orderIndex: zod.number().optional(),
+});
+
+/**
+ * @summary Update a course module (admin)
+ */
+export const AdminUpdateCourseModuleParams = zod.object({
+  moduleId: zod.coerce.string(),
+});
+
+export const AdminUpdateCourseModuleBody = zod.object({
+  title: zod.string().optional(),
+  description: zod.string().optional(),
+  videoUrl: zod.string().nullish(),
+  orderIndex: zod.number().optional(),
+});
+
+export const AdminUpdateCourseModuleResponse = zod.object({
+  id: zod.string(),
+  courseId: zod.string(),
+  title: zod.string(),
+  description: zod.string(),
+  videoUrl: zod.string().nullish(),
+  orderIndex: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a course module (admin)
+ */
+export const AdminDeleteCourseModuleParams = zod.object({
+  moduleId: zod.coerce.string(),
+});
+
+/**
+ * @summary List pending course purchases for admin review
+ */
+export const AdminListCoursePurchasesResponseItem = zod.object({
+  id: zod.string(),
+  courseId: zod.string(),
+  userId: zod.string(),
+  yapeOperationCode: zod.string(),
+  status: zod.enum(["pending", "approved", "rejected"]),
+  adminNotes: zod.string().nullish(),
+  courseTitle: zod.string(),
+  courseSlug: zod.string(),
+  pricePen: zod.string(),
+  buyerName: zod.string(),
+  buyerEmail: zod.string(),
+  buyerAvatar: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const AdminListCoursePurchasesResponse = zod.array(
+  AdminListCoursePurchasesResponseItem,
+);
+
+/**
+ * @summary Approve a course purchase and grant access
+ */
+export const AdminApproveCoursePurchaseParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const AdminApproveCoursePurchaseResponse = zod.object({
+  id: zod.string(),
+  courseId: zod.string(),
+  userId: zod.string(),
+  yapeOperationCode: zod.string(),
+  status: zod.enum(["pending", "approved", "rejected"]),
+  adminNotes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Reject a course purchase with a reason
+ */
+export const AdminRejectCoursePurchaseParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const AdminRejectCoursePurchaseBody = zod.object({
+  reason: zod.string(),
+});
+
+export const AdminRejectCoursePurchaseResponse = zod.object({
+  id: zod.string(),
+  courseId: zod.string(),
+  userId: zod.string(),
+  yapeOperationCode: zod.string(),
+  status: zod.enum(["pending", "approved", "rejected"]),
+  adminNotes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary List notifications for current user (cursor-paginated)
  */
 export const listNotificationsQueryUnreadOnlyDefault = false;

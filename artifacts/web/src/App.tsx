@@ -50,6 +50,8 @@ const CuentaPage = lazy(() => import("@/pages/cuenta"));
 const TarjetaMiembroPage = lazy(() => import("@/pages/tarjeta-miembro"));
 const PendientePage = lazy(() => import("@/pages/pendiente"));
 const RechazadoPage = lazy(() => import("@/pages/rechazado"));
+const CursosPage = lazy(() => import("@/pages/cursos"));
+const CursoDetallePage = lazy(() => import("@/pages/curso-detalle"));
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -422,6 +424,16 @@ function ClerkProviderWithRoutes() {
                 </Route>
                 <Route path="/recursos">
                   <ProtectedRoute><RecursosPage /></ProtectedRoute>
+                </Route>
+                <Route path="/cursos/:slug">
+                  {(params) => (
+                    <ProtectedRoute>
+                      <CursoDetallePage slug={params.slug as string} />
+                    </ProtectedRoute>
+                  )}
+                </Route>
+                <Route path="/cursos">
+                  <ProtectedRoute><CursosPage /></ProtectedRoute>
                 </Route>
                 <Route path="/marketplace/mis-anuncios">
                   <ProtectedRoute><MisAnunciosPage /></ProtectedRoute>

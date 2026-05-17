@@ -18,18 +18,26 @@ import type {
 
 import type {
   ActivityItem,
+  AdminCoursePurchase,
   AdminListUsersParams,
   AdminMetrics,
   AdminRejectListingBody,
   AdminRejectResourceBody,
   AdminResolveReport200,
   AdminStats,
+  AdminUploadCourseCoverBody,
   AdminUploadEventCoverBody,
   CardVisibilityBody,
   CardVisibilityResponse,
   CheckUsernameAvailabilityParams,
   CheckUsernameResponse,
   CommunityStats,
+  CourseDetail,
+  CourseModule,
+  CoursePurchase,
+  CoursePurchaseBody,
+  CreateCourseBody,
+  CreateCourseModuleBody,
   CreateEventBody,
   CreateListingBody,
   CreatePostBody,
@@ -71,6 +79,7 @@ import type {
   PublicUser,
   ReactBody,
   ReactionSummary,
+  RejectCoursePurchaseBody,
   ReorderBody,
   Report,
   RequestUploadUrlBody,
@@ -83,6 +92,8 @@ import type {
   SendMessageBody,
   ThreadListPageResponse,
   UnifiedModerationQueue,
+  UpdateCourseBody,
+  UpdateCourseModuleBody,
   UpdateEventBody,
   UpdateLandingFaqBody,
   UpdateLandingSectionBody,
@@ -4890,6 +4901,1183 @@ export function useGetMessageThread<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List published courses
+ */
+export const getListCoursesUrl = () => {
+  return `/api/courses`;
+};
+
+export const listCourses = async (
+  options?: RequestInit,
+): Promise<CourseDetail[]> => {
+  return customFetch<CourseDetail[]>(getListCoursesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCoursesQueryKey = () => {
+  return [`/api/courses`] as const;
+};
+
+export const getListCoursesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCourses>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCourses>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCoursesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCourses>>> = ({
+    signal,
+  }) => listCourses({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCourses>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCoursesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCourses>>
+>;
+export type ListCoursesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List published courses
+ */
+
+export function useListCourses<
+  TData = Awaited<ReturnType<typeof listCourses>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCourses>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCoursesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get course by slug with viewer purchase state
+ */
+export const getGetCourseUrl = (slug: string) => {
+  return `/api/courses/${slug}`;
+};
+
+export const getCourse = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<CourseDetail> => {
+  return customFetch<CourseDetail>(getGetCourseUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCourseQueryKey = (slug: string) => {
+  return [`/api/courses/${slug}`] as const;
+};
+
+export const getGetCourseQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCourse>>,
+  TError = ErrorType<unknown>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCourse>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCourseQueryKey(slug);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCourse>>> = ({
+    signal,
+  }) => getCourse(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getCourse>>, TError, TData> & {
+    queryKey: QueryKey;
+  };
+};
+
+export type GetCourseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCourse>>
+>;
+export type GetCourseQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get course by slug with viewer purchase state
+ */
+
+export function useGetCourse<
+  TData = Awaited<ReturnType<typeof getCourse>>,
+  TError = ErrorType<unknown>,
+>(
+  slug: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCourse>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCourseQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Submit Yape operation code to buy a course
+ */
+export const getSubmitCoursePurchaseUrl = (slug: string) => {
+  return `/api/courses/${slug}/purchase`;
+};
+
+export const submitCoursePurchase = async (
+  slug: string,
+  coursePurchaseBody: CoursePurchaseBody,
+  options?: RequestInit,
+): Promise<CoursePurchase> => {
+  return customFetch<CoursePurchase>(getSubmitCoursePurchaseUrl(slug), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(coursePurchaseBody),
+  });
+};
+
+export const getSubmitCoursePurchaseMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitCoursePurchase>>,
+    TError,
+    { slug: string; data: BodyType<CoursePurchaseBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitCoursePurchase>>,
+  TError,
+  { slug: string; data: BodyType<CoursePurchaseBody> },
+  TContext
+> => {
+  const mutationKey = ["submitCoursePurchase"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitCoursePurchase>>,
+    { slug: string; data: BodyType<CoursePurchaseBody> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return submitCoursePurchase(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitCoursePurchaseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitCoursePurchase>>
+>;
+export type SubmitCoursePurchaseMutationBody = BodyType<CoursePurchaseBody>;
+export type SubmitCoursePurchaseMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Submit Yape operation code to buy a course
+ */
+export const useSubmitCoursePurchase = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitCoursePurchase>>,
+    TError,
+    { slug: string; data: BodyType<CoursePurchaseBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitCoursePurchase>>,
+  TError,
+  { slug: string; data: BodyType<CoursePurchaseBody> },
+  TContext
+> => {
+  return useMutation(getSubmitCoursePurchaseMutationOptions(options));
+};
+
+/**
+ * @summary List all courses (admin)
+ */
+export const getAdminListCoursesUrl = () => {
+  return `/api/admin/courses`;
+};
+
+export const adminListCourses = async (
+  options?: RequestInit,
+): Promise<CourseDetail[]> => {
+  return customFetch<CourseDetail[]>(getAdminListCoursesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListCoursesQueryKey = () => {
+  return [`/api/admin/courses`] as const;
+};
+
+export const getAdminListCoursesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListCourses>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCourses>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListCoursesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListCourses>>
+  > = ({ signal }) => adminListCourses({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCourses>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListCoursesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListCourses>>
+>;
+export type AdminListCoursesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all courses (admin)
+ */
+
+export function useAdminListCourses<
+  TData = Awaited<ReturnType<typeof adminListCourses>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCourses>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListCoursesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a course (admin)
+ */
+export const getAdminCreateCourseUrl = () => {
+  return `/api/admin/courses`;
+};
+
+export const adminCreateCourse = async (
+  createCourseBody: CreateCourseBody,
+  options?: RequestInit,
+): Promise<CourseDetail> => {
+  return customFetch<CourseDetail>(getAdminCreateCourseUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCourseBody),
+  });
+};
+
+export const getAdminCreateCourseMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateCourse>>,
+    TError,
+    { data: BodyType<CreateCourseBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateCourse>>,
+  TError,
+  { data: BodyType<CreateCourseBody> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateCourse"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateCourse>>,
+    { data: BodyType<CreateCourseBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminCreateCourse(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateCourseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateCourse>>
+>;
+export type AdminCreateCourseMutationBody = BodyType<CreateCourseBody>;
+export type AdminCreateCourseMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a course (admin)
+ */
+export const useAdminCreateCourse = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateCourse>>,
+    TError,
+    { data: BodyType<CreateCourseBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateCourse>>,
+  TError,
+  { data: BodyType<CreateCourseBody> },
+  TContext
+> => {
+  return useMutation(getAdminCreateCourseMutationOptions(options));
+};
+
+/**
+ * @summary Update a course (admin)
+ */
+export const getAdminUpdateCourseUrl = (id: string) => {
+  return `/api/admin/courses/${id}`;
+};
+
+export const adminUpdateCourse = async (
+  id: string,
+  updateCourseBody: UpdateCourseBody,
+  options?: RequestInit,
+): Promise<CourseDetail> => {
+  return customFetch<CourseDetail>(getAdminUpdateCourseUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateCourseBody),
+  });
+};
+
+export const getAdminUpdateCourseMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateCourse>>,
+    TError,
+    { id: string; data: BodyType<UpdateCourseBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateCourse>>,
+  TError,
+  { id: string; data: BodyType<UpdateCourseBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateCourse"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateCourse>>,
+    { id: string; data: BodyType<UpdateCourseBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUpdateCourse(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateCourseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateCourse>>
+>;
+export type AdminUpdateCourseMutationBody = BodyType<UpdateCourseBody>;
+export type AdminUpdateCourseMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a course (admin)
+ */
+export const useAdminUpdateCourse = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateCourse>>,
+    TError,
+    { id: string; data: BodyType<UpdateCourseBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateCourse>>,
+  TError,
+  { id: string; data: BodyType<UpdateCourseBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateCourseMutationOptions(options));
+};
+
+/**
+ * @summary Delete a course (admin)
+ */
+export const getAdminDeleteCourseUrl = (id: string) => {
+  return `/api/admin/courses/${id}`;
+};
+
+export const adminDeleteCourse = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminDeleteCourseUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteCourseMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteCourse>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteCourse>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteCourse"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteCourse>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteCourse(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteCourseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteCourse>>
+>;
+
+export type AdminDeleteCourseMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a course (admin)
+ */
+export const useAdminDeleteCourse = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteCourse>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteCourse>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getAdminDeleteCourseMutationOptions(options));
+};
+
+/**
+ * @summary Upload course cover image (admin)
+ */
+export const getAdminUploadCourseCoverUrl = (id: string) => {
+  return `/api/admin/courses/${id}/cover`;
+};
+
+export const adminUploadCourseCover = async (
+  id: string,
+  adminUploadCourseCoverBody: AdminUploadCourseCoverBody,
+  options?: RequestInit,
+): Promise<CourseDetail> => {
+  const formData = new FormData();
+  formData.append(`cover`, adminUploadCourseCoverBody.cover);
+
+  return customFetch<CourseDetail>(getAdminUploadCourseCoverUrl(id), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getAdminUploadCourseCoverMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUploadCourseCover>>,
+    TError,
+    { id: string; data: BodyType<AdminUploadCourseCoverBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUploadCourseCover>>,
+  TError,
+  { id: string; data: BodyType<AdminUploadCourseCoverBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUploadCourseCover"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUploadCourseCover>>,
+    { id: string; data: BodyType<AdminUploadCourseCoverBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminUploadCourseCover(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUploadCourseCoverMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUploadCourseCover>>
+>;
+export type AdminUploadCourseCoverMutationBody =
+  BodyType<AdminUploadCourseCoverBody>;
+export type AdminUploadCourseCoverMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Upload course cover image (admin)
+ */
+export const useAdminUploadCourseCover = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUploadCourseCover>>,
+    TError,
+    { id: string; data: BodyType<AdminUploadCourseCoverBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUploadCourseCover>>,
+  TError,
+  { id: string; data: BodyType<AdminUploadCourseCoverBody> },
+  TContext
+> => {
+  return useMutation(getAdminUploadCourseCoverMutationOptions(options));
+};
+
+/**
+ * @summary Add a module to a course (admin)
+ */
+export const getAdminCreateCourseModuleUrl = (id: string) => {
+  return `/api/admin/courses/${id}/modules`;
+};
+
+export const adminCreateCourseModule = async (
+  id: string,
+  createCourseModuleBody: CreateCourseModuleBody,
+  options?: RequestInit,
+): Promise<CourseModule> => {
+  return customFetch<CourseModule>(getAdminCreateCourseModuleUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCourseModuleBody),
+  });
+};
+
+export const getAdminCreateCourseModuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateCourseModule>>,
+    TError,
+    { id: string; data: BodyType<CreateCourseModuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateCourseModule>>,
+  TError,
+  { id: string; data: BodyType<CreateCourseModuleBody> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateCourseModule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateCourseModule>>,
+    { id: string; data: BodyType<CreateCourseModuleBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminCreateCourseModule(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateCourseModuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateCourseModule>>
+>;
+export type AdminCreateCourseModuleMutationBody =
+  BodyType<CreateCourseModuleBody>;
+export type AdminCreateCourseModuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add a module to a course (admin)
+ */
+export const useAdminCreateCourseModule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateCourseModule>>,
+    TError,
+    { id: string; data: BodyType<CreateCourseModuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateCourseModule>>,
+  TError,
+  { id: string; data: BodyType<CreateCourseModuleBody> },
+  TContext
+> => {
+  return useMutation(getAdminCreateCourseModuleMutationOptions(options));
+};
+
+/**
+ * @summary Update a course module (admin)
+ */
+export const getAdminUpdateCourseModuleUrl = (moduleId: string) => {
+  return `/api/admin/courses/modules/${moduleId}`;
+};
+
+export const adminUpdateCourseModule = async (
+  moduleId: string,
+  updateCourseModuleBody: UpdateCourseModuleBody,
+  options?: RequestInit,
+): Promise<CourseModule> => {
+  return customFetch<CourseModule>(getAdminUpdateCourseModuleUrl(moduleId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateCourseModuleBody),
+  });
+};
+
+export const getAdminUpdateCourseModuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateCourseModule>>,
+    TError,
+    { moduleId: string; data: BodyType<UpdateCourseModuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateCourseModule>>,
+  TError,
+  { moduleId: string; data: BodyType<UpdateCourseModuleBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateCourseModule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateCourseModule>>,
+    { moduleId: string; data: BodyType<UpdateCourseModuleBody> }
+  > = (props) => {
+    const { moduleId, data } = props ?? {};
+
+    return adminUpdateCourseModule(moduleId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateCourseModuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateCourseModule>>
+>;
+export type AdminUpdateCourseModuleMutationBody =
+  BodyType<UpdateCourseModuleBody>;
+export type AdminUpdateCourseModuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a course module (admin)
+ */
+export const useAdminUpdateCourseModule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateCourseModule>>,
+    TError,
+    { moduleId: string; data: BodyType<UpdateCourseModuleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateCourseModule>>,
+  TError,
+  { moduleId: string; data: BodyType<UpdateCourseModuleBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateCourseModuleMutationOptions(options));
+};
+
+/**
+ * @summary Delete a course module (admin)
+ */
+export const getAdminDeleteCourseModuleUrl = (moduleId: string) => {
+  return `/api/admin/courses/modules/${moduleId}`;
+};
+
+export const adminDeleteCourseModule = async (
+  moduleId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminDeleteCourseModuleUrl(moduleId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteCourseModuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteCourseModule>>,
+    TError,
+    { moduleId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteCourseModule>>,
+  TError,
+  { moduleId: string },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteCourseModule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteCourseModule>>,
+    { moduleId: string }
+  > = (props) => {
+    const { moduleId } = props ?? {};
+
+    return adminDeleteCourseModule(moduleId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteCourseModuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteCourseModule>>
+>;
+
+export type AdminDeleteCourseModuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a course module (admin)
+ */
+export const useAdminDeleteCourseModule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteCourseModule>>,
+    TError,
+    { moduleId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteCourseModule>>,
+  TError,
+  { moduleId: string },
+  TContext
+> => {
+  return useMutation(getAdminDeleteCourseModuleMutationOptions(options));
+};
+
+/**
+ * @summary List pending course purchases for admin review
+ */
+export const getAdminListCoursePurchasesUrl = () => {
+  return `/api/admin/courses/purchases`;
+};
+
+export const adminListCoursePurchases = async (
+  options?: RequestInit,
+): Promise<AdminCoursePurchase[]> => {
+  return customFetch<AdminCoursePurchase[]>(getAdminListCoursePurchasesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListCoursePurchasesQueryKey = () => {
+  return [`/api/admin/courses/purchases`] as const;
+};
+
+export const getAdminListCoursePurchasesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListCoursePurchases>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCoursePurchases>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListCoursePurchasesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListCoursePurchases>>
+  > = ({ signal }) => adminListCoursePurchases({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCoursePurchases>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListCoursePurchasesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListCoursePurchases>>
+>;
+export type AdminListCoursePurchasesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List pending course purchases for admin review
+ */
+
+export function useAdminListCoursePurchases<
+  TData = Awaited<ReturnType<typeof adminListCoursePurchases>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListCoursePurchases>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListCoursePurchasesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Approve a course purchase and grant access
+ */
+export const getAdminApproveCoursePurchaseUrl = (id: string) => {
+  return `/api/admin/courses/purchases/${id}/approve`;
+};
+
+export const adminApproveCoursePurchase = async (
+  id: string,
+  options?: RequestInit,
+): Promise<CoursePurchase> => {
+  return customFetch<CoursePurchase>(getAdminApproveCoursePurchaseUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAdminApproveCoursePurchaseMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminApproveCoursePurchase>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminApproveCoursePurchase>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["adminApproveCoursePurchase"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminApproveCoursePurchase>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminApproveCoursePurchase(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminApproveCoursePurchaseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminApproveCoursePurchase>>
+>;
+
+export type AdminApproveCoursePurchaseMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Approve a course purchase and grant access
+ */
+export const useAdminApproveCoursePurchase = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminApproveCoursePurchase>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminApproveCoursePurchase>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getAdminApproveCoursePurchaseMutationOptions(options));
+};
+
+/**
+ * @summary Reject a course purchase with a reason
+ */
+export const getAdminRejectCoursePurchaseUrl = (id: string) => {
+  return `/api/admin/courses/purchases/${id}/reject`;
+};
+
+export const adminRejectCoursePurchase = async (
+  id: string,
+  rejectCoursePurchaseBody: RejectCoursePurchaseBody,
+  options?: RequestInit,
+): Promise<CoursePurchase> => {
+  return customFetch<CoursePurchase>(getAdminRejectCoursePurchaseUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rejectCoursePurchaseBody),
+  });
+};
+
+export const getAdminRejectCoursePurchaseMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRejectCoursePurchase>>,
+    TError,
+    { id: string; data: BodyType<RejectCoursePurchaseBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRejectCoursePurchase>>,
+  TError,
+  { id: string; data: BodyType<RejectCoursePurchaseBody> },
+  TContext
+> => {
+  const mutationKey = ["adminRejectCoursePurchase"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRejectCoursePurchase>>,
+    { id: string; data: BodyType<RejectCoursePurchaseBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminRejectCoursePurchase(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRejectCoursePurchaseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRejectCoursePurchase>>
+>;
+export type AdminRejectCoursePurchaseMutationBody =
+  BodyType<RejectCoursePurchaseBody>;
+export type AdminRejectCoursePurchaseMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Reject a course purchase with a reason
+ */
+export const useAdminRejectCoursePurchase = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRejectCoursePurchase>>,
+    TError,
+    { id: string; data: BodyType<RejectCoursePurchaseBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRejectCoursePurchase>>,
+  TError,
+  { id: string; data: BodyType<RejectCoursePurchaseBody> },
+  TContext
+> => {
+  return useMutation(getAdminRejectCoursePurchaseMutationOptions(options));
+};
 
 /**
  * @summary List notifications for current user (cursor-paginated)

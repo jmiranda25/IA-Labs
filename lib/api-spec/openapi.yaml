@@ -32,6 +32,8 @@ tags:
     description: File storage
   - name: community
     description: Community-wide aggregates
+  - name: courses
+    description: Course marketplace with Yape payment
 
 paths:
   /healthz:
@@ -1202,6 +1204,288 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ListingMessage"
+
+  # ── Courses ──────────────────────────────────────────────────────────────────
+  /courses:
+    get:
+      operationId: listCourses
+      tags: [courses]
+      summary: List published courses
+      responses:
+        "200":
+          description: Published courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CourseDetail"
+
+  /courses/{slug}:
+    get:
+      operationId: getCourse
+      tags: [courses]
+      summary: Get course by slug with viewer purchase state
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Course detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseDetail"
+
+  /courses/{slug}/purchase:
+    post:
+      operationId: submitCoursePurchase
+      tags: [courses]
+      summary: Submit Yape operation code to buy a course
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoursePurchaseBody"
+      responses:
+        "201":
+          description: Purchase submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoursePurchase"
+
+  /admin/courses:
+    get:
+      operationId: adminListCourses
+      tags: [courses]
+      summary: List all courses (admin)
+      responses:
+        "200":
+          description: All courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CourseDetail"
+    post:
+      operationId: adminCreateCourse
+      tags: [courses]
+      summary: Create a course (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourseBody"
+      responses:
+        "201":
+          description: Created course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseDetail"
+
+  /admin/courses/{id}:
+    patch:
+      operationId: adminUpdateCourse
+      tags: [courses]
+      summary: Update a course (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCourseBody"
+      responses:
+        "200":
+          description: Updated course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseDetail"
+    delete:
+      operationId: adminDeleteCourse
+      tags: [courses]
+      summary: Delete a course (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/courses/{id}/cover:
+    post:
+      operationId: adminUploadCourseCover
+      tags: [courses]
+      summary: Upload course cover image (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                cover:
+                  type: string
+                  format: binary
+              required: [cover]
+      responses:
+        "200":
+          description: Updated course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseDetail"
+
+  /admin/courses/{id}/modules:
+    post:
+      operationId: adminCreateCourseModule
+      tags: [courses]
+      summary: Add a module to a course (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourseModuleBody"
+      responses:
+        "201":
+          description: Created module
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseModule"
+
+  /admin/courses/modules/{moduleId}:
+    patch:
+      operationId: adminUpdateCourseModule
+      tags: [courses]
+      summary: Update a course module (admin)
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCourseModuleBody"
+      responses:
+        "200":
+          description: Updated module
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseModule"
+    delete:
+      operationId: adminDeleteCourseModule
+      tags: [courses]
+      summary: Delete a course module (admin)
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/courses/purchases:
+    get:
+      operationId: adminListCoursePurchases
+      tags: [courses]
+      summary: List pending course purchases for admin review
+      responses:
+        "200":
+          description: Pending purchases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminCoursePurchase"
+
+  /admin/courses/purchases/{id}/approve:
+    post:
+      operationId: adminApproveCoursePurchase
+      tags: [courses]
+      summary: Approve a course purchase and grant access
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Approved purchase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoursePurchase"
+
+  /admin/courses/purchases/{id}/reject:
+    post:
+      operationId: adminRejectCoursePurchase
+      tags: [courses]
+      summary: Reject a course purchase with a reason
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectCoursePurchaseBody"
+      responses:
+        "200":
+          description: Rejected purchase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoursePurchase"
 
   # ── Notifications ────────────────────────────────────────────────────────────
   /notifications:
@@ -2482,6 +2766,217 @@ components:
         toId:
           type: string
       required: [body, toId]
+
+    # ── Courses ────────────────────────────────────────────────────────────────
+    CourseModule:
+      type: object
+      properties:
+        id:
+          type: string
+        courseId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        videoUrl:
+          type: string
+          nullable: true
+        orderIndex:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, courseId, title, description, orderIndex, createdAt]
+
+    CoursePurchase:
+      type: object
+      properties:
+        id:
+          type: string
+        courseId:
+          type: string
+        userId:
+          type: string
+        yapeOperationCode:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        adminNotes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, courseId, userId, yapeOperationCode, status, createdAt, updatedAt]
+
+    CourseDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        pricePen:
+          type: string
+        coverUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, published]
+        createdBy:
+          type: string
+        creatorName:
+          type: string
+        moduleCount:
+          type: integer
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseModule"
+        hasAccess:
+          type: boolean
+        purchase:
+          nullable: true
+          allOf:
+            - type: object
+              properties:
+                id:
+                  type: string
+                status:
+                  type: string
+                  enum: [pending, approved, rejected]
+                adminNotes:
+                  type: string
+                  nullable: true
+                yapeOperationCode:
+                  type: string
+                createdAt:
+                  type: string
+                  format: date-time
+              required: [id, status, yapeOperationCode, createdAt]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, title, slug, description, pricePen, status, createdBy, creatorName, moduleCount, modules, hasAccess, createdAt, updatedAt]
+
+    AdminCoursePurchase:
+      type: object
+      properties:
+        id:
+          type: string
+        courseId:
+          type: string
+        userId:
+          type: string
+        yapeOperationCode:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        adminNotes:
+          type: string
+          nullable: true
+        courseTitle:
+          type: string
+        courseSlug:
+          type: string
+        pricePen:
+          type: string
+        buyerName:
+          type: string
+        buyerEmail:
+          type: string
+        buyerAvatar:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, courseId, userId, yapeOperationCode, status, courseTitle, courseSlug, pricePen, buyerName, buyerEmail, createdAt, updatedAt]
+
+    CoursePurchaseBody:
+      type: object
+      properties:
+        yapeOperationCode:
+          type: string
+      required: [yapeOperationCode]
+
+    CreateCourseBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        pricePen:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+      required: [title, pricePen]
+
+    UpdateCourseBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        pricePen:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+
+    CreateCourseModuleBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        videoUrl:
+          type: string
+          nullable: true
+        orderIndex:
+          type: integer
+      required: [title]
+
+    UpdateCourseModuleBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        videoUrl:
+          type: string
+          nullable: true
+        orderIndex:
+          type: integer
+
+    RejectCoursePurchaseBody:
+      type: object
+      properties:
+        reason:
+          type: string
+      required: [reason]
 
     # ── Notifications ──────────────────────────────────────────────────────────
     Notification:
