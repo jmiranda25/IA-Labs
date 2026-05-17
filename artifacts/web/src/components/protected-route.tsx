@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Show } from "@clerk/react";
 import { Redirect, useLocation } from "wouter";
-import { useGetMe } from "@workspace/api-client-react";
+import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { toast } from "sonner";
 
 interface ProtectedRouteProps {
@@ -10,20 +10,43 @@ interface ProtectedRouteProps {
 
 /**
  * StatusGate — called inside Clerk's "signed-in" guard.
- * Checks the DB user's status and redirects pending/rejected users
- * before rendering any protected content.
+ *
+ * Always fetches a FRESH /api/users/me on every mount (staleTime: 0,
+ * refetchOnMount: "always", gcTime: 0).  This prevents a stale cached 403
+ * from a previous "pending" state from incorrectly redirecting an admin whose
+ * account has since been approved.
+ *
+ * The redirect is intentionally deferred while a re-fetch is in progress so
+ * that we only act on settled, server-confirmed data:
+ *   - isLoading      → no cache at all yet, wait
+ *   - error + isFetching → stale error still alive but re-fetch underway, wait
+ *   - error + !isFetching → confirmed fresh error → redirect
+ *   - data           → confirmed fresh data   → check status
  */
 function StatusGate({ children }: ProtectedRouteProps) {
-  const { data: me, isLoading, error } = useGetMe();
+  const { data: me, isLoading, isFetching, error } = useGetMe({
+    query: {
+      queryKey: getGetMeQueryKey(),
+      staleTime: 0,
+      gcTime: 0,
+      refetchOnMount: "always",
+    },
+  });
 
+  // Initial load (no data or error in cache yet)
   if (isLoading) return null;
 
-  // Handle HTTP 403 responses from requireAuth (returned when row exists with pending/rejected status)
-  const errorCode = (error as any)?.response?.data?.code ?? (error as any)?.data?.code;
+  // Stale error in cache but a fresh re-fetch is already in flight — wait
+  // before acting so we don't redirect an admin who was just approved.
+  if (error && isFetching) return null;
+
+  // Confirmed fresh error from requireAuth middleware
+  const errorCode =
+    (error as any)?.response?.data?.code ?? (error as any)?.data?.code;
   if (errorCode === "PENDING_APPROVAL") return <Redirect to="/pendiente" />;
   if (errorCode === "ACCOUNT_REJECTED") return <Redirect to="/rechazado" />;
 
-  // Handle 200 responses where status is embedded in the user object (first login)
+  // Confirmed fresh 200 — check the status field (handles first-ever login)
   const status = (me as any)?.status;
   if (status === "pending") return <Redirect to="/pendiente" />;
   if (status === "rejected") return <Redirect to="/rechazado" />;
