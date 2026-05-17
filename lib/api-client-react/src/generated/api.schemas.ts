@@ -506,6 +506,12 @@ export const CourseDetailStatus = {
   published: "published",
 } as const;
 
+export type CourseDetailPurchaseCounts = {
+  pending: number;
+  approved: number;
+  rejected: number;
+};
+
 export type CourseDetailPurchase = {
   id: string;
   status: "pending" | "approved" | "rejected";
@@ -520,11 +526,13 @@ export interface CourseDetail {
   slug: string;
   description: string;
   pricePen: string;
+  capacity?: number | null;
   coverUrl?: string | null;
   status: CourseDetailStatus;
   createdBy: string;
   creatorName: string;
   moduleCount: number;
+  purchaseCounts: CourseDetailPurchaseCounts;
   modules: CourseModule[];
   hasAccess: boolean;
   purchase?: CourseDetailPurchase;
@@ -574,6 +582,7 @@ export interface CreateCourseBody {
   title: string;
   description?: string;
   pricePen: string;
+  capacity?: number | null;
   status?: CreateCourseBodyStatus;
 }
 
@@ -589,6 +598,7 @@ export interface UpdateCourseBody {
   title?: string;
   description?: string;
   pricePen?: string;
+  capacity?: number | null;
   status?: UpdateCourseBodyStatus;
 }
 

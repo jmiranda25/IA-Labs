@@ -4,6 +4,7 @@ import { Layout } from "@/components/layout";
 import {
   useGetCourse,
   useSubmitCoursePurchase,
+  useGetMe,
   getGetCourseQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,6 +38,8 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  Users,
+  Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { CourseDetail, CourseModule } from "@workspace/api-client-react";
@@ -219,6 +222,8 @@ interface CursoDetalleProps {
 export default function CursoDetalle({ slug }: CursoDetalleProps) {
   const qc = useQueryClient();
   const [yapeOpen, setYapeOpen] = useState(false);
+  const { data: me } = useGetMe();
+  const isAdmin = (me as any)?.role === "administrator";
   const { data, isLoading } = useGetCourse(slug, {
     query: { queryKey: getGetCourseQueryKey(slug) },
   });
@@ -332,53 +337,78 @@ export default function CursoDetalle({ slug }: CursoDetalleProps) {
                   )}
                 </div>
 
-                {/* Purchase state messages */}
-                {!course.hasAccess && purchaseStatus === "pending" && (
-                  <div className="rounded-md bg-yellow-500/10 border border-yellow-500/30 p-3 text-sm text-yellow-200 flex gap-2">
-                    <Clock className="h-4 w-4 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium">Pago en revisión</p>
-                      <p className="text-yellow-200/70 mt-0.5">Te notificaremos cuando sea aprobado.</p>
-                    </div>
+                {/* Capacity info */}
+                {(course as any).capacity != null ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground justify-center">
+                    <Users className="h-4 w-4 shrink-0" />
+                    <span>{(course as any).capacity} cupos disponibles</span>
                   </div>
-                )}
-
-                {!course.hasAccess && purchaseStatus === "rejected" && (
-                  <div className="rounded-md bg-red-500/10 border border-red-500/30 p-3 text-sm text-red-300 flex gap-2">
-                    <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium">Solicitud rechazada</p>
-                      {purchase?.adminNotes && (
-                        <p className="text-red-300/70 mt-0.5">{purchase.adminNotes}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {course.hasAccess ? (
-                  <div className="text-center text-sm text-muted-foreground">
-                    <PlayCircle className="h-5 w-5 mx-auto mb-1 text-green-400" />
-                    Expande los módulos para ver el contenido
-                  </div>
-                ) : purchaseStatus === "pending" ? (
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                    onClick={() => setYapeOpen(true)}
-                    disabled
-                  >
-                    <Clock className="h-4 w-4 mr-2" />
-                    Esperando validación
-                  </Button>
                 ) : (
-                  <Button className="w-full" onClick={() => setYapeOpen(true)}>
-                    {purchaseStatus === "rejected" ? "Reintentar pago" : "Comprar con Yape"}
-                  </Button>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground justify-center">
+                    <Users className="h-4 w-4 shrink-0" />
+                    <span>Cupos ilimitados</span>
+                  </div>
                 )}
 
-                <p className="text-xs text-center text-muted-foreground/60">
-                  Pago manual vía Yape · Acceso activado en &lt;24h
-                </p>
+                {/* Admin view: never show purchase buttons */}
+                {isAdmin ? (
+                  <div className="space-y-2">
+                    <div className="rounded-md bg-primary/10 border border-primary/20 p-3 text-sm text-primary/80 flex gap-2">
+                      <Shield className="h-4 w-4 shrink-0 mt-0.5" />
+                      <span>Eres administrador. Gestiona este curso desde el panel de admin.</span>
+                    </div>
+                    <Link href="/admin?tab=cursos">
+                      <Button variant="outline" className="w-full gap-2">
+                        <Shield className="h-4 w-4" />Ver solicitudes de compra
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    {/* Purchase state messages */}
+                    {!course.hasAccess && purchaseStatus === "pending" && (
+                      <div className="rounded-md bg-yellow-500/10 border border-yellow-500/30 p-3 text-sm text-yellow-200 flex gap-2">
+                        <Clock className="h-4 w-4 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-medium">Pago en revisión</p>
+                          <p className="text-yellow-200/70 mt-0.5">Te notificaremos cuando sea aprobado.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {!course.hasAccess && purchaseStatus === "rejected" && (
+                      <div className="rounded-md bg-red-500/10 border border-red-500/30 p-3 text-sm text-red-300 flex gap-2">
+                        <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-medium">Solicitud rechazada</p>
+                          {purchase?.adminNotes && (
+                            <p className="text-red-300/70 mt-0.5">{purchase.adminNotes}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {course.hasAccess ? (
+                      <div className="text-center text-sm text-muted-foreground">
+                        <PlayCircle className="h-5 w-5 mx-auto mb-1 text-green-400" />
+                        Expande los módulos para ver el contenido
+                      </div>
+                    ) : purchaseStatus === "pending" ? (
+                      <Button className="w-full" variant="outline" disabled>
+                        <Clock className="h-4 w-4 mr-2" />
+                        Esperando validación
+                      </Button>
+                    ) : (
+                      <Button className="w-full" onClick={() => setYapeOpen(true)}>
+                        {purchaseStatus === "rejected" ? "Reintentar pago" : "Comprar con Yape"}
+                      </Button>
+                    )}
+
+                    <p className="text-xs text-center text-muted-foreground/60">
+                      Pago manual vía Yape · Acceso activado en &lt;24h
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>

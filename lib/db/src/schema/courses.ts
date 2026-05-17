@@ -24,6 +24,7 @@ export const coursesTable = pgTable("courses", {
   slug: text("slug").notNull().unique(),
   description: text("description").notNull().default(""),
   pricePen: numeric("price_pen", { precision: 10, scale: 2 }).notNull(),
+  capacity: integer("capacity"),
   coverUrl: text("cover_url"),
   status: courseStatusEnum("status").notNull().default("draft"),
   createdBy: text("created_by")

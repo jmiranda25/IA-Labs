@@ -1426,13 +1426,14 @@ function CoursesAdmin() {
     title: z.string().min(3, "Mínimo 3 caracteres"),
     description: z.string().optional(),
     pricePen: z.string().min(1, "Precio requerido"),
+    capacity: z.string().optional(),
     status: z.enum(["draft", "published"]),
   });
   type CourseFormValues = z.infer<typeof courseSchema>;
 
   const courseForm = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema),
-    defaultValues: { title: "", description: "", pricePen: "", status: "draft" },
+    defaultValues: { title: "", description: "", pricePen: "", capacity: "", status: "draft" },
   });
 
   function openCourseDialog(course?: CourseDetail) {
@@ -1442,28 +1443,33 @@ function CoursesAdmin() {
         title: course.title,
         description: course.description ?? "",
         pricePen: String(course.pricePen),
+        capacity: (course as any).capacity != null ? String((course as any).capacity) : "",
         status: course.status,
       });
     } else {
       setEditingCourse(null);
-      courseForm.reset({ title: "", description: "", pricePen: "", status: "draft" });
+      courseForm.reset({ title: "", description: "", pricePen: "", capacity: "", status: "draft" });
     }
     setCourseDialogOpen(true);
   }
 
   const courseMutation = useMutation({
     mutationFn: async (data: CourseFormValues) => {
+      const payload = {
+        ...data,
+        capacity: data.capacity && data.capacity.trim() !== "" ? parseInt(data.capacity, 10) : null,
+      };
       if (editingCourse) {
         const res = await authFetch(`/api/admin/courses/${editingCourse.id}`, {
           method: "PATCH",
-          body: JSON.stringify(data),
+          body: JSON.stringify(payload),
         });
         if (!res.ok) throw new Error("Error al actualizar");
         return res.json();
       } else {
         const res = await authFetch("/api/admin/courses", {
           method: "POST",
-          body: JSON.stringify(data),
+          body: JSON.stringify(payload),
         });
         if (!res.ok) throw new Error("Error al crear");
         return res.json();
@@ -1757,8 +1763,18 @@ function CoursesAdmin() {
                           {c.status === "published" ? "Publicado" : "Borrador"}
                         </Badge>
                         <span className="text-xs text-primary font-medium">S/ {Number(c.pricePen).toFixed(2)}</span>
+                        {(c as any).capacity != null && (
+                          <span className="text-xs text-muted-foreground">{(c as any).capacity} cupos</span>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{c.moduleCount} módulo{c.moduleCount !== 1 ? "s" : ""}</p>
+                      {(c as any).purchaseCounts && (
+                        <div className="flex gap-2.5 mt-1.5 flex-wrap">
+                          <span className="text-[11px] text-yellow-400/80"><span className="font-semibold">{(c as any).purchaseCounts.pending}</span> pendiente{(c as any).purchaseCounts.pending !== 1 ? "s" : ""}</span>
+                          <span className="text-[11px] text-green-400/80"><span className="font-semibold">{(c as any).purchaseCounts.approved}</span> aprobado{(c as any).purchaseCounts.approved !== 1 ? "s" : ""}</span>
+                          <span className="text-[11px] text-muted-foreground/60"><span className="font-semibold">{(c as any).purchaseCounts.rejected}</span> rechazado{(c as any).purchaseCounts.rejected !== 1 ? "s" : ""}</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <Button
@@ -1886,6 +1902,13 @@ function CoursesAdmin() {
                 <Input id="c-price" {...courseForm.register("pricePen")} placeholder="Ej. 49.90" type="number" step="0.01" min="0" />
                 {courseForm.formState.errors.pricePen && <p className="text-xs text-destructive">{courseForm.formState.errors.pricePen.message}</p>}
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="c-capacity">Cupos (vacío = ilimitado)</Label>
+                <Input id="c-capacity" {...courseForm.register("capacity")} placeholder="Ej. 30" type="number" min="1" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div></div>
               <div className="space-y-1.5">
                 <Label htmlFor="c-status">Estado</Label>
                 <Select

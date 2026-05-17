@@ -35,7 +35,7 @@ import { es } from "date-fns/locale";
 import ReactMarkdown from "react-markdown";
 import {
   ShoppingBag, Tag, DollarSign, MessageCircle,
-  CheckCircle, Edit, ExternalLink, ChevronLeft, Flag,
+  CheckCircle, Edit, ExternalLink, ChevronLeft, Flag, Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,8 +64,9 @@ export default function MarketplaceListingPage({ slug }: { slug: string }) {
   const [reportReason, setReportReason] = useState("");
 
   const l = listing as any;
+  const isAdmin = (me as any)?.role === "administrator";
   const isSeller = me?.id === l?.sellerId;
-  const canReport = !!me && !isSeller;
+  const canReport = !!me && !isSeller && !isAdmin;
 
   const handleReport = async () => {
     if (!reportReason.trim() || !l) return;
@@ -239,10 +240,17 @@ export default function MarketplaceListingPage({ slug }: { slug: string }) {
               </div>
             ) : (
               <div className="flex flex-col gap-2 pt-1">
-                {l.status === "active" && (
+                {l.status === "active" && !isAdmin && (
                   <Button className="w-full gap-2" onClick={handleContact}>
                     <MessageCircle className="h-4 w-4" />Contactar al vendedor
                   </Button>
+                )}
+                {isAdmin && (
+                  <Link href="/admin?tab=marketplace">
+                    <Button variant="outline" size="sm" className="gap-1.5 w-full">
+                      <Shield className="h-3.5 w-3.5" />Ver en panel de admin
+                    </Button>
+                  </Link>
                 )}
                 {canReport && (
                   <Button

@@ -1295,11 +1295,17 @@ export const ListCoursesResponseItem = zod.object({
   slug: zod.string(),
   description: zod.string(),
   pricePen: zod.string(),
+  capacity: zod.number().nullish(),
   coverUrl: zod.string().nullish(),
   status: zod.enum(["draft", "published"]),
   createdBy: zod.string(),
   creatorName: zod.string(),
   moduleCount: zod.number(),
+  purchaseCounts: zod.object({
+    pending: zod.number(),
+    approved: zod.number(),
+    rejected: zod.number(),
+  }),
   modules: zod.array(
     zod.object({
       id: zod.string(),
@@ -1339,11 +1345,17 @@ export const GetCourseResponse = zod.object({
   slug: zod.string(),
   description: zod.string(),
   pricePen: zod.string(),
+  capacity: zod.number().nullish(),
   coverUrl: zod.string().nullish(),
   status: zod.enum(["draft", "published"]),
   createdBy: zod.string(),
   creatorName: zod.string(),
   moduleCount: zod.number(),
+  purchaseCounts: zod.object({
+    pending: zod.number(),
+    approved: zod.number(),
+    rejected: zod.number(),
+  }),
   modules: zod.array(
     zod.object({
       id: zod.string(),
@@ -1389,11 +1401,17 @@ export const AdminListCoursesResponseItem = zod.object({
   slug: zod.string(),
   description: zod.string(),
   pricePen: zod.string(),
+  capacity: zod.number().nullish(),
   coverUrl: zod.string().nullish(),
   status: zod.enum(["draft", "published"]),
   createdBy: zod.string(),
   creatorName: zod.string(),
   moduleCount: zod.number(),
+  purchaseCounts: zod.object({
+    pending: zod.number(),
+    approved: zod.number(),
+    rejected: zod.number(),
+  }),
   modules: zod.array(
     zod.object({
       id: zod.string(),
@@ -1427,6 +1445,7 @@ export const AdminCreateCourseBody = zod.object({
   title: zod.string(),
   description: zod.string().optional(),
   pricePen: zod.string(),
+  capacity: zod.number().nullish(),
   status: zod.enum(["draft", "published"]).optional(),
 });
 
@@ -1441,6 +1460,7 @@ export const AdminUpdateCourseBody = zod.object({
   title: zod.string().optional(),
   description: zod.string().optional(),
   pricePen: zod.string().optional(),
+  capacity: zod.number().nullish(),
   status: zod.enum(["draft", "published"]).optional(),
 });
 
@@ -1450,11 +1470,17 @@ export const AdminUpdateCourseResponse = zod.object({
   slug: zod.string(),
   description: zod.string(),
   pricePen: zod.string(),
+  capacity: zod.number().nullish(),
   coverUrl: zod.string().nullish(),
   status: zod.enum(["draft", "published"]),
   createdBy: zod.string(),
   creatorName: zod.string(),
   moduleCount: zod.number(),
+  purchaseCounts: zod.object({
+    pending: zod.number(),
+    approved: zod.number(),
+    rejected: zod.number(),
+  }),
   modules: zod.array(
     zod.object({
       id: zod.string(),
@@ -1504,11 +1530,17 @@ export const AdminUploadCourseCoverResponse = zod.object({
   slug: zod.string(),
   description: zod.string(),
   pricePen: zod.string(),
+  capacity: zod.number().nullish(),
   coverUrl: zod.string().nullish(),
   status: zod.enum(["draft", "published"]),
   createdBy: zod.string(),
   creatorName: zod.string(),
   moduleCount: zod.number(),
+  purchaseCounts: zod.object({
+    pending: zod.number(),
+    approved: zod.number(),
+    rejected: zod.number(),
+  }),
   modules: zod.array(
     zod.object({
       id: zod.string(),

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, count } from "drizzle-orm";
 import {
   db,
   coursesTable,
@@ -58,9 +58,12 @@ async function enrichCourse(
   course: typeof coursesTable.$inferSelect,
   userId?: string,
 ) {
-  const [modules, creator] = await Promise.all([
+  const [modules, creator, pendingCount, approvedCount, rejectedCount] = await Promise.all([
     getModules(course.id),
     db.query.usersTable.findFirst({ where: eq(usersTable.id, course.createdBy) }),
+    db.select({ c: count() }).from(coursePurchasesTable).where(and(eq(coursePurchasesTable.courseId, course.id), eq(coursePurchasesTable.status, "pending"))),
+    db.select({ c: count() }).from(coursePurchasesTable).where(and(eq(coursePurchasesTable.courseId, course.id), eq(coursePurchasesTable.status, "approved"))),
+    db.select({ c: count() }).from(coursePurchasesTable).where(and(eq(coursePurchasesTable.courseId, course.id), eq(coursePurchasesTable.status, "rejected"))),
   ]);
 
   let purchase: typeof coursePurchasesTable.$inferSelect | null = null;
@@ -88,6 +91,7 @@ async function enrichCourse(
   return {
     ...course,
     pricePen: course.pricePen,
+    capacity: course.capacity ?? null,
     modules: hasAccess ? modules : modules.map((m) => ({ ...m, videoUrl: null })),
     hasAccess,
     purchase: purchase
@@ -101,6 +105,11 @@ async function enrichCourse(
       : null,
     creatorName: creator?.displayName ?? "Unknown",
     moduleCount: modules.length,
+    purchaseCounts: {
+      pending: Number(pendingCount[0]?.c ?? 0),
+      approved: Number(approvedCount[0]?.c ?? 0),
+      rejected: Number(rejectedCount[0]?.c ?? 0),
+    },
   };
 }
 
@@ -252,10 +261,11 @@ router.get("/admin/courses", requireAdmin, async (_req, res) => {
 // ── ADMIN — POST /admin/courses ───────────────────────────────────────────────
 
 router.post("/admin/courses", requireAdmin, async (req, res) => {
-  const { title, description, pricePen, status } = req.body as {
+  const { title, description, pricePen, capacity, status } = req.body as {
     title: string;
     description?: string;
     pricePen: string;
+    capacity?: number | null;
     status?: "draft" | "published";
   };
 
@@ -275,6 +285,7 @@ router.post("/admin/courses", requireAdmin, async (req, res) => {
       slug,
       description: description ?? "",
       pricePen,
+      capacity: capacity ?? null,
       status: status ?? "draft",
       createdBy: req.userDbId!,
     })
@@ -287,10 +298,11 @@ router.post("/admin/courses", requireAdmin, async (req, res) => {
 
 router.patch("/admin/courses/:id", requireAdmin, async (req, res) => {
   const courseId = req.params.id as string;
-  const { title, description, pricePen, status } = req.body as {
+  const { title, description, pricePen, capacity, status } = req.body as {
     title?: string;
     description?: string;
     pricePen?: string;
+    capacity?: number | null;
     status?: "draft" | "published";
   };
 
@@ -306,6 +318,7 @@ router.patch("/admin/courses/:id", requireAdmin, async (req, res) => {
   if (title !== undefined) patch.title = title;
   if (description !== undefined) patch.description = description;
   if (pricePen !== undefined) patch.pricePen = pricePen;
+  if (capacity !== undefined) patch.capacity = capacity;
   if (status !== undefined) patch.status = status;
 
   const [updated] = await db
