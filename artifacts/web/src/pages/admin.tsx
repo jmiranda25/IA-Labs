@@ -26,6 +26,11 @@ import {
   useAdminApproveMarketplaceListing,
   useAdminRejectMarketplaceListing,
 } from "@workspace/api-client-react";
+import type {
+  CourseDetail,
+  CourseModule,
+  AdminCoursePurchase,
+} from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1377,7 +1382,7 @@ function CoursesAdmin() {
 
   // ── Courses CRUD state ───
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<any>(null);
+  const [editingCourse, setEditingCourse] = useState<CourseDetail | null>(null);
   const [deleteCourseId, setDeleteCourseId] = useState<string | null>(null);
   const [coverUploadId, setCoverUploadId] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -1386,7 +1391,7 @@ function CoursesAdmin() {
   // ── Module state ───
   const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
   const [moduleCourseId, setModuleCourseId] = useState<string | null>(null);
-  const [editingModule, setEditingModule] = useState<any>(null);
+  const [editingModule, setEditingModule] = useState<CourseModule | null>(null);
   const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
 
   // ── Purchases state ───
@@ -1401,20 +1406,20 @@ function CoursesAdmin() {
     queryFn: async () => {
       const res = await authFetch("/api/admin/courses");
       if (!res.ok) throw new Error("Error al cargar cursos");
-      return res.json() as Promise<any[]>;
+      return res.json() as Promise<CourseDetail[]>;
     },
   });
-  const courses: any[] = coursesRaw as any[];
+  const courses: CourseDetail[] = coursesRaw;
 
   const { data: purchasesRaw = [], isLoading: purchasesLoading } = useQuery({
     queryKey: ["admin-course-purchases"],
     queryFn: async () => {
       const res = await authFetch("/api/admin/courses/purchases");
       if (!res.ok) throw new Error("Error al cargar compras");
-      return res.json() as Promise<any[]>;
+      return res.json() as Promise<AdminCoursePurchase[]>;
     },
   });
-  const purchases: any[] = purchasesRaw as any[];
+  const purchases: AdminCoursePurchase[] = purchasesRaw;
 
   // ── Course form ───
   const courseSchema = z.object({
@@ -1430,7 +1435,7 @@ function CoursesAdmin() {
     defaultValues: { title: "", description: "", pricePen: "", status: "draft" },
   });
 
-  function openCourseDialog(course?: any) {
+  function openCourseDialog(course?: CourseDetail) {
     if (course) {
       setEditingCourse(course);
       courseForm.reset({
@@ -1522,7 +1527,7 @@ function CoursesAdmin() {
     defaultValues: { title: "", description: "", videoUrl: "" },
   });
 
-  function openModuleDialog(courseId: string, module?: any) {
+  function openModuleDialog(courseId: string, module?: CourseModule) {
     setModuleCourseId(courseId);
     if (module) {
       setEditingModule(module);
@@ -1592,8 +1597,8 @@ function CoursesAdmin() {
     onError: () => toast.error("Error al reordenar módulo"),
   });
 
-  async function handleMoveModule(course: any, moduleIndex: number, direction: "up" | "down") {
-    const modules: any[] = [...(course.modules ?? [])].sort((a: any, b: any) => a.orderIndex - b.orderIndex);
+  async function handleMoveModule(course: CourseDetail, moduleIndex: number, direction: "up" | "down") {
+    const modules: CourseModule[] = [...course.modules].sort((a: CourseModule, b: CourseModule) => a.orderIndex - b.orderIndex);
     const targetIndex = direction === "up" ? moduleIndex - 1 : moduleIndex + 1;
     if (targetIndex < 0 || targetIndex >= modules.length) return;
     const current = modules[moduleIndex];
@@ -1673,11 +1678,11 @@ function CoursesAdmin() {
               <p className="text-sm">No hay solicitudes de compra pendientes.</p>
             </div>
           ) : (
-            purchases.map((p: any) => (
+            purchases.map((p: AdminCoursePurchase) => (
               <Card key={p.id}>
                 <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
                   <Avatar className="h-9 w-9 shrink-0">
-                    <AvatarImage src={p.buyerAvatar} />
+                    <AvatarImage src={p.buyerAvatar ?? undefined} />
                     <AvatarFallback className="text-xs">{p.buyerName?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 space-y-0.5">
@@ -1734,7 +1739,7 @@ function CoursesAdmin() {
               <p className="text-sm">Sin cursos. Crea el primero.</p>
             </div>
           ) : (
-            courses.map((c: any) => (
+            courses.map((c: CourseDetail) => (
               <Card key={c.id} className="overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
@@ -1803,10 +1808,10 @@ function CoursesAdmin() {
                           <Plus className="h-3 w-3" />Agregar
                         </Button>
                       </div>
-                      {c.modules?.length === 0 ? (
+                      {c.modules.length === 0 ? (
                         <p className="text-xs text-muted-foreground">Sin módulos todavía.</p>
                       ) : (
-                        [...(c.modules ?? [])].sort((a: any, b: any) => a.orderIndex - b.orderIndex).map((m: any, i: number, arr: any[]) => (
+                        [...c.modules].sort((a: CourseModule, b: CourseModule) => a.orderIndex - b.orderIndex).map((m: CourseModule, i: number, arr: CourseModule[]) => (
                           <div key={m.id} className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
                             <span className="text-xs font-bold text-muted-foreground w-5 shrink-0">{i + 1}</span>
                             <div className="flex-1 min-w-0">
