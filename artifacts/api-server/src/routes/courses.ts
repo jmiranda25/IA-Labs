@@ -128,9 +128,15 @@ router.get("/courses/:slug", requireAuth, async (req, res) => {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  if (course.status === "draft" && !req.isAdmin) {
-    res.status(404).json({ error: "Not found" });
-    return;
+  if (course.status === "draft") {
+    const viewer = await db.query.usersTable.findFirst({
+      where: eq(usersTable.clerkId, req.userId!),
+      columns: { role: true },
+    });
+    if (viewer?.role !== "administrator") {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
   }
   res.json(await enrichCourse(course, req.userId));
 });

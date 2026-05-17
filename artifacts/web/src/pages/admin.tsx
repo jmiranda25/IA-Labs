@@ -86,7 +86,7 @@ import {
   ChevronUp, ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@clerk/react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { LandingEditor } from "@/components/admin/landing-editor";
 import { useViewMode } from "@/contexts/view-mode";
 
@@ -2010,9 +2010,19 @@ function CoursesAdmin() {
 
 // ── Admin Page ────────────────────────────────────────────────────────────────
 
+const VALID_TABS = new Set([
+  "dashboard", "pendientes", "users", "moderacion", "landing",
+  "eventos", "recursos", "marketplace", "referidos", "cursos",
+]);
+
 export default function AdminPage() {
   const { data: me, isLoading } = useGetMe();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const search = useSearch();
+  const initialTab = (() => {
+    const tab = new URLSearchParams(search).get("tab");
+    return tab && VALID_TABS.has(tab) ? tab : "dashboard";
+  })();
+  const [activeTab, setActiveTab] = useState(initialTab);
   const { viewAsUser, toggleViewMode } = useViewMode();
   const [, navigate] = useLocation();
 
