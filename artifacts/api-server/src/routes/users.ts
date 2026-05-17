@@ -112,13 +112,15 @@ router.get("/users/me", requireAuth, async (req, res) => {
       .returning();
   } else {
     // For existing users the DB is authoritative for role.
-    // Exception: ADMIN_BOOTSTRAP_EMAILS are auto-upgraded on every login so that
-    // admins who signed up before the list was configured are corrected automatically.
+    // Exception: ADMIN_BOOTSTRAP_EMAILS are corrected on every login so that
+    // admins who signed up before the list was configured (or whose status was
+    // reset by a deployment/migration) are always kept role=administrator + status=active.
     const storedEmail = user.email?.toLowerCase() ?? null;
     const effectiveEmail = clerkEmail ?? storedEmail;
+    const isBootstrapAdmin = !!effectiveEmail && BOOTSTRAP_ADMIN_EMAILS.has(effectiveEmail);
 
-    if (effectiveEmail && BOOTSTRAP_ADMIN_EMAILS.has(effectiveEmail) && user.role !== "administrator") {
-      const updates: { role: string; email?: string } = { role: "administrator" };
+    if (isBootstrapAdmin && (user.role !== "administrator" || user.status !== "active")) {
+      const updates: Record<string, string> = { role: "administrator", status: "active" };
       if (clerkEmail && !user.email) updates.email = clerkEmail;
       [user] = await db
         .update(usersTable)
