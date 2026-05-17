@@ -177,7 +177,7 @@ export default function MarketplaceListingPage({ slug }: { slug: string }) {
               <DollarSign className="h-5 w-5 text-primary" />
               {l.price != null ? (
                 <span className="text-2xl font-bold text-primary">
-                  {l.currency} {Number(l.price).toLocaleString("es")}
+                  S/ {Number(l.price).toLocaleString("es")}
                 </span>
               ) : (
                 <span className="text-muted-foreground">Precio a convenir</span>

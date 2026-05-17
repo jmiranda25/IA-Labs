@@ -66,7 +66,7 @@ const listingSchema = z.object({
   description: z.string().min(10, "Mínimo 10 caracteres"),
   category: z.string().min(1, "Selecciona una categoría"),
   price: z.string().optional(),
-  currency: z.string().default("USD"),
+  currency: z.string().default("PEN"),
 });
 type ListingForm = z.infer<typeof listingSchema>;
 
@@ -125,7 +125,7 @@ function ListingRow({ listing, onEdit }: { listing: any; onEdit: (l: any) => voi
                 <Tag className="h-2.5 w-2.5" />{listing.category}
               </Badge>
               {listing.price != null && (
-                <span className="font-medium text-primary">{listing.currency} {Number(listing.price).toLocaleString("es")}</span>
+                <span className="font-medium text-primary">S/ {Number(listing.price).toLocaleString("es")}</span>
               )}
               <span>·</span>
               <span>{formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true, locale: es })}</span>
@@ -182,12 +182,12 @@ export default function MisAnunciosPage() {
 
   const form = useForm<ListingForm>({
     resolver: zodResolver(listingSchema),
-    defaultValues: { title: "", description: "", category: "", price: "", currency: "USD" },
+    defaultValues: { title: "", description: "", category: "", price: "", currency: "PEN" },
   });
 
   const editForm = useForm<ListingForm>({
     resolver: zodResolver(listingSchema),
-    defaultValues: { title: "", description: "", category: "", price: "", currency: "USD" },
+    defaultValues: { title: "", description: "", category: "", price: "", currency: "PEN" },
   });
 
   const openEdit = (listing: any) => {
@@ -197,7 +197,7 @@ export default function MisAnunciosPage() {
       description: listing.description,
       category: listing.category,
       price: listing.price != null ? String(listing.price) : "",
-      currency: listing.currency ?? "USD",
+      currency: listing.currency ?? "PEN",
     });
   };
 
@@ -326,12 +326,10 @@ export default function MisAnunciosPage() {
                 </div>
                 <div className="w-24 space-y-1.5">
                   <Label>Moneda</Label>
-                  <Select onValueChange={(v) => form.setValue("currency", v)} defaultValue="USD">
+                  <Select onValueChange={(v) => form.setValue("currency", v)} defaultValue="PEN">
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="MXN">MXN</SelectItem>
+                      <SelectItem value="PEN">S/ PEN</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -397,9 +395,7 @@ export default function MisAnunciosPage() {
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="MXN">MXN</SelectItem>
+                      <SelectItem value="PEN">S/ PEN</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

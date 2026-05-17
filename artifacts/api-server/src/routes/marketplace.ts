@@ -129,7 +129,7 @@ router.get("/marketplace/listings/:slug", requireAuth, async (req, res) => {
 
 // POST /marketplace/listings
 router.post("/marketplace/listings", requireAuth, async (req, res) => {
-  const { title, description, price, currency = "USD", category } = req.body;
+  const { title, description, price, currency = "PEN", category } = req.body;
   const slug = slugify(title);
   const [listing] = await db
     .insert(marketplaceListingsTable)

@@ -63,7 +63,7 @@ function ListingCard({ listing }: { listing: any }) {
           )}
           {listing.price != null ? (
             <span className="inline-block rounded-none bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-secondary-foreground">
-              {listing.currency} {Number(listing.price).toLocaleString("es")}
+              S/ {Number(listing.price).toLocaleString("es")}
             </span>
           ) : (
             <span className="inline-block rounded-none bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-secondary-foreground">

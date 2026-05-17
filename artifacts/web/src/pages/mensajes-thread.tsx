@@ -4,16 +4,14 @@ import {
   useGetMessageThread,
   useSendListingMessage,
   useGetMe,
-  useGetMarketplaceListing,
+  useListMessageThreads,
   getGetMessageThreadQueryKey,
   getListMessageThreadsQueryKey,
-  getGetMarketplaceListingQueryKey,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { Send, MessageCircle, ChevronLeft, ShoppingBag } from "lucide-react";
@@ -38,9 +36,10 @@ export default function MensajesThreadPage({
   });
   const msgs = (messagesRaw as any[]) ?? [];
 
-  // Fetch listing info to get slug for the "Back to listing" link
-  // We need to find what listing this is — we'll look it up via listingId across my threads
-  // (listing detail endpoint uses slug, not id — use a lighter approach via threads context)
+  // Always fetch threads so listing slug is available even on direct navigation
+  const { data: threadsRaw, isLoading: threadsLoading } = useListMessageThreads();
+  const threads = (threadsRaw as any[]) ?? [];
+
   const send = useSendListingMessage();
 
   // Auto-scroll to bottom whenever messages load or new messages arrive
@@ -66,12 +65,6 @@ export default function MensajesThreadPage({
     const body = message.trim();
     setMessage("");
     try {
-      // We need the listing slug — derive from the first message's listingId by fetching all threads
-      // Alternatively, send to backend using listingId and find slug there
-      // We store listingId as the route param; backend uses listingId for messages/:slug route
-      // But our route is POST /marketplace/listings/:slug/messages — we need slug.
-      // Let's do a quick lookup from threads cache
-      const threads = (qc.getQueryData<any[]>(getListMessageThreadsQueryKey()) ?? []) as any[];
       const thread = threads.find((t: any) => t.listingId === listingId && t.otherUserId === otherUserId);
       const slug = thread?.listingSlug;
       if (!slug) { toast.error("No se pudo identificar el anuncio"); setMessage(body); return; }
@@ -97,8 +90,6 @@ export default function MensajesThreadPage({
   const otherName = otherUserMsg?.fromName ?? "Vendedor";
   const otherAvatar = otherUserMsg?.fromAvatar ?? null;
 
-  // Find listing slug from threads in cache
-  const threads = (qc.getQueryData<any[]>(getListMessageThreadsQueryKey()) ?? []) as any[];
   const thread = threads.find((t: any) => t.listingId === listingId);
   const listingTitle = thread?.listingTitle ?? "";
   const listingSlug = thread?.listingSlug ?? "";
@@ -191,13 +182,13 @@ export default function MensajesThreadPage({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={send.isPending}
+            disabled={send.isPending || threadsLoading}
             className="flex-1"
           />
           <Button
             size="icon"
             onClick={handleSend}
-            disabled={send.isPending || !message.trim()}
+            disabled={send.isPending || threadsLoading || !message.trim()}
             aria-label="Enviar mensaje"
           >
             <Send className="h-4 w-4" />

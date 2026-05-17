@@ -584,7 +584,7 @@ function ModerationQueue() {
                   <CardContent className="space-y-2 text-sm">
                     {preview.item.images?.[0]?.url && <img src={preview.item.images[0].url} alt={preview.item.title} className="w-full h-40 object-cover rounded-lg" />}
                     <Badge variant="secondary">{preview.item.category}</Badge>
-                    {preview.item.price != null && <p className="font-semibold text-primary">{preview.item.currency} {Number(preview.item.price).toLocaleString("es")}</p>}
+                    {preview.item.price != null && <p className="font-semibold text-primary">S/ {Number(preview.item.price).toLocaleString("es")}</p>}
                     <p className="text-xs text-muted-foreground line-clamp-5">{preview.item.description}</p>
                     <p className="text-xs">Vendedor: {preview.item.sellerName}</p>
                     <div className="flex gap-2 pt-1">
@@ -962,7 +962,7 @@ function MarketplaceAdmin() {
                 <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                   {l.images?.[0]?.url ? <img src={l.images[0].url} alt={l.title} className="w-full h-full object-cover rounded-md" /> : <ShoppingBag className="h-4 w-4 text-muted-foreground/40" />}
                 </div>
-                <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{l.title}</p><p className="text-xs text-muted-foreground">{l.category} · {l.sellerName}{l.price != null && ` · ${l.currency} ${Number(l.price).toLocaleString("es")}`}</p></div>
+                <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{l.title}</p><p className="text-xs text-muted-foreground">{l.category} · {l.sellerName}{l.price != null && ` · S/ ${Number(l.price).toLocaleString("es")}`}</p></div>
                 <div className="flex gap-1 shrink-0">
                   <Button size="sm" variant="ghost" className="h-7 px-2 text-green-400 hover:text-green-300 hover:bg-green-500/10 text-xs" onClick={(e) => { e.stopPropagation(); handleApprove(l.slug); }}><Check className="h-3 w-3 mr-1" />Aprobar</Button>
                   <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10 text-xs" onClick={(e) => { e.stopPropagation(); setRejectSlug(l.slug); setRejectReason(""); setRejectOpen(true); }}><X className="h-3 w-3 mr-1" />Rechazar</Button>
@@ -977,7 +977,7 @@ function MarketplaceAdmin() {
             <CardContent className="space-y-2 text-sm">
               {preview.images?.length > 0 && <img src={preview.images[0].url} alt={preview.title} className="w-full h-40 object-cover rounded-lg" />}
               <Badge variant="secondary">{preview.category}</Badge>
-              {preview.price != null && <p className="font-semibold text-primary">{preview.currency} {Number(preview.price).toLocaleString("es")}</p>}
+              {preview.price != null && <p className="font-semibold text-primary">S/ {Number(preview.price).toLocaleString("es")}</p>}
               <p className="text-xs text-muted-foreground line-clamp-6">{preview.description}</p>
               <p className="text-xs">Vendedor: {preview.sellerName}</p>
               <div className="flex gap-2 pt-1">

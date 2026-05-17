@@ -93,7 +93,7 @@ export default function CursosPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Cursos</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Accede a cursos creados por nuestra comunidad. Paga con Yape y el equipo activará tu acceso.
+              Cursos creados y curados por el equipo de IA Labs. Paga con Yape y activamos tu acceso.
             </p>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground bg-muted/60 rounded-lg px-3 py-2">
