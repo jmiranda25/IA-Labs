@@ -16,5 +16,12 @@
       "tag": "20260503033122_add_is_public",
       "breakpoints": true
     }
+    ,{
+      "idx": 2,
+      "version": "7",
+      "when": 1747440000000,
+      "tag": "20260517000000_add_courses",
+      "breakpoints": true
+    }
   ]
 }

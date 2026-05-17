@@ -78,6 +78,7 @@ import {
   Calendar, Plus, Trash2, Upload, BookOpen, Link2, FileDown,
   GraduationCap, ExternalLink, Eye, ShoppingBag, TrendingUp,
   TrendingDown, Minus, Flag, MessageSquare, UserX, Copy, Award,
+  ChevronUp, ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
@@ -1576,6 +1577,33 @@ function CoursesAdmin() {
     onError: () => toast.error("Error al eliminar módulo"),
   });
 
+  const reorderModuleMutation = useMutation({
+    mutationFn: async ({ moduleId, orderIndex }: { moduleId: string; orderIndex: number }) => {
+      const res = await authFetch(`/api/admin/courses/modules/${moduleId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ orderIndex }),
+      });
+      if (!res.ok) throw new Error("Error al reordenar");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-courses"] });
+    },
+    onError: () => toast.error("Error al reordenar módulo"),
+  });
+
+  async function handleMoveModule(course: any, moduleIndex: number, direction: "up" | "down") {
+    const modules: any[] = [...(course.modules ?? [])].sort((a: any, b: any) => a.orderIndex - b.orderIndex);
+    const targetIndex = direction === "up" ? moduleIndex - 1 : moduleIndex + 1;
+    if (targetIndex < 0 || targetIndex >= modules.length) return;
+    const current = modules[moduleIndex];
+    const target = modules[targetIndex];
+    await Promise.all([
+      reorderModuleMutation.mutateAsync({ moduleId: current.id, orderIndex: target.orderIndex }),
+      reorderModuleMutation.mutateAsync({ moduleId: target.id, orderIndex: current.orderIndex }),
+    ]);
+  }
+
   // ── Purchase actions ───
   const approvePurchaseMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -1778,25 +1806,47 @@ function CoursesAdmin() {
                       {c.modules?.length === 0 ? (
                         <p className="text-xs text-muted-foreground">Sin módulos todavía.</p>
                       ) : (
-                        c.modules?.map((m: any, i: number) => (
+                        [...(c.modules ?? [])].sort((a: any, b: any) => a.orderIndex - b.orderIndex).map((m: any, i: number, arr: any[]) => (
                           <div key={m.id} className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
-                            <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}</span>
+                            <span className="text-xs font-bold text-muted-foreground w-5 shrink-0">{i + 1}</span>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-medium truncate">{m.title}</p>
                               {m.videoUrl && <p className="text-xs text-muted-foreground/60 truncate">{m.videoUrl}</p>}
                             </div>
-                            <Button size="icon" variant="ghost" className="h-6 w-6" aria-label="Editar módulo" onClick={() => openModuleDialog(c.id, m)}>
-                              <Edit3 className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-6 w-6 text-destructive hover:text-destructive"
-                              aria-label="Eliminar módulo"
-                              onClick={() => deleteModuleMutation.mutate(m.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            <div className="flex items-center gap-0.5 shrink-0">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6"
+                                aria-label="Subir módulo"
+                                disabled={i === 0 || reorderModuleMutation.isPending}
+                                onClick={() => handleMoveModule(c, i, "up")}
+                              >
+                                <ChevronUp className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6"
+                                aria-label="Bajar módulo"
+                                disabled={i === arr.length - 1 || reorderModuleMutation.isPending}
+                                onClick={() => handleMoveModule(c, i, "down")}
+                              >
+                                <ChevronDown className="h-3 w-3" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-6 w-6" aria-label="Editar módulo" onClick={() => openModuleDialog(c.id, m)}>
+                                <Edit3 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6 text-destructive hover:text-destructive"
+                                aria-label="Eliminar módulo"
+                                onClick={() => deleteModuleMutation.mutate(m.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
                         ))
                       )}

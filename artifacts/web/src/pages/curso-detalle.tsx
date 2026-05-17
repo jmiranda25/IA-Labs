@@ -7,6 +7,9 @@ import {
   getGetCourseQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,11 +38,19 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { CourseDetail, CourseModule } from "@workspace/api-client-react";
 
 const YAPE_NUMBER = "946323928";
+
+const yapeSchema = z.object({
+  yapeOperationCode: z
+    .string()
+    .min(4, "El código debe tener al menos 4 caracteres")
+    .max(20, "El código es demasiado largo")
+    .regex(/^\d+$/, "Solo se permiten números"),
+});
+type YapeFormValues = z.infer<typeof yapeSchema>;
 
 interface YapeModalProps {
   open: boolean;
@@ -49,20 +60,24 @@ interface YapeModalProps {
 }
 
 function YapeModal({ open, onOpenChange, course, onSuccess }: YapeModalProps) {
-  const [code, setCode] = useState("");
   const mutation = useSubmitCoursePurchase();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<YapeFormValues>({
+    resolver: zodResolver(yapeSchema),
+    defaultValues: { yapeOperationCode: "" },
+  });
 
-  function handleSubmit() {
-    if (!code.trim()) {
-      toast.error("Ingresa el código de operación");
-      return;
-    }
+  function onSubmit(values: YapeFormValues) {
     mutation.mutate(
-      { slug: course.slug, data: { yapeOperationCode: code.trim() } },
+      { slug: course.slug, data: { yapeOperationCode: values.yapeOperationCode } },
       {
         onSuccess: () => {
           toast.success("Solicitud enviada. El equipo validará tu pago pronto.");
-          setCode("");
+          reset();
           onOpenChange(false);
           onSuccess();
         },
@@ -83,54 +98,58 @@ function YapeModal({ open, onOpenChange, course, onSuccess }: YapeModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          {/* Yape info */}
-          <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Datos para el pago</p>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Número Yape</span>
-              <span className="font-mono font-bold text-foreground">{YAPE_NUMBER}</span>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-4 py-2">
+            {/* Yape info */}
+            <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-2">
+              <p className="text-sm font-medium text-foreground">Datos para el pago</p>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Número Yape</span>
+                <span className="font-mono font-bold text-foreground">{YAPE_NUMBER}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Monto exacto</span>
+                <span className="font-bold text-primary text-base">S/ {Number(course.pricePen).toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Concepto</span>
+                <span className="text-foreground text-right max-w-[60%] truncate">{course.title}</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Monto exacto</span>
-              <span className="font-bold text-primary text-base">S/ {Number(course.pricePen).toFixed(2)}</span>
+
+            <div className="rounded-md bg-amber-500/10 border border-amber-500/30 p-3 text-sm text-amber-200 flex gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>Asegúrate de enviar el monto exacto. Una vez validado recibirás acceso inmediato.</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Concepto</span>
-              <span className="text-foreground text-right max-w-[60%] truncate">{course.title}</span>
+
+            {/* Code input */}
+            <div className="space-y-2">
+              <Label htmlFor="yape-code">Código de operación Yape</Label>
+              <Input
+                id="yape-code"
+                placeholder="Ej. 123456"
+                {...register("yapeOperationCode")}
+                autoFocus
+                inputMode="numeric"
+              />
+              {errors.yapeOperationCode && (
+                <p className="text-xs text-destructive">{errors.yapeOperationCode.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Lo encuentras en el comprobante de pago dentro de la app Yape.
+              </p>
             </div>
           </div>
 
-          <div className="rounded-md bg-amber-500/10 border border-amber-500/30 p-3 text-sm text-amber-200 flex gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>Asegúrate de enviar el monto exacto. Una vez validado recibirás acceso inmediato.</span>
-          </div>
-
-          {/* Code input */}
-          <div className="space-y-2">
-            <Label htmlFor="yape-code">Código de operación Yape</Label>
-            <Input
-              id="yape-code"
-              placeholder="Ej. 123456"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              autoFocus
-            />
-            <p className="text-xs text-muted-foreground">
-              Lo encuentras en el comprobante de pago dentro de la app Yape.
-            </p>
-          </div>
-        </div>
-
-        <DialogFooter className="flex gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={mutation.isPending || !code.trim()}>
-            {mutation.isPending ? "Enviando…" : "Enviar solicitud"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter className="flex gap-2">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? "Enviando…" : "Enviar solicitud"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
