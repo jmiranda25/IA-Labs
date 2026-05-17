@@ -19,7 +19,7 @@ type ClerkClaims = {
   [key: string]: unknown;
 };
 
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const auth = getAuth(req);
   const claims = auth?.sessionClaims as ClerkClaims | null;
   const userId = claims?.userId as string | undefined || auth?.userId;
@@ -28,6 +28,23 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     return;
   }
   req.userId = userId;
+
+  // Check account status — only applies to users who already have a row.
+  // Brand-new users (no row yet) are allowed through so GET /users/me can create their row.
+  const user = await db.query.usersTable.findFirst({
+    where: eq(usersTable.clerkId, userId),
+    columns: { status: true },
+  });
+
+  if (user?.status === "pending") {
+    res.status(403).json({ error: "Account pending approval", code: "PENDING_APPROVAL" });
+    return;
+  }
+  if (user?.status === "rejected") {
+    res.status(403).json({ error: "Account not approved", code: "ACCOUNT_REJECTED" });
+    return;
+  }
+
   next();
 }
 

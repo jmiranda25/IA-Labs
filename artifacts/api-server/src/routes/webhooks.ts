@@ -7,6 +7,13 @@ import { env } from "../env";
 
 const router = Router();
 
+const BOOTSTRAP_ADMIN_EMAILS = new Set(
+  (process.env.ADMIN_BOOTSTRAP_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+);
+
 function generateUsername(base: string): string {
   const cleaned = base
     .toLowerCase()
@@ -94,6 +101,8 @@ router.post(
       const emailPrefix = primaryEmail?.split("@")[0] ?? "member";
       const username = await uniqueUsername(data.username || emailPrefix);
 
+      const isBootstrapAdmin = !!primaryEmail && BOOTSTRAP_ADMIN_EMAILS.has(primaryEmail.toLowerCase());
+
       const existing = await db.query.usersTable.findFirst({
         where: eq(usersTable.clerkId, data.id),
         columns: { id: true },
@@ -107,10 +116,11 @@ router.post(
           username,
           displayName,
           avatarUrl: data.image_url ?? null,
-          role: "participant",
+          role: isBootstrapAdmin ? "administrator" : "participant",
+          status: isBootstrapAdmin ? "active" : "pending",
           skills: [],
         });
-        req.log.info({ clerkId: data.id, email: primaryEmail }, "Profile created via webhook");
+        req.log.info({ clerkId: data.id, email: primaryEmail, status: isBootstrapAdmin ? "active" : "pending" }, "Profile created via webhook");
       }
     }
 

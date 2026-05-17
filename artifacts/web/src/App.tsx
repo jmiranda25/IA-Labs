@@ -48,6 +48,8 @@ const PreferenciasNotificacionesPage = lazy(() => import("@/pages/preferencias-n
 const ForbiddenPage = lazy(() => import("@/pages/forbidden"));
 const CuentaPage = lazy(() => import("@/pages/cuenta"));
 const TarjetaMiembroPage = lazy(() => import("@/pages/tarjeta-miembro"));
+const PendientePage = lazy(() => import("@/pages/pendiente"));
+const RechazadoPage = lazy(() => import("@/pages/rechazado"));
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -313,6 +315,18 @@ function ClerkProviderWithRoutes() {
                 <Route path="/403">
                   <Suspense fallback={<PageSpinner />}>
                     <ForbiddenPage />
+                  </Suspense>
+                </Route>
+
+                <Route path="/pendiente">
+                  <Suspense fallback={<PageSpinner />}>
+                    <PendientePage />
+                  </Suspense>
+                </Route>
+
+                <Route path="/rechazado">
+                  <Suspense fallback={<PageSpinner />}>
+                    <RechazadoPage />
                   </Suspense>
                 </Route>
 

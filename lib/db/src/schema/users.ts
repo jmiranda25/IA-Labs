@@ -25,6 +25,7 @@ export const usersTable = pgTable("users", {
     resource_status: true,
     listing_status: true,
   }),
+  status: text("status").notNull().default("pending"),
   referredBy: text("referred_by"),
   joinedAt: timestamp("joined_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

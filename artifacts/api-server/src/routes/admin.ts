@@ -38,6 +38,7 @@ router.get("/admin/metrics", requireAdmin, async (_req, res) => {
     [pendingListingsRow],
     [pendingResourcesRow],
     [openReportsRow],
+    [pendingUsersRow],
   ] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(usersTable),
     db.select({ count: sql<number>`count(*)` }).from(usersTable).where(gt(usersTable.joinedAt, thirtyDaysAgo)),
@@ -47,6 +48,7 @@ router.get("/admin/metrics", requireAdmin, async (_req, res) => {
     db.select({ count: sql<number>`count(*)` }).from(marketplaceListingsTable).where(eq(marketplaceListingsTable.status, "pending")),
     db.select({ count: sql<number>`count(*)` }).from(resourcesTable).where(eq(resourcesTable.published, false)),
     db.select({ count: sql<number>`count(*)` }).from(reportsTable).where(eq(reportsTable.status, "open")),
+    db.select({ count: sql<number>`count(*)` }).from(usersTable).where(eq(usersTable.status, "pending")),
   ]);
 
   const cur = Number(cur30Row?.count ?? 0);
@@ -61,6 +63,7 @@ router.get("/admin/metrics", requireAdmin, async (_req, res) => {
     pendingListings: Number(pendingListingsRow?.count ?? 0),
     pendingResources: Number(pendingResourcesRow?.count ?? 0),
     openReports: Number(openReportsRow?.count ?? 0),
+    pendingUsers: Number(pendingUsersRow?.count ?? 0),
   });
 });
 
@@ -252,6 +255,107 @@ router.post("/admin/users/:userId/ban", requireAdmin, async (req, res) => {
   }
 
   res.status(204).send();
+});
+
+// ── Pending member approval ───────────────────────────────────────────────────
+
+router.get("/admin/users/pending", requireAdmin, async (_req, res) => {
+  const users = await db.query.usersTable.findMany({
+    where: eq(usersTable.status, "pending"),
+    orderBy: desc(usersTable.joinedAt),
+  });
+  res.json({ users });
+});
+
+router.post("/admin/users/:userId/approve", requireAdmin, async (req, res) => {
+  const { userId } = req.params as { userId: string };
+
+  const [updated] = await db
+    .update(usersTable)
+    .set({ status: "active", updatedAt: new Date() })
+    .where(eq(usersTable.id, userId))
+    .returning();
+
+  if (!updated) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  // Notify the approved user
+  await notify({
+    recipientId: updated.id,
+    type: "admin_action",
+    title: "¡Tu solicitud fue aprobada!",
+    body: "Tu cuenta ha sido activada. ¡Bienvenido/a a la comunidad!",
+    link: "/dashboard",
+  });
+
+  // Notify all administrators
+  const admins = await db.query.usersTable.findMany({
+    where: eq(usersTable.role, "administrator"),
+    columns: { id: true },
+  });
+  await Promise.all(
+    admins.map((a) =>
+      notify({
+        recipientId: a.id,
+        type: "admin_action",
+        title: "Nuevo miembro aprobado",
+        body: `${updated.displayName} fue aprobado/a como miembro.`,
+        link: "/admin",
+      })
+    )
+  );
+
+  res.json(updated);
+});
+
+router.post("/admin/users/:userId/reject", requireAdmin, async (req, res) => {
+  const { userId } = req.params as { userId: string };
+  const { reason } = req.body as { reason?: string };
+
+  if (!reason?.trim()) {
+    res.status(400).json({ error: "A rejection reason is required" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(usersTable)
+    .set({ status: "rejected", updatedAt: new Date() })
+    .where(eq(usersTable.id, userId))
+    .returning();
+
+  if (!updated) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  // Notify the rejected user (stored for if they ever regain access)
+  await notify({
+    recipientId: updated.id,
+    type: "admin_action",
+    title: "Solicitud no aprobada",
+    body: `Tu solicitud no fue aprobada. Razón: ${reason}`,
+  });
+
+  // Notify all administrators
+  const admins = await db.query.usersTable.findMany({
+    where: eq(usersTable.role, "administrator"),
+    columns: { id: true },
+  });
+  await Promise.all(
+    admins.map((a) =>
+      notify({
+        recipientId: a.id,
+        type: "admin_action",
+        title: "Solicitud rechazada",
+        body: `${updated.displayName} fue rechazado/a. Razón: ${reason}`,
+        link: "/admin",
+      })
+    )
+  );
+
+  res.json(updated);
 });
 
 // ── Moderation queue (unified) ────────────────────────────────────────────────

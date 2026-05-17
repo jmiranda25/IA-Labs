@@ -106,6 +106,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
         displayName: name,
         avatarUrl: avatar,
         role: effectiveRole,
+        status: isBootstrapAdmin ? "active" : "pending",
         skills: [],
       })
       .returning();

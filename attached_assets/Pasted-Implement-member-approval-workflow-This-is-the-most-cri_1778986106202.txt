@@ -1,0 +1,61 @@
+Implement member approval workflow. This is the most critical 
+business feature missing.
+
+BACKEND changes:
+1. Add 'pending' as a valid status in the users table:
+   ALTER TABLE users ADD COLUMN IF NOT EXISTS status 
+   VARCHAR(20) DEFAULT 'pending';
+   
+   Update existing users to 'active':
+   UPDATE users SET status = 'active' WHERE status IS NULL;
+
+2. In the Clerk webhook handler (webhooks.ts) and the 
+   GET /api/users/me auto-create path: set status = 'pending' 
+   for all NEW user registrations (except ADMIN_BOOTSTRAP_EMAILS)
+
+3. Add admin endpoints:
+   GET  /api/admin/users/pending  — list pending users
+   POST /api/admin/users/:id/approve — set status='active', 
+        send welcome email via notify helper
+   POST /api/admin/users/:id/reject  — set status='rejected', 
+        send rejection email, requires { reason } in body
+
+4. In requireAuth middleware: if user.status === 'pending' 
+   return 403 with { code: 'PENDING_APPROVAL' }
+   If user.status === 'rejected' return 403 with 
+   { code: 'ACCOUNT_REJECTED' }
+
+FRONTEND changes:
+5. Create a pending approval page at /pendiente:
+   - Clean centered layout, dark theme
+   - Icon: hourglass or clock (lucide)
+   - Title: "Solicitud enviada"
+   - Text: "Revisaremos tu solicitud y te notificaremos 
+     por correo electrónico. Esto puede tomar hasta 24 horas."
+   - Button: "Cerrar sesión"
+   - NO access to any other page
+
+6. Create a rejected page at /rechazado:
+   - Same style
+   - Title: "Solicitud no aprobada"  
+   - Text: "Tu solicitud no fue aprobada. Si crees que 
+     es un error, escríbenos a hola@aibuild.community"
+   - Button: "Cerrar sesión"
+
+7. In protected-route.tsx: check user status after auth
+   - If PENDING_APPROVAL → redirect to /pendiente
+   - If ACCOUNT_REJECTED → redirect to /rechazado
+
+8. In admin panel (admin.tsx): add "Pendientes" tab 
+   showing pending users with:
+   - Avatar, name, email, joined date
+   - Green "Aprobar" button → calls approve endpoint
+   - Red "Rechazar" button → opens reason dialog → calls reject
+   - Badge showing count: "Pendientes (3)"
+
+9. When admin approves/rejects: trigger an in-app notification 
+   to all administrators via the existing notify helper
+
+Do all backend changes first, then frontend. 
+Run the migration SQL immediately.
+Show me progress after each major step.

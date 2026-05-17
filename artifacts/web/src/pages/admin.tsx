@@ -132,6 +132,17 @@ function KpiCard({ label, value, growth, sparkData, color = "#6366f1", alert, on
   );
 }
 
+function PendingBadge() {
+  const { data: metrics } = useGetAdminMetrics({ query: { queryKey: getGetAdminMetricsQueryKey() } });
+  const count = (metrics as any)?.pendingUsers ?? 0;
+  if (!count) return null;
+  return (
+    <span className="ml-0.5 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-purple-500 text-white text-[10px] font-bold leading-none">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 function AdminDashboard({ onDrillDown }: { onDrillDown: (tab: string) => void }) {
   const { data: metrics, isLoading } = useGetAdminMetrics({ query: { queryKey: getGetAdminMetricsQueryKey() } });
   const m = metrics as any;
@@ -146,6 +157,7 @@ function AdminDashboard({ onDrillDown }: { onDrillDown: (tab: string) => void })
 
   const cards = [
     { label: "Total Miembros", value: m?.totalMembers ?? 0, growth: m?.members30dGrowth, sparkData: spark(1), tab: "users" },
+    { label: "Solicitudes pendientes", value: m?.pendingUsers ?? 0, sparkData: spark(7), color: "#a855f7", alert: (m?.pendingUsers ?? 0) > 0, tab: "pendientes" },
     { label: "Eventos próximos", value: m?.upcomingEvents ?? 0, sparkData: spark(2), color: "#f97316", tab: "eventos" },
     { label: "Hilos activos (7d)", value: m?.activeThreads7d ?? 0, sparkData: spark(3), color: "#22c55e", tab: null },
     { label: "Listings pendientes", value: m?.pendingListings ?? 0, sparkData: spark(4), color: "#eab308", alert: (m?.pendingListings ?? 0) > 0, tab: "moderacion" },
@@ -984,6 +996,154 @@ function MarketplaceAdmin() {
   );
 }
 
+// ── Pending Member Approval Tab ───────────────────────────────────────────────
+
+function PendingUsersTab() {
+  const { getToken } = useAuth();
+  const qc = useQueryClient();
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<{ id: string; displayName: string } | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  async function authFetch(url: string, opts: RequestInit = {}) {
+    const token = await getToken();
+    return fetch(url, {
+      ...opts,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...(opts.headers ?? {}),
+      },
+    });
+  }
+
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["admin-pending-users"],
+    queryFn: async () => {
+      const res = await authFetch("/api/admin/users/pending");
+      if (!res.ok) throw new Error("Error al cargar solicitudes");
+      return res.json() as Promise<{ users: any[] }>;
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await authFetch(`/api/admin/users/${userId}/approve`, { method: "POST" });
+      if (!res.ok) throw new Error("Error al aprobar");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetch();
+      qc.invalidateQueries({ queryKey: getGetAdminMetricsQueryKey() });
+      toast.success("Usuario aprobado");
+    },
+    onError: () => toast.error("Error al aprobar el usuario"),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
+      const res = await authFetch(`/api/admin/users/${userId}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      });
+      if (!res.ok) throw new Error("Error al rechazar");
+      return res.json();
+    },
+    onSuccess: () => {
+      refetch();
+      qc.invalidateQueries({ queryKey: getGetAdminMetricsQueryKey() });
+      toast.success("Solicitud rechazada");
+      setRejectOpen(false);
+      setRejectTarget(null);
+      setRejectReason("");
+    },
+    onError: () => toast.error("Error al rechazar la solicitud"),
+  });
+
+  const users: any[] = data?.users ?? [];
+
+  if (isLoading) return <Skeleton className="h-64 rounded-xl" />;
+
+  if (users.length === 0) {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        <Check className="h-12 w-12 mx-auto mb-3 text-green-400 opacity-50" />
+        <p className="font-medium">Sin solicitudes pendientes</p>
+        <p className="text-sm mt-1">Todos los usuarios han sido revisados.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {users.map((u: any) => (
+        <Card key={u.id}>
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+            <Avatar className="h-10 w-10 shrink-0">
+              <AvatarImage src={u.avatarUrl} />
+              <AvatarFallback className="text-sm">{u.displayName?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{u.displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{u.email ?? "Sin email"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Registrado: {new Date(u.joinedAt).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 bg-green-600 hover:bg-green-500 text-white border-0"
+                disabled={approveMutation.isPending}
+                onClick={() => approveMutation.mutate(u.id)}
+              >
+                <Check className="h-3.5 w-3.5" />
+                Aprobar
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-8 gap-1.5"
+                onClick={() => { setRejectTarget({ id: u.id, displayName: u.displayName }); setRejectReason(""); setRejectOpen(true); }}
+              >
+                <X className="h-3.5 w-3.5" />
+                Rechazar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
+      <Dialog open={rejectOpen} onOpenChange={(o) => { setRejectOpen(o); if (!o) setRejectTarget(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rechazar solicitud</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            ¿Rechazar a <strong>{rejectTarget?.displayName}</strong>? Indica el motivo.
+          </p>
+          <Textarea
+            placeholder="Motivo del rechazo..."
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={3}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectOpen(false)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              disabled={!rejectReason.trim() || rejectMutation.isPending}
+              onClick={() => rejectTarget && rejectMutation.mutate({ userId: rejectTarget.id, reason: rejectReason })}
+            >
+              {rejectMutation.isPending ? "Rechazando…" : "Rechazar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // ── Referral Links Tab ────────────────────────────────────────────────────────
 
 function ReferralLinksTab() {
@@ -1238,6 +1398,11 @@ export default function AdminPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="dashboard" data-testid="tab-admin-dashboard"><BarChart3 className="h-4 w-4 mr-1.5" />Dashboard</TabsTrigger>
+            <TabsTrigger value="pendientes" data-testid="tab-admin-pendientes" className="gap-1.5">
+              <Users className="h-4 w-4" />
+              Pendientes
+              <PendingBadge />
+            </TabsTrigger>
             <TabsTrigger value="users" data-testid="tab-admin-users"><Users className="h-4 w-4 mr-1.5" />Usuarios</TabsTrigger>
             <TabsTrigger value="moderacion" data-testid="tab-admin-moderation"><Flag className="h-4 w-4 mr-1.5" />Moderación</TabsTrigger>
             <TabsTrigger value="landing" data-testid="tab-admin-landing"><Edit3 className="h-4 w-4 mr-1.5" />Landing</TabsTrigger>
@@ -1249,6 +1414,9 @@ export default function AdminPage() {
 
           <TabsContent value="dashboard" className="mt-6">
             <AdminDashboard onDrillDown={setActiveTab} />
+          </TabsContent>
+          <TabsContent value="pendientes" className="mt-6">
+            <PendingUsersTab />
           </TabsContent>
           <TabsContent value="users" className="mt-6">
             <UserManagement />
