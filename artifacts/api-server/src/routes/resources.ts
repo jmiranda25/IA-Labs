@@ -92,7 +92,7 @@ function filePathToObjectPath(filePath: string): string {
 
 router.get("/resources", requireAuth, async (req, res) => {
   const { q, tags, type, cursor } = req.query as Record<string, string>;
-  const userId = req.userId!;
+  const userId = req.userDbId!;
   const PAGE = 20;
 
   const conditions: Parameters<typeof and>[0][] = [];
@@ -173,7 +173,7 @@ router.get("/resources", requireAuth, async (req, res) => {
 
 router.get("/resources/:slug", requireAuth, async (req, res) => {
   const slug = req.params.slug as string;
-  const userId = req.userId!;
+  const userId = req.userDbId!;
 
   const resource = await db.query.resourcesTable.findFirst({
     where: eq(resourcesTable.slug, slug),
@@ -226,7 +226,7 @@ router.post("/resources", requireAuth, async (req, res) => {
       url: url ?? null,
       description: description ?? "",
       coverUrl: coverUrl ?? null,
-      authorId: req.userId!,
+      authorId: req.userDbId!,
       published: false,
     })
     .returning();
@@ -246,7 +246,7 @@ router.post(
   upload.single("file"),
   async (req, res) => {
     const slug = req.params.slug as string;
-    const userId = req.userId!;
+    const userId = req.userDbId!;
 
     const resource = await db.query.resourcesTable.findFirst({
       where: eq(resourcesTable.slug, slug),
@@ -293,7 +293,7 @@ router.post(
 
 router.delete("/resources/:slug", requireAuth, async (req, res) => {
   const slug = req.params.slug as string;
-  const userId = req.userId!;
+  const userId = req.userDbId!;
 
   const resource = await db.query.resourcesTable.findFirst({
     where: eq(resourcesTable.slug, slug),

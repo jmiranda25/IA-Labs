@@ -6,7 +6,8 @@ import { eq } from "drizzle-orm";
 declare global {
   namespace Express {
     interface Request {
-      userId?: string;
+      userId?: string;   // Clerk ID — use only for Clerk API calls / object-storage owner
+      userDbId?: string; // Internal users.id UUID — use for all DB FK columns
       userRole?: string;
       isAdmin?: boolean;
     }
@@ -40,7 +41,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   // Brand-new users (no row yet) are allowed through so GET /users/me can create their row.
   const user = await db.query.usersTable.findFirst({
     where: eq(usersTable.clerkId, userId),
-    columns: { status: true, email: true },
+    columns: { id: true, status: true, email: true },
   });
 
   // Bootstrap admins must always be active regardless of DB state.
@@ -54,6 +55,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         .update(usersTable)
         .set({ status: "active", role: "administrator", updatedAt: new Date() })
         .where(eq(usersTable.clerkId, userId));
+      req.userDbId = user.id;
       next();
       return;
     }
@@ -68,6 +70,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return;
   }
 
+  if (user) req.userDbId = user.id;
   next();
 }
 
@@ -126,12 +129,13 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
   // Fallback: DB check for stale JWTs or missing Clerk JWT template
   const user = await db.query.usersTable.findFirst({
     where: eq(usersTable.clerkId, userId),
-    columns: { role: true },
+    columns: { id: true, role: true },
   });
   if (user?.role !== "administrator") {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
   req.isAdmin = true;
+  if (user) req.userDbId = user.id;
   next();
 }

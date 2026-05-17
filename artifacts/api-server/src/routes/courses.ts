@@ -112,7 +112,7 @@ router.get("/courses", requireAuth, async (req, res) => {
     orderBy: desc(coursesTable.createdAt),
   });
   const enriched = await Promise.all(
-    courses.map((c) => enrichCourse(c, req.userId)),
+    courses.map((c) => enrichCourse(c, req.userDbId)),
   );
   res.json(enriched);
 });
@@ -138,7 +138,7 @@ router.get("/courses/:slug", requireAuth, async (req, res) => {
       return;
     }
   }
-  res.json(await enrichCourse(course, req.userId));
+  res.json(await enrichCourse(course, req.userDbId));
 });
 
 // ── POST /courses/:slug/purchase ──────────────────────────────────────────────
@@ -146,7 +146,7 @@ router.get("/courses/:slug", requireAuth, async (req, res) => {
 router.post("/courses/:slug/purchase", requireAuth, async (req, res) => {
   const slug = req.params.slug as string;
   const { yapeOperationCode } = req.body as { yapeOperationCode: string };
-  const userId = req.userId!;
+  const userId = req.userDbId!;
 
   if (!yapeOperationCode?.trim()) {
     res.status(400).json({ error: "Código de operación requerido" });
@@ -276,7 +276,7 @@ router.post("/admin/courses", requireAdmin, async (req, res) => {
       description: description ?? "",
       pricePen,
       status: status ?? "draft",
-      createdBy: req.userId!,
+      createdBy: req.userDbId!,
     })
     .returning();
 

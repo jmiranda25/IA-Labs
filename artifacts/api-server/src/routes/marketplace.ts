@@ -49,7 +49,7 @@ async function enrichListing(l: typeof marketplaceListingsTable.$inferSelect) {
 // GET /marketplace/listings
 router.get("/marketplace/listings", requireAuth, async (req, res) => {
   const { q, category, minPrice, maxPrice, cursor, limit = "20" } = req.query as Record<string, string>;
-  const userId = req.userId!;
+  const userId = req.userDbId!;
   const lim = Math.min(parseInt(limit) || 20, 50);
 
   const conditions: ReturnType<typeof eq>[] = [
@@ -108,7 +108,7 @@ router.get("/marketplace/listings", requireAuth, async (req, res) => {
 // GET /marketplace/my-listings
 router.get("/marketplace/my-listings", requireAuth, async (req, res) => {
   const rows = await db.query.marketplaceListingsTable.findMany({
-    where: eq(marketplaceListingsTable.sellerId, req.userId!),
+    where: eq(marketplaceListingsTable.sellerId, req.userDbId!),
     orderBy: desc(marketplaceListingsTable.createdAt),
   });
   const enriched = await Promise.all(rows.map(enrichListing));
@@ -121,7 +121,7 @@ router.get("/marketplace/listings/:slug", requireAuth, async (req, res) => {
     where: eq(marketplaceListingsTable.slug, req.params.slug as string),
   });
   if (!listing) { res.status(404).json({ error: "Not found" }); return; }
-  if (listing.status !== "active" && listing.sellerId !== req.userId && !req.isAdmin) {
+  if (listing.status !== "active" && listing.sellerId !== req.userDbId && !req.isAdmin) {
     res.status(404).json({ error: "Not found" }); return;
   }
   res.json(await enrichListing(listing));
@@ -135,7 +135,7 @@ router.post("/marketplace/listings", requireAuth, async (req, res) => {
     .insert(marketplaceListingsTable)
     .values({
       id: randomUUID(),
-      sellerId: req.userId!,
+      sellerId: req.userDbId!,
       title,
       slug,
       description,
@@ -155,7 +155,7 @@ router.patch("/marketplace/listings/:slug", requireAuth, async (req, res) => {
     where: eq(marketplaceListingsTable.slug, slug),
   });
   if (!listing) { res.status(404).json({ error: "Not found" }); return; }
-  if (listing.sellerId !== req.userId && !req.isAdmin) { res.status(403).json({ error: "Forbidden" }); return; }
+  if (listing.sellerId !== req.userDbId && !req.isAdmin) { res.status(403).json({ error: "Forbidden" }); return; }
 
   const { title, description, price, currency, category } = req.body;
   const patch: Record<string, unknown> = { updatedAt: new Date() };
@@ -184,7 +184,7 @@ router.post(
       where: eq(marketplaceListingsTable.slug, slug),
     });
     if (!listing) { res.status(404).json({ error: "Not found" }); return; }
-    if (listing.sellerId !== req.userId && !req.isAdmin) { res.status(403).json({ error: "Forbidden" }); return; }
+    if (listing.sellerId !== req.userDbId && !req.isAdmin) { res.status(403).json({ error: "Forbidden" }); return; }
 
     const existing = await db.query.listingImagesTable.findMany({
       where: eq(listingImagesTable.listingId, listing.id),
@@ -224,7 +224,7 @@ router.post("/marketplace/listings/:slug/sold", requireAuth, async (req, res) =>
     where: eq(marketplaceListingsTable.slug, slug),
   });
   if (!listing) { res.status(404).json({ error: "Not found" }); return; }
-  if (listing.sellerId !== req.userId) { res.status(403).json({ error: "Solo el vendedor puede marcar como vendido" }); return; }
+  if (listing.sellerId !== req.userDbId) { res.status(403).json({ error: "Solo el vendedor puede marcar como vendido" }); return; }
 
   const [updated] = await db
     .update(marketplaceListingsTable)
@@ -243,7 +243,7 @@ router.post("/marketplace/listings/:slug/messages", requireAuth, async (req, res
   if (!listing) { res.status(404).json({ error: "Not found" }); return; }
 
   const { body, toId } = req.body as { body: string; toId: string };
-  const fromId = req.userId!;
+  const fromId = req.userDbId!;
 
   if (fromId !== listing.sellerId && toId !== listing.sellerId) {
     res.status(403).json({ error: "Forbidden" }); return;
@@ -269,7 +269,7 @@ router.post("/marketplace/listings/:slug/messages", requireAuth, async (req, res
 
 // GET /messages/threads
 router.get("/messages/threads", requireAuth, async (req, res) => {
-  const userId = req.userId!;
+  const userId = req.userDbId!;
   const msgs = await db.query.listingMessagesTable.findMany({
     where: or(eq(listingMessagesTable.fromId, userId), eq(listingMessagesTable.toId, userId)),
     orderBy: desc(listingMessagesTable.createdAt),
@@ -317,7 +317,7 @@ router.get("/messages/threads", requireAuth, async (req, res) => {
 
 // GET /messages/threads/:listingId/:otherUserId
 router.get("/messages/threads/:listingId/:otherUserId", requireAuth, async (req, res) => {
-  const userId = req.userId!;
+  const userId = req.userDbId!;
   const { listingId, otherUserId } = req.params as { listingId: string; otherUserId: string };
 
   // Explicit admin block — admins cannot read private messages unless participant
