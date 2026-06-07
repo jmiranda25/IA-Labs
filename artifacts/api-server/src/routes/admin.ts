@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { eq, ilike, and, sql, desc, lt, gt } from "drizzle-orm";
-import { createClerkClient } from "@clerk/express";
 import {
   db,
   usersTable,
@@ -19,8 +18,6 @@ import { sseClients } from "./notifications";
 import { randomUUID } from "crypto";
 
 const router = Router();
-
-const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 // ── Metrics ───────────────────────────────────────────────────────────────────
 
@@ -120,8 +117,8 @@ router.get("/admin/users", requireAdmin, async (req, res) => {
   res.json({ users: page, nextCursor, total: page.length });
 });
 
-function emitRoleChanged(clerkUserId: string, role: string) {
-  const clients = sseClients.get(clerkUserId);
+function emitRoleChanged(userId: string, role: string) {
+  const clients = sseClients.get(userId);
   if (clients) {
     const payload = JSON.stringify({ role });
     for (const client of clients) {
@@ -130,7 +127,7 @@ function emitRoleChanged(clerkUserId: string, role: string) {
   }
 }
 
-// PATCH /admin/users/:id/role — update DB + Clerk publicMetadata
+// PATCH /admin/users/:id/role — update DB role
 router.patch("/admin/users/:userId/role", requireAdmin, async (req, res) => {
   const userId = req.params.userId as string;
 
@@ -149,18 +146,12 @@ router.patch("/admin/users/:userId/role", requireAdmin, async (req, res) => {
   const [updated] = await db
     .update(usersTable)
     .set({ role, updatedAt: new Date() })
-    .where(eq(usersTable.clerkId, userId))
+    .where(eq(usersTable.id, userId))
     .returning();
 
   if (!updated) {
     res.status(404).json({ error: "Not found" });
     return;
-  }
-
-  try {
-    await clerk.users.updateUser(userId, { publicMetadata: { role } });
-  } catch (err) {
-    req.log?.warn({ err }, "Clerk updateUser metadata failed");
   }
 
   emitRoleChanged(userId, role);
@@ -187,7 +178,7 @@ router.put("/admin/users/:userId/role", requireAdmin, async (req, res) => {
   const [updated] = await db
     .update(usersTable)
     .set({ role, updatedAt: new Date() })
-    .where(eq(usersTable.clerkId, userId))
+    .where(eq(usersTable.id, userId))
     .returning();
 
   if (!updated) {
@@ -195,18 +186,12 @@ router.put("/admin/users/:userId/role", requireAdmin, async (req, res) => {
     return;
   }
 
-  try {
-    await clerk.users.updateUser(userId, { publicMetadata: { role } });
-  } catch (err) {
-    req.log?.warn({ err }, "Clerk updateUser metadata failed");
-  }
-
   emitRoleChanged(userId, role);
 
   res.json(updated);
 });
 
-// POST /admin/users/:id/disable — set disabled_at + Clerk lockUser
+// POST /admin/users/:id/disable — set disabled_at
 router.post("/admin/users/:userId/disable", requireAdmin, async (req, res) => {
   const userId = req.params.userId as string;
 
@@ -218,18 +203,12 @@ router.post("/admin/users/:userId/disable", requireAdmin, async (req, res) => {
   const [updated] = await db
     .update(usersTable)
     .set({ disabledAt: new Date(), updatedAt: new Date() })
-    .where(eq(usersTable.clerkId, userId))
+    .where(eq(usersTable.id, userId))
     .returning();
 
   if (!updated) {
     res.status(404).json({ error: "Not found" });
     return;
-  }
-
-  try {
-    await clerk.users.lockUser(userId);
-  } catch (err) {
-    req.log?.warn({ err }, "Clerk lockUser failed");
   }
 
   res.json(updated);
@@ -247,13 +226,7 @@ router.post("/admin/users/:userId/ban", requireAdmin, async (req, res) => {
   await db
     .update(usersTable)
     .set({ isBanned: true, updatedAt: new Date() })
-    .where(eq(usersTable.clerkId, userId));
-
-  try {
-    await clerk.users.banUser(userId);
-  } catch (err) {
-    req.log?.warn({ err }, "Clerk banUser failed");
-  }
+    .where(eq(usersTable.id, userId));
 
   res.status(204).send();
 });
@@ -282,7 +255,6 @@ router.post("/admin/users/:userId/approve", requireAdmin, async (req, res) => {
     return;
   }
 
-  // Notify the approved user (in-app + email)
   await notify({
     recipientId: updated.id,
     type: "admin_action",
@@ -291,15 +263,14 @@ router.post("/admin/users/:userId/approve", requireAdmin, async (req, res) => {
     link: "/dashboard",
   });
 
-  if (updated.clerkId) {
+  if (updated.email) {
     void sendEmail({
-      clerkId: updated.clerkId,
+      email: updated.email,
       subject: "¡Bienvenido/a a IA Labs! 🚀",
       body: `Hola ${updated.displayName},\n\n¡Tu solicitud para unirte a IA Labs fue aprobada!\n\nYa puedes acceder a todos los beneficios de la comunidad: eventos, foro, recursos y marketplace.\n\nEntra aquí: https://ialabs.tech/dashboard\n\nNos alegra tenerte en la comunidad,\nEl equipo de IA Labs`,
     });
   }
 
-  // Notify all administrators
   const admins = await db.query.usersTable.findMany({
     where: eq(usersTable.role, "administrator"),
     columns: { id: true },
@@ -339,7 +310,6 @@ router.post("/admin/users/:userId/reject", requireAdmin, async (req, res) => {
     return;
   }
 
-  // Notify the rejected user (in-app + email)
   await notify({
     recipientId: updated.id,
     type: "admin_action",
@@ -347,15 +317,14 @@ router.post("/admin/users/:userId/reject", requireAdmin, async (req, res) => {
     body: `Tu solicitud no fue aprobada. Razón: ${reason}`,
   });
 
-  if (updated.clerkId) {
+  if (updated.email) {
     void sendEmail({
-      clerkId: updated.clerkId,
+      email: updated.email,
       subject: "Actualización sobre tu solicitud en IA Labs",
       body: `Hola ${updated.displayName},\n\nGracias por tu interés en unirte a IA Labs.\n\nLuego de revisar tu solicitud, no pudimos aprobarla en este momento.\n\nMotivo: ${reason}\n\nSi tienes preguntas, puedes responder a este correo o escribirnos.\n\nEl equipo de IA Labs`,
     });
   }
 
-  // Notify all administrators
   const admins = await db.query.usersTable.findMany({
     where: eq(usersTable.role, "administrator"),
     columns: { id: true },
@@ -421,7 +390,6 @@ router.post("/admin/reports/:reportId/resolve", requireAdmin, async (req, res) =
     .set({ status: newStatus, resolvedAt: new Date() })
     .where(eq(reportsTable.id, reportId));
 
-  // Soft-delete the target if action === 'remove'
   if (action === "remove") {
     if (report.targetType === "forum_post") {
       await db
@@ -441,7 +409,6 @@ router.post("/admin/reports/:reportId/resolve", requireAdmin, async (req, res) =
     }
   }
 
-  // Notify reporter of outcome
   const reporterUser = await db.query.usersTable.findFirst({
     where: eq(usersTable.id, report.reporterId),
     columns: { id: true },

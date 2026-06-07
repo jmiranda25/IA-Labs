@@ -1,15 +1,10 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import pinoHttp from "pino-http";
-import { clerkMiddleware } from "@clerk/express";
-import { publishableKeyFromHost } from "@clerk/shared/keys";
-import {
-  CLERK_PROXY_PATH,
-  clerkProxyMiddleware,
-  getClerkProxyHost,
-} from "./middlewares/clerkProxyMiddleware";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { env } from "./env";
 
 const app: Express = express();
 
@@ -33,22 +28,26 @@ app.use(
   }),
 );
 
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
+app.use(
+  helmet({
+    // Allow inline scripts/styles needed by the SPA served through the same origin
+    contentSecurityPolicy: false,
+  }),
+);
 
-app.use(cors({ credentials: true, origin: true }));
-// Capture raw body for Clerk webhook signature verification BEFORE express.json() parses it
-app.use("/api/webhooks/clerk", express.raw({ type: "application/json" }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const allowedOrigins = env.FRONTEND_URL
+  ? [env.FRONTEND_URL]
+  : true; // permissive in development
 
 app.use(
-  clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
-      getClerkProxyHost(req) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
-    ),
-  })),
+  cors({
+    credentials: true,
+    origin: allowedOrigins,
+  }),
 );
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 

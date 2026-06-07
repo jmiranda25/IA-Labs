@@ -18,7 +18,7 @@ import {
   useCreateReport,
   type ForumPostWithAuthor,
 } from "@workspace/api-client-react";
-import { useUser } from "@clerk/react";
+import { useGetMe } from "@workspace/api-client-react";
 import {
   ArrowLeft,
   Pin,
@@ -276,9 +276,9 @@ function PostCard({ post, myId, isAdmin, threadId, onReactionToggle, onDelete, o
 
 export default function ForoHiloPage({ categorySlug, threadId }: Props) {
   const [, navigate] = useLocation();
-  const { user } = useUser();
-  const myId = user?.id ?? "";
-  const isAdmin = (user?.publicMetadata?.isAdmin as boolean) ?? false;
+  const { data: me } = useGetMe();
+  const myId = (me as any)?.id ?? "";
+  const isAdmin = (me as any)?.role === "administrator";
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -585,7 +585,7 @@ export default function ForoHiloPage({ categorySlug, threadId }: Props) {
           <Lock className="h-4 w-4" />
           Este tema está cerrado para nuevas respuestas.
         </div>
-      ) : user ? (
+      ) : me ? (
         <div className="rounded-xl border border-border bg-card p-5 space-y-3">
           <p className="text-sm font-medium text-foreground">Tu respuesta</p>
           <Textarea

@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { eq, ilike, or, sql, and, ne, lt, desc } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
-import { getAuth, clerkClient } from "@clerk/express";
 import { requireAuth } from "../lib/requireAuth";
 import { sendEmail } from "../lib/sendEmail";
 import { ObjectStorageService } from "../lib/objectStorage";
@@ -35,7 +34,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
 
 const USERNAME_RE = /^[a-z0-9_]{3,24}$/;
 
-// Safe columns for the public directory — never include email / clerkId / isBanned
+// Safe columns for the public directory — never include email / passwordHash / isBanned
 const PUBLIC_COLS = {
   id: true,
   username: true,
@@ -49,8 +48,7 @@ const PUBLIC_COLS = {
   joinedAt: true,
 } as const;
 
-// Emails that always receive the administrator role on first sign-up.
-// Comma-separated list in ADMIN_BOOTSTRAP_EMAILS env var.
+// Emails that always receive the administrator role.
 const BOOTSTRAP_ADMIN_EMAILS = new Set(
   (process.env.ADMIN_BOOTSTRAP_EMAILS ?? "")
     .split(",")
@@ -60,91 +58,28 @@ const BOOTSTRAP_ADMIN_EMAILS = new Set(
 
 // ── GET /users/me ────────────────────────────────────────────────────────────
 router.get("/users/me", requireAuth, async (req, res) => {
-  const clerkId = req.userId!;
-  const auth = getAuth(req);
-  const claims = auth?.sessionClaims as Record<string, unknown> | null;
-  const clerkRole = (claims?.publicMetadata as Record<string, unknown> | null)?.role as string | undefined;
-  // Email from JWT (requires a Clerk JWT template that includes it).
-  // We always fall back to the Clerk backend API when the JWT claim is absent.
-  let clerkEmail = (claims?.email as string | undefined)?.toLowerCase() ?? null;
+  const userId = req.userId!;
 
-  // If the JWT doesn't carry an email, fetch it from the Clerk API (live keys
-  // may have a different JWT template than dev keys).
-  if (!clerkEmail) {
-    try {
-      const clerkUser = await clerkClient.users.getUser(clerkId);
-      clerkEmail = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase() ?? null;
-    } catch {
-      // non-fatal; bootstrap will just rely on DB email if available
-    }
-  }
-
-  let user = await db.query.usersTable.findFirst({
-    where: eq(usersTable.clerkId, clerkId),
+  const user = await db.query.usersTable.findFirst({
+    where: eq(usersTable.id, userId),
   });
 
   if (!user) {
-    // Determine role: bootstrap email list takes highest priority,
-    // then Clerk JWT publicMetadata, then default participant.
-    const isBootstrapAdmin = !!clerkEmail && BOOTSTRAP_ADMIN_EMAILS.has(clerkEmail);
-    const effectiveRole: "administrator" | "participant" = isBootstrapAdmin
-      ? "administrator"
-      : clerkRole === "administrator"
-      ? "administrator"
-      : "participant";
+    res.status(404).json({ error: "Usuario no encontrado" });
+    return;
+  }
 
-    const name =
-      (claims?.name as string) ||
-      clerkEmail?.split("@")[0] ||
-      "Member";
-    const avatar = (claims?.picture as string) || null;
-    [user] = await db
-      .insert(usersTable)
-      .values({
-        id: randomUUID(),
-        clerkId,
-        email: clerkEmail,   // always store so future bootstrap checks can use DB
-        displayName: name,
-        avatarUrl: avatar,
-        role: effectiveRole,
-        status: isBootstrapAdmin ? "active" : "pending",
-        skills: [],
-      })
+  // Bootstrap admin self-heal on every request
+  const storedEmail = user.email?.toLowerCase() ?? null;
+  if (storedEmail && BOOTSTRAP_ADMIN_EMAILS.has(storedEmail) &&
+      (user.role !== "administrator" || user.status !== "active")) {
+    const [updated] = await db
+      .update(usersTable)
+      .set({ role: "administrator", status: "active", updatedAt: new Date() })
+      .where(eq(usersTable.id, userId))
       .returning();
-
-    // Welcome email for new non-admin registrations
-    if (!isBootstrapAdmin) {
-      void sendEmail({
-        clerkId,
-        subject: "Solicitud recibida — IA Labs",
-        body: `Hola ${name},\n\nRecibimos tu solicitud para unirte a IA Labs, la comunidad hispanohablante de IA.\n\nUn administrador revisará tu solicitud pronto. Te notificaremos por correo cuando tu cuenta sea activada.\n\nMientras tanto, si tienes alguna pregunta, no dudes en escribirnos.\n\nEl equipo de IA Labs`,
-      });
-    }
-  } else {
-    // For existing users the DB is authoritative for role.
-    // Exception: ADMIN_BOOTSTRAP_EMAILS are corrected on every login so that
-    // admins who signed up before the list was configured (or whose status was
-    // reset by a deployment/migration) are always kept role=administrator + status=active.
-    const storedEmail = user.email?.toLowerCase() ?? null;
-    const effectiveEmail = clerkEmail ?? storedEmail;
-    const isBootstrapAdmin = !!effectiveEmail && BOOTSTRAP_ADMIN_EMAILS.has(effectiveEmail);
-
-    if (isBootstrapAdmin && (user.role !== "administrator" || user.status !== "active")) {
-      const updates: Record<string, string> = { role: "administrator", status: "active" };
-      if (clerkEmail && !user.email) updates.email = clerkEmail;
-      [user] = await db
-        .update(usersTable)
-        .set(updates)
-        .where(eq(usersTable.clerkId, clerkId))
-        .returning();
-    } else if (clerkEmail && !user.email) {
-      // Store missing email for future bootstrap checks
-      [user] = await db
-        .update(usersTable)
-        .set({ email: clerkEmail })
-        .where(eq(usersTable.clerkId, clerkId))
-        .returning();
-    }
+    res.json(updated);
+    return;
   }
 
   res.json(user);
@@ -152,7 +87,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
 
 // ── PUT /users/me ─────────────────────────────────────────────────────────────
 router.put("/users/me", requireAuth, async (req, res) => {
-  const clerkId = req.userId!;
+  const userId = req.userId!;
   const { displayName, bio, avatarUrl, skills, location, website, username } = req.body;
 
   if (username !== undefined && username !== null && username !== "") {
@@ -175,7 +110,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
         ...(username ? { username } : {}),
         updatedAt: new Date(),
       })
-      .where(eq(usersTable.clerkId, clerkId))
+      .where(eq(usersTable.id, userId))
       .returning();
     res.json(updated);
   } catch (err: any) {
@@ -190,7 +125,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
 // ── GET /users/me/notification-preferences ───────────────────────────────────
 router.get("/users/me/notification-preferences", requireAuth, async (req, res) => {
   const user = await db.query.usersTable.findFirst({
-    where: eq(usersTable.clerkId, req.userId!),
+    where: eq(usersTable.id, req.userId!),
     columns: { notificationPreferences: true },
   });
   if (!user) { res.status(404).json({ error: "Not found" }); return; }
@@ -204,14 +139,14 @@ router.put("/users/me/notification-preferences", requireAuth, async (req, res) =
   const [updated] = await db
     .update(usersTable)
     .set({ notificationPreferences: parsed.data, updatedAt: new Date() })
-    .where(eq(usersTable.clerkId, req.userId!))
+    .where(eq(usersTable.id, req.userId!))
     .returning();
   res.json({ ...DEFAULT_NOTIF_PREFS, ...(updated.notificationPreferences as object ?? {}) });
 });
 
 // ── POST /users/me/avatar ─────────────────────────────────────────────────────
 router.post("/users/me/avatar", requireAuth, upload.single("avatar"), async (req, res) => {
-  const clerkId = req.userId!;
+  const userId = req.userId!;
   const file = req.file;
   if (!file) {
     res.status(400).json({ error: "No se proporcionó archivo" });
@@ -220,11 +155,11 @@ router.post("/users/me/avatar", requireAuth, upload.single("avatar"), async (req
 
   const ext = file.mimetype === "image/png" ? "png" : file.mimetype === "image/webp" ? "webp" : "jpg";
   const uuid = randomUUID();
-  const subPath = `avatars/${clerkId}/${uuid}.${ext}`;
+  const subPath = `avatars/${userId}/${uuid}.${ext}`;
 
   try {
     await objectStorageService.uploadToPrivate(subPath, file.buffer, file.mimetype, {
-      owner: clerkId,
+      owner: userId,
       visibility: "public",
     });
   } catch (err: any) {
@@ -234,13 +169,13 @@ router.post("/users/me/avatar", requireAuth, upload.single("avatar"), async (req
   }
 
   const avatarUrl = `/api/storage/objects/${subPath}`;
-  await db.update(usersTable).set({ avatarUrl, updatedAt: new Date() }).where(eq(usersTable.clerkId, clerkId));
+  await db.update(usersTable).set({ avatarUrl, updatedAt: new Date() }).where(eq(usersTable.id, userId));
   res.json({ avatarUrl });
 });
 
 // ── GET /users/check-username ─────────────────────────────────────────────────
 router.get("/users/check-username", requireAuth, async (req, res) => {
-  const clerkId = req.userId!;
+  const userId = req.userId!;
   const value = req.query.value as string;
 
   if (!value || !USERNAME_RE.test(value)) {
@@ -249,7 +184,7 @@ router.get("/users/check-username", requireAuth, async (req, res) => {
   }
 
   const existing = await db.query.usersTable.findFirst({
-    where: and(eq(usersTable.username, value), ne(usersTable.clerkId, clerkId)),
+    where: and(eq(usersTable.username, value), ne(usersTable.id, userId)),
   });
 
   res.json({ available: !existing });
@@ -270,8 +205,6 @@ router.get("/users/by-username/:username", requireAuth, async (req, res) => {
 });
 
 // ── GET /users (cursor-paginated public directory) ────────────────────────────
-// TODO: add a GIN trigram index on (display_name || ' ' || username) when the
-//       directory grows beyond a few thousand rows.
 router.get("/users", requireAuth, async (req, res) => {
   const { q, role, cursor, limit: limitRaw } = req.query as Record<string, string>;
   const limit = Math.min(parseInt(limitRaw ?? "24") || 24, 60);
@@ -291,7 +224,6 @@ router.get("/users", requireAuth, async (req, res) => {
     conditions.push(eq(usersTable.role, role) as ReturnType<typeof eq>);
   }
 
-  // Cursor decoding: base64(JSON.stringify({ joinedAt, id }))
   if (cursor) {
     try {
       const decoded = JSON.parse(Buffer.from(cursor, "base64").toString()) as {
@@ -337,7 +269,7 @@ router.get("/users", requireAuth, async (req, res) => {
 
 // ── PATCH /users/me/card-visibility ──────────────────────────────────────────
 router.patch("/users/me/card-visibility", requireAuth, async (req, res) => {
-  const clerkId = req.userId!;
+  const userId = req.userId!;
   const { isPublic } = req.body;
   if (typeof isPublic !== "boolean") {
     res.status(400).json({ error: "isPublic must be a boolean" });
@@ -346,7 +278,7 @@ router.patch("/users/me/card-visibility", requireAuth, async (req, res) => {
   const [updated] = await db
     .update(usersTable)
     .set({ isPublic, updatedAt: new Date() })
-    .where(eq(usersTable.clerkId, clerkId))
+    .where(eq(usersTable.id, userId))
     .returning({ isPublic: usersTable.isPublic });
   res.json({ isPublic: updated.isPublic });
 });
@@ -355,7 +287,7 @@ router.patch("/users/me/card-visibility", requireAuth, async (req, res) => {
 router.get("/users/:userId", requireAuth, async (req, res) => {
   const userId = req.params.userId as string;
   const user = await db.query.usersTable.findFirst({
-    where: eq(usersTable.clerkId, userId),
+    where: eq(usersTable.id, userId),
   });
   if (!user) { res.status(404).json({ error: "Not found" }); return; }
   res.json(user);

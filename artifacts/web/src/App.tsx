@@ -1,8 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from "@clerk/react";
-import { publishableKeyFromHost } from "@clerk/react/internal";
-import { esES } from "@clerk/localizations";
-import { shadcn } from "@clerk/themes";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
@@ -14,6 +10,7 @@ import { ProtectedRoute, RequireAdmin } from "@/components/protected-route";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { queryClient } from "@/lib/queryClient";
 import { ViewModeProvider } from "@/contexts/view-mode";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
@@ -53,71 +50,7 @@ const RechazadoPage = lazy(() => import("@/pages/rechazado"));
 const CursosPage = lazy(() => import("@/pages/cursos"));
 const CursoDetallePage = lazy(() => import("@/pages/curso-detalle"));
 
-const clerkPubKey = publishableKeyFromHost(
-  window.location.hostname,
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-);
-
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-
-function stripBase(path: string): string {
-  return basePath && path.startsWith(basePath)
-    ? path.slice(basePath.length) || "/"
-    : path;
-}
-
-if (!clerkPubKey) {
-  throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY");
-}
-
-const clerkAppearance = {
-  theme: shadcn,
-  cssLayerName: "clerk",
-  options: {
-    socialButtonsVariant: "blockButton" as const,
-  },
-  variables: {
-    colorPrimary: "hsl(270 100% 60%)",
-    colorForeground: "hsl(213 31% 91%)",
-    colorMutedForeground: "hsl(215 20% 65%)",
-    colorDanger: "hsl(0 84% 60%)",
-    colorBackground: "hsl(224 71% 6%)",
-    colorInput: "hsl(216 34% 17%)",
-    colorInputForeground: "hsl(213 31% 91%)",
-    colorNeutral: "hsl(216 34% 17%)",
-    fontFamily: "'Inter', sans-serif",
-    borderRadius: "0.5rem",
-  },
-  elements: {
-    rootBox: "w-full flex justify-center",
-    cardBox:
-      "bg-[hsl(224_71%_6%)] rounded-2xl w-[440px] max-w-full overflow-hidden border border-[hsl(216_34%_17%)]",
-    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle: "text-[hsl(213_31%_91%)] font-semibold",
-    headerSubtitle: "text-[hsl(215_20%_65%)]",
-    socialButtonsBlockButtonText: "text-[hsl(213_31%_91%)]",
-    formFieldLabel: "text-[hsl(213_31%_91%)]",
-    footerActionLink: "text-[hsl(270_100%_70%)]",
-    footerActionText: "text-[hsl(215_20%_65%)]",
-    dividerText: "text-[hsl(215_20%_65%)]",
-    identityPreviewEditButton: "text-[hsl(270_100%_70%)]",
-    formFieldSuccessText: "text-green-400",
-    alertText: "text-[hsl(213_31%_91%)]",
-    socialButtonsBlockButton:
-      "!border-[hsl(216_34%_17%)] hover:!border-[hsl(270_100%_60%)]",
-    formButtonPrimary:
-      "!bg-[hsl(270_100%_60%)] hover:!bg-[hsl(270_100%_65%)]",
-    formFieldInput:
-      "!bg-[hsl(216_34%_17%)] !border-[hsl(216_34%_25%)] !text-[hsl(213_31%_91%)]",
-    footerAction: "!bg-transparent",
-    dividerLine: "!bg-[hsl(216_34%_17%)]",
-    alert: "!border-[hsl(216_34%_17%)]",
-    otpCodeFieldInput:
-      "!bg-[hsl(216_34%_17%)] !border-[hsl(216_34%_25%)]",
-  },
-};
+const basePath = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
 function PageSpinner() {
   return (
@@ -131,68 +64,214 @@ function PageSpinner() {
   );
 }
 
-function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
-  const qc = useQueryClient();
-  const prevUserIdRef = useRef<string | null | undefined>(undefined);
-
-  useEffect(() => {
-    const unsubscribe = addListener(({ user }) => {
-      const userId = user?.id ?? null;
-      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
-        qc.clear();
-      }
-      prevUserIdRef.current = userId;
-    });
-    return unsubscribe;
-  }, [addListener, qc]);
-
-  return null;
-}
-
-function GuestOnlyPage({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <Show when="signed-in">
-        <Redirect to="/dashboard" />
-      </Show>
-      <Show when="signed-out">{children}</Show>
-    </>
-  );
-}
+// ── Auth pages ────────────────────────────────────────────────────────────────
 
 function SignInPage() {
-  const demoEmail =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("email") ?? undefined
-      : undefined;
+  const { login, isAuthenticated, isLoading } = useAuth();
+  const [, navigate] = useLocation();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pre = params.get("email");
+    if (pre) setEmail(pre);
+  }, []);
+
+  if (!isLoading && isAuthenticated) return <Redirect to="/dashboard" />;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await login(email, password);
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(err.message ?? "Error al iniciar sesión");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <GuestOnlyPage>
-      <AuthLayout
-        switchText="¿No tienes cuenta?"
-        switchLinkText="Crear cuenta"
-        switchHref="/registro"
-      >
-        <SignIn
-          key={demoEmail ?? "default"}
-          routing="path"
-          path={`${basePath}/iniciar-sesion`}
-          signUpUrl={`${basePath}/registro`}
-          forceRedirectUrl={`${basePath}/dashboard`}
-          fallbackRedirectUrl={`${basePath}/dashboard`}
-          initialValues={demoEmail ? { emailAddress: demoEmail } : undefined}
-        />
-      </AuthLayout>
-    </GuestOnlyPage>
+    <AuthLayout
+      switchText="¿No tienes cuenta?"
+      switchLinkText="Crear cuenta"
+      switchHref="/registro"
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm mx-auto">
+        <h1 className="text-2xl font-semibold text-center">Iniciar sesión</h1>
+        {error && (
+          <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
+            {error}
+          </p>
+        )}
+        <div className="flex flex-col gap-1">
+          <label htmlFor="email" className="text-sm font-medium">Email</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="rounded-md border border-input bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="password" className="text-sm font-medium">Contraseña</label>
+          <input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="rounded-md border border-input bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          {submitting ? "Iniciando sesión…" : "Iniciar sesión"}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }
 
-function ReferralRedeemer() {
-  const { isSignedIn, getToken } = useAuth();
+function SignUpPage() {
+  const { register, isAuthenticated, isLoading } = useAuth();
+  const [, navigate] = useLocation();
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isSignedIn) return;
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) sessionStorage.setItem("referral_pending", ref);
+  }, []);
+
+  if (!isLoading && isAuthenticated) return <Redirect to="/dashboard" />;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await register(email, password, displayName);
+      navigate("/pendiente");
+    } catch (err: any) {
+      setError(err.message ?? "Error al crear la cuenta");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <AuthLayout
+      switchText="¿Ya tienes cuenta?"
+      switchLinkText="Iniciar sesión"
+      switchHref="/iniciar-sesion"
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm mx-auto">
+        <h1 className="text-2xl font-semibold text-center">Crear cuenta</h1>
+        {error && (
+          <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
+            {error}
+          </p>
+        )}
+        <div className="flex flex-col gap-1">
+          <label htmlFor="displayName" className="text-sm font-medium">Nombre</label>
+          <input
+            id="displayName"
+            type="text"
+            autoComplete="name"
+            required
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="rounded-md border border-input bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="reg-email" className="text-sm font-medium">Email</label>
+          <input
+            id="reg-email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="rounded-md border border-input bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="reg-password" className="text-sm font-medium">Contraseña</label>
+          <input
+            id="reg-password"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="rounded-md border border-input bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <p className="text-xs text-muted-foreground">Mínimo 8 caracteres</p>
+        </div>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          {submitting ? "Creando cuenta…" : "Crear cuenta"}
+        </button>
+      </form>
+    </AuthLayout>
+  );
+}
+
+function RecuperarPage() {
+  return (
+    <AuthLayout
+      switchText="¿Recuerdas tu contraseña?"
+      switchLinkText="Iniciar sesión"
+      switchHref="/iniciar-sesion"
+    >
+      <div className="flex flex-col gap-4 w-full max-w-sm mx-auto text-center">
+        <h1 className="text-2xl font-semibold">Recuperar contraseña</h1>
+        <p className="text-sm text-muted-foreground">
+          Para restablecer tu contraseña, contacta al administrador de la plataforma.
+        </p>
+        <a href="/iniciar-sesion" className="text-sm text-primary underline">
+          Volver al inicio de sesión
+        </a>
+      </div>
+    </AuthLayout>
+  );
+}
+
+function HomeRedirect() {
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (isAuthenticated) return <Redirect to="/dashboard" />;
+  return <LandingPage />;
+}
+
+// ── Referral handler ──────────────────────────────────────────────────────────
+
+function ReferralRedeemer() {
+  const { isAuthenticated, getToken } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
     const code = sessionStorage.getItem("referral_pending");
     if (!code) return;
 
@@ -203,7 +282,7 @@ function ReferralRedeemer() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({ code }),
         });
@@ -214,88 +293,17 @@ function ReferralRedeemer() {
         // fail silently, will retry on next load
       }
     })();
-  }, [isSignedIn, getToken]);
+  }, [isAuthenticated, getToken]);
 
   return null;
 }
 
-function SignUpPage() {
-  useEffect(() => {
-    const ref = new URLSearchParams(window.location.search).get("ref");
-    if (ref) sessionStorage.setItem("referral_pending", ref);
-  }, []);
+// ── Main app ──────────────────────────────────────────────────────────────────
 
+function AppRoutes() {
   return (
-    <GuestOnlyPage>
-      <AuthLayout
-        switchText="¿Ya tienes cuenta?"
-        switchLinkText="Iniciar sesión"
-        switchHref="/iniciar-sesion"
-      >
-        <SignUp
-          routing="path"
-          path={`${basePath}/registro`}
-          signInUrl={`${basePath}/iniciar-sesion`}
-          forceRedirectUrl={`${basePath}/dashboard`}
-          fallbackRedirectUrl={`${basePath}/dashboard`}
-        />
-      </AuthLayout>
-    </GuestOnlyPage>
-  );
-}
-
-function RecuperarPage() {
-  return (
-    <GuestOnlyPage>
-      <AuthLayout
-        switchText="¿Recuerdas tu contraseña?"
-        switchLinkText="Iniciar sesión"
-        switchHref="/iniciar-sesion"
-      >
-        <SignIn
-          routing="path"
-          path={`${basePath}/recuperar`}
-          signUpUrl={`${basePath}/registro`}
-          forceRedirectUrl={`${basePath}/dashboard`}
-          fallbackRedirectUrl={`${basePath}/dashboard`}
-        />
-      </AuthLayout>
-    </GuestOnlyPage>
-  );
-}
-
-function HomeRedirect() {
-  return (
-    <>
-      <Show when="signed-in">
-        <Redirect to="/dashboard" />
-      </Show>
-      <Show when="signed-out">
-        <LandingPage />
-      </Show>
-    </>
-  );
-}
-
-function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
-
-  return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      proxyUrl={clerkProxyUrl}
-      appearance={clerkAppearance}
-      localization={esES}
-      signInUrl={`${basePath}/iniciar-sesion`}
-      signUpUrl={`${basePath}/registro`}
-      signInFallbackRedirectUrl={`${basePath}/dashboard`}
-      signUpFallbackRedirectUrl={`${basePath}/dashboard`}
-      routerPush={(to) => setLocation(stripBase(to))}
-      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
-    >
-      <QueryClientProvider client={queryClient}>
-        <ViewModeProvider>
-        <ClerkQueryClientCacheInvalidator />
+    <QueryClientProvider client={queryClient}>
+      <ViewModeProvider>
         <ReferralRedeemer />
         <TooltipProvider>
           <ErrorBoundary>
@@ -491,9 +499,8 @@ function ClerkProviderWithRoutes() {
           <Toaster />
           <SonnerToaster position="top-right" richColors theme="dark" />
         </TooltipProvider>
-        </ViewModeProvider>
-      </QueryClientProvider>
-    </ClerkProvider>
+      </ViewModeProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -501,7 +508,9 @@ function App() {
   return (
     <HelmetProvider>
       <WouterRouter base={basePath}>
-        <ClerkProviderWithRoutes />
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </WouterRouter>
     </HelmetProvider>
   );

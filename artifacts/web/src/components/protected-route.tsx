@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import { Show } from "@clerk/react";
 import { Redirect, useLocation } from "wouter";
 import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface ProtectedRouteProps {
@@ -9,19 +9,10 @@ interface ProtectedRouteProps {
 }
 
 /**
- * StatusGate — called inside Clerk's "signed-in" guard.
+ * StatusGate — guards routes behind account-status checks.
  *
- * Always fetches a FRESH /api/users/me on every mount (staleTime: 0,
- * refetchOnMount: "always", gcTime: 0).  This prevents a stale cached 403
- * from a previous "pending" state from incorrectly redirecting an admin whose
- * account has since been approved.
- *
- * The redirect is intentionally deferred while a re-fetch is in progress so
- * that we only act on settled, server-confirmed data:
- *   - isLoading      → no cache at all yet, wait
- *   - error + isFetching → stale error still alive but re-fetch underway, wait
- *   - error + !isFetching → confirmed fresh error → redirect
- *   - data           → confirmed fresh data   → check status
+ * Always fetches a FRESH /api/users/me on every mount so a freshly-approved
+ * account is never held back by a cached "pending" response.
  */
 function StatusGate({ children }: ProtectedRouteProps) {
   const { data: me, isLoading, isFetching, error } = useGetMe({
@@ -33,20 +24,17 @@ function StatusGate({ children }: ProtectedRouteProps) {
     },
   });
 
-  // Initial load (no data or error in cache yet)
   if (isLoading) return null;
 
-  // Stale error in cache but a fresh re-fetch is already in flight — wait
-  // before acting so we don't redirect an admin who was just approved.
+  // A stale error is in cache but a fresh re-fetch is already in flight — wait
+  // so we don't redirect an admin who was just approved.
   if (error && isFetching) return null;
 
-  // Confirmed fresh error from requireAuth middleware
   const errorCode =
     (error as any)?.response?.data?.code ?? (error as any)?.data?.code;
   if (errorCode === "PENDING_APPROVAL") return <Redirect to="/pendiente" />;
   if (errorCode === "ACCOUNT_REJECTED") return <Redirect to="/rechazado" />;
 
-  // Confirmed fresh 200 — check the status field (handles first-ever login)
   const status = (me as any)?.status;
   if (status === "pending") return <Redirect to="/pendiente" />;
   if (status === "rejected") return <Redirect to="/rechazado" />;
@@ -55,23 +43,22 @@ function StatusGate({ children }: ProtectedRouteProps) {
 }
 
 /**
- * Gate a route behind Clerk authentication + account status check.
+ * Gate a route behind authentication + account status check.
  * – Signed out         → redirect to /iniciar-sesion
  * – Pending approval   → redirect to /pendiente
  * – Rejected           → redirect to /rechazado
  * – Active + signed in → renders children
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  return (
-    <>
-      <Show when="signed-in">
-        <StatusGate>{children}</StatusGate>
-      </Show>
-      <Show when="signed-out">
-        <Redirect to="/iniciar-sesion" />
-      </Show>
-    </>
-  );
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return null;
+
+  if (!isAuthenticated) {
+    return <Redirect to="/iniciar-sesion" />;
+  }
+
+  return <StatusGate>{children}</StatusGate>;
 }
 
 /**
@@ -80,8 +67,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
  * – Participant → shows "Acceso restringido" toast and redirects to /dashboard.
  * – Loading    → renders nothing (avoids flash).
  *
- * Must be used inside ProtectedRoute (or any route that guarantees the user
- * is already authenticated).
+ * Must be used inside ProtectedRoute.
  */
 export function RequireAdmin({ children }: ProtectedRouteProps) {
   const { data: me, isLoading } = useGetMe();

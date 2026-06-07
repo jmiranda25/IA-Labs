@@ -1,38 +1,18 @@
-const CLERK_API = "https://api.clerk.com/v1";
-
+/**
+ * sendEmail — stub for transactional email.
+ *
+ * Replace with a real provider (Resend, SendGrid, Nodemailer, etc.) by reading
+ * SMTP_* or RESEND_API_KEY from env and sending via their SDK here.
+ * The function is intentionally non-fatal: a failure must never interrupt a request.
+ */
 export async function sendEmail(params: {
-  clerkId: string;
+  email: string;
   subject: string;
   body: string;
 }): Promise<void> {
-  const secretKey = process.env.CLERK_SECRET_KEY;
-  if (!secretKey) return;
-
-  try {
-    const userRes = await fetch(`${CLERK_API}/users/${params.clerkId}`, {
-      headers: { Authorization: `Bearer ${secretKey}` },
-    });
-    if (!userRes.ok) return;
-
-    const u = (await userRes.json()) as {
-      primary_email_address_id?: string | null;
-    };
-    if (!u.primary_email_address_id) return;
-
-    await fetch(`${CLERK_API}/emails`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${secretKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email_address_id: u.primary_email_address_id,
-        from_email_name: "noreply",
-        subject: params.subject,
-        body: params.body,
-      }),
-    });
-  } catch {
-    // Non-fatal: email failure must not interrupt the request
+  // Log in development so devs can see what would be sent
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[email] To: ${params.email}\nSubject: ${params.subject}\n${params.body}\n`);
   }
+  // In production, integrate a real email provider here.
 }

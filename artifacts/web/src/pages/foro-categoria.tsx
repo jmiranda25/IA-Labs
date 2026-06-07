@@ -7,7 +7,7 @@ import {
   getListForumThreadsQueryKey,
   useCreateForumThread,
 } from "@workspace/api-client-react";
-import { useUser, useAuth } from "@clerk/react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   ArrowLeft,
   Pin,
@@ -38,8 +38,7 @@ interface Props {
 
 export default function ForoCategoriaPage({ slug }: Props) {
   const [, navigate] = useLocation();
-  const { user } = useUser();
-  const { getToken } = useAuth();
+  const { isAuthenticated } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -104,7 +103,7 @@ export default function ForoCategoriaPage({ slug }: Props) {
             <p className="text-xs text-muted-foreground">Foro › {categoryName}</p>
           </div>
         </div>
-        {user && (
+        {isAuthenticated && (
           <Button size="sm" onClick={() => setOpen(true)} className="gap-2">
             <PlusCircle className="h-4 w-4" />
             Nuevo tema
@@ -131,7 +130,7 @@ export default function ForoCategoriaPage({ slug }: Props) {
         <div className="rounded-xl border border-border bg-card p-10 text-center text-muted-foreground">
           <MessageSquare className="mx-auto h-10 w-10 mb-3 opacity-40" />
           <p>Aún no hay temas en esta categoría.</p>
-          {user && (
+          {isAuthenticated && (
             <Button size="sm" className="mt-4 gap-2" onClick={() => setOpen(true)}>
               <PlusCircle className="h-4 w-4" />
               Crear el primer tema

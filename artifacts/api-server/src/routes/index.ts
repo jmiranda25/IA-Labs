@@ -13,10 +13,10 @@ import reportsRouter from "./reports";
 import communityRouter from "./community";
 import landingRouter from "./landing";
 import storageRouter from "./storage";
-import webhooksRouter from "./webhooks";
 import seoRouter from "./seo";
 import referralsRouter from "./referrals";
 import coursesRouter from "./courses";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
@@ -25,7 +25,7 @@ router.use(healthRouter);
 router.use(publicRouter);
 router.use(ogRouter);
 router.use(communityRouter);
-router.use(webhooksRouter);
+router.use(authRouter);
 router.use(usersRouter);
 router.use(eventsRouter);
 router.use(forumRouter);

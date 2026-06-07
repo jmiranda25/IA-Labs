@@ -85,7 +85,7 @@ import {
   TrendingDown, Minus, Flag, MessageSquare, UserX, Copy, Award,
   ChevronUp, ChevronDown,
 } from "lucide-react";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLocation, useSearch } from "wouter";
 import { LandingEditor } from "@/components/admin/landing-editor";
 import { useViewMode } from "@/contexts/view-mode";
@@ -195,7 +195,8 @@ function AdminDashboard({ onDrillDown }: { onDrillDown: (tab: string) => void })
 // ── User Management (TanStack Table) ─────────────────────────────────────────
 
 function UserManagement() {
-  const { userId: currentUserId } = useAuth();
+  const { user: authUser } = useAuth();
+  const currentUserId = authUser?.id;
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -256,7 +257,7 @@ function UserManagement() {
       cell: ({ row }) => {
         const u = row.original;
         const isDisabled = !!u.disabledAt;
-        const isSelf = u.clerkId === currentUserId;
+        const isSelf = u.id === currentUserId;
         const newRole = u.role === "administrator" ? "participant" : "administrator";
         return (
           <div className="flex items-center gap-1.5 justify-end">
@@ -264,7 +265,7 @@ function UserManagement() {
               size="sm"
               variant="outline"
               className="h-7 text-xs"
-              onClick={() => setConfirmRole({ userId: u.clerkId, displayName: u.displayName, newRole })}
+              onClick={() => setConfirmRole({ userId: u.id, displayName: u.displayName, newRole })}
               data-testid={`btn-toggle-role-${u.id}`}
               disabled={isSelf}
               title={isSelf ? "No puedes modificar tu propio rol" : undefined}
@@ -276,7 +277,7 @@ function UserManagement() {
                 size="sm"
                 variant="ghost"
                 className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                onClick={() => setConfirmDisable({ userId: u.clerkId, displayName: u.displayName })}
+                onClick={() => setConfirmDisable({ userId: u.id, displayName: u.displayName })}
                 data-testid={`btn-disable-${u.id}`}
                 disabled={isSelf}
                 title={isSelf ? "No puedes desactivar tu propia cuenta" : undefined}

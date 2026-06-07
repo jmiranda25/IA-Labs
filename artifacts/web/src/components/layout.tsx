@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { UserButton } from "@clerk/react";
 import {
   useGetMe,
   useListNotifications,
@@ -18,10 +17,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Bell, Menu, LayoutDashboard, Users, Calendar, MessageSquare,
   BookOpen, ShoppingBag, MessageCircle, Settings, Shield, X,
-  BellRing, User, Eye, GraduationCap,
+  BellRing, User, Eye, GraduationCap, LogOut,
 } from "lucide-react";
 import { useEffect, useRef, useCallback } from "react";
-import { useUser } from "@clerk/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useViewMode } from "@/contexts/view-mode";
 
@@ -47,7 +46,7 @@ function NotificationBell() {
   const [open, setOpen] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const backoffRef = useRef(1000);
-  const { user } = useUser();
+  const { isAuthenticated } = useAuth();
 
   const invalidateAll = useCallback(() => {
     qc.invalidateQueries({ queryKey: getListNotificationsQueryKey({ unreadOnly: false, limit: 10 }) });
@@ -55,7 +54,7 @@ function NotificationBell() {
   }, [qc]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
 
     function connect() {
@@ -103,7 +102,7 @@ function NotificationBell() {
       eventSourceRef.current?.close();
       eventSourceRef.current = null;
     };
-  }, [user, invalidateAll]);
+  }, [isAuthenticated, invalidateAll]);
 
   const unread = unreadData?.count ?? notifsData?.unreadCount ?? 0;
   const notifications = notifsData?.notifications ?? [];
@@ -169,6 +168,61 @@ function NotificationBell() {
             </span>
           </Link>
         </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function UserAvatar() {
+  const { data: me } = useGetMe();
+  const { logout } = useAuth();
+  const [, navigate] = useLocation();
+  const [open, setOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/iniciar-sesion");
+  };
+
+  const initials = me?.displayName
+    ? me.displayName.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
+    : "?";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary ring-1 ring-primary/30 hover:ring-primary/60 transition-all overflow-hidden"
+          aria-label="Menú de usuario"
+        >
+          {me?.avatarUrl ? (
+            <img src={me.avatarUrl} alt={me.displayName} className="h-full w-full object-cover" />
+          ) : (
+            initials
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-44 p-1">
+        <Link href="/perfil" onClick={() => setOpen(false)}>
+          <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted transition-colors">
+            <User className="h-4 w-4" />
+            Mi perfil
+          </button>
+        </Link>
+        <Link href="/cuenta" onClick={() => setOpen(false)}>
+          <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted transition-colors">
+            <Settings className="h-4 w-4" />
+            Cuenta
+          </button>
+        </Link>
+        <div className="my-1 border-t border-border" />
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Cerrar sesión
+        </button>
       </PopoverContent>
     </Popover>
   );
@@ -311,13 +365,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 )}
               </div>
             </Link>
-            <UserButton
-              userProfileMode="navigation"
-              userProfileUrl={`${basePath}/cuenta`}
-              appearance={{
-                elements: { avatarBox: "h-7 w-7" },
-              }}
-            />
+            <UserAvatar />
           </div>
         </header>
 

@@ -1,11 +1,16 @@
-import { useClerk } from "@clerk/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import { XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function RechazadoPage() {
-  const { signOut } = useClerk();
+  const { logout } = useAuth();
   const [, navigate] = useLocation();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -30,17 +35,10 @@ export default function RechazadoPage() {
         </div>
 
         <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
-          <Button
-            onClick={() => navigate("/")}
-            className="w-full sm:w-auto"
-          >
+          <Button onClick={() => navigate("/")} className="w-full sm:w-auto">
             Reintentar acceso
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => signOut({ redirectUrl: "/" })}
-            className="w-full sm:w-auto"
-          >
+          <Button variant="outline" onClick={handleLogout} className="w-full sm:w-auto">
             Cerrar sesión
           </Button>
         </div>
