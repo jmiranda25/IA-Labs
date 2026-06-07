@@ -1,0 +1,20 @@
+FROM node:20-alpine
+
+RUN npm install -g pnpm@9
+
+WORKDIR /app
+
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+
+COPY lib/ ./lib/
+COPY artifacts/api-server/ ./artifacts/api-server/
+
+RUN pnpm install --frozen-lockfile
+
+RUN pnpm --filter @workspace/api-server build
+
+EXPOSE 8080
+
+CMD ["pnpm", "--filter", "@workspace/api-server", "start"]
