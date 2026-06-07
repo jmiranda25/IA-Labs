@@ -30,5 +30,12 @@
       "tag": "20260607000000_add_auth_tables",
       "breakpoints": true
     }
+    ,{
+      "idx": 4,
+      "version": "7",
+      "when": 1780876800000,
+      "tag": "20260608000000_add_missing_schema",
+      "breakpoints": true
+    }
   ]
 }

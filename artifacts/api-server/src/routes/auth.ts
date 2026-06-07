@@ -77,103 +77,113 @@ async function uniqueUsername(preferred: string): Promise<string> {
 
 // ── POST /api/auth/register ───────────────────────────────────────────────────
 router.post("/auth/register", authLimiter, async (req, res) => {
-  const parsed = registerSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Datos inválidos", details: parsed.error.issues });
-    return;
+  try {
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Datos inválidos", details: parsed.error.issues });
+      return;
+    }
+
+    const { email, password, displayName } = parsed.data;
+    const normalizedEmail = email.toLowerCase();
+
+    const existing = await db.query.usersTable.findFirst({
+      where: eq(usersTable.email, normalizedEmail),
+      columns: { id: true },
+    });
+
+    if (existing) {
+      res.status(409).json({ error: "Este email ya está en uso" });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const userId = randomUUID();
+    const isBootstrapAdmin = BOOTSTRAP_ADMIN_EMAILS.has(normalizedEmail);
+    const username = await uniqueUsername(displayName);
+
+    const [user] = await db
+      .insert(usersTable)
+      .values({
+        id: userId,
+        clerkId: userId, // reuse id field for native-auth users
+        email: normalizedEmail,
+        username,
+        displayName,
+        passwordHash,
+        role: isBootstrapAdmin ? "administrator" : "participant",
+        status: isBootstrapAdmin ? "active" : "pending",
+        skills: [],
+      })
+      .returning();
+
+    const { accessToken, refreshToken } = await issueTokenPair(
+      user.id,
+      user.email!,
+      user.role
+    );
+
+    res.status(201).json({ user, accessToken, refreshToken });
+  } catch (err) {
+    console.error("POST /auth/register error:", (err as Error)?.message ?? err);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
-
-  const { email, password, displayName } = parsed.data;
-  const normalizedEmail = email.toLowerCase();
-
-  const existing = await db.query.usersTable.findFirst({
-    where: eq(usersTable.email, normalizedEmail),
-    columns: { id: true },
-  });
-
-  if (existing) {
-    res.status(409).json({ error: "Este email ya está en uso" });
-    return;
-  }
-
-  const passwordHash = await bcrypt.hash(password, 12);
-  const userId = randomUUID();
-  const isBootstrapAdmin = BOOTSTRAP_ADMIN_EMAILS.has(normalizedEmail);
-  const username = await uniqueUsername(displayName);
-
-  const [user] = await db
-    .insert(usersTable)
-    .values({
-      id: userId,
-      clerkId: userId, // reuse id field for native-auth users
-      email: normalizedEmail,
-      username,
-      displayName,
-      passwordHash,
-      role: isBootstrapAdmin ? "administrator" : "participant",
-      status: isBootstrapAdmin ? "active" : "pending",
-      skills: [],
-    })
-    .returning();
-
-  const { accessToken, refreshToken } = await issueTokenPair(
-    user.id,
-    user.email!,
-    user.role
-  );
-
-  res.status(201).json({ user, accessToken, refreshToken });
 });
 
 // ── POST /api/auth/login ──────────────────────────────────────────────────────
 router.post("/auth/login", authLimiter, async (req, res) => {
-  const parsed = loginSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Datos inválidos" });
-    return;
+  try {
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Datos inválidos" });
+      return;
+    }
+
+    const { email, password } = parsed.data;
+    const normalizedEmail = email.toLowerCase();
+
+    const user = await db.query.usersTable.findFirst({
+      where: eq(usersTable.email, normalizedEmail),
+    });
+
+    if (!user || !user.passwordHash) {
+      // Constant-time rejection to prevent user enumeration
+      await bcrypt.hash(password, 12);
+      res.status(401).json({ error: "Credenciales inválidas" });
+      return;
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      res.status(401).json({ error: "Credenciales inválidas" });
+      return;
+    }
+
+    // Bootstrap admin self-heal on every login
+    let effectiveUser = user;
+    if (
+      BOOTSTRAP_ADMIN_EMAILS.has(normalizedEmail) &&
+      (user.role !== "administrator" || user.status !== "active")
+    ) {
+      const [updated] = await db
+        .update(usersTable)
+        .set({ status: "active", role: "administrator", updatedAt: new Date() })
+        .where(eq(usersTable.id, user.id))
+        .returning();
+      effectiveUser = updated;
+    }
+
+    const { accessToken, refreshToken } = await issueTokenPair(
+      effectiveUser.id,
+      effectiveUser.email!,
+      effectiveUser.role
+    );
+
+    res.json({ user: effectiveUser, accessToken, refreshToken });
+  } catch (err) {
+    console.error("POST /auth/login error:", (err as Error)?.message ?? err);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
-
-  const { email, password } = parsed.data;
-  const normalizedEmail = email.toLowerCase();
-
-  const user = await db.query.usersTable.findFirst({
-    where: eq(usersTable.email, normalizedEmail),
-  });
-
-  if (!user || !user.passwordHash) {
-    // Constant-time rejection to prevent user enumeration
-    await bcrypt.hash(password, 12);
-    res.status(401).json({ error: "Credenciales inválidas" });
-    return;
-  }
-
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
-    res.status(401).json({ error: "Credenciales inválidas" });
-    return;
-  }
-
-  // Bootstrap admin self-heal on every login
-  let effectiveUser = user;
-  if (
-    BOOTSTRAP_ADMIN_EMAILS.has(normalizedEmail) &&
-    (user.role !== "administrator" || user.status !== "active")
-  ) {
-    const [updated] = await db
-      .update(usersTable)
-      .set({ status: "active", role: "administrator", updatedAt: new Date() })
-      .where(eq(usersTable.id, user.id))
-      .returning();
-    effectiveUser = updated;
-  }
-
-  const { accessToken, refreshToken } = await issueTokenPair(
-    effectiveUser.id,
-    effectiveUser.email!,
-    effectiveUser.role
-  );
-
-  res.json({ user: effectiveUser, accessToken, refreshToken });
 });
 
 // ── POST /api/auth/refresh ────────────────────────────────────────────────────

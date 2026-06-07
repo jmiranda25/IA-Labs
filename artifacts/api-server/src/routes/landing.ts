@@ -92,21 +92,26 @@ const SEED_DEFAULTS: Record<string, { title: string | null; subtitle: string | n
 // ── Public: GET /landing/content ─────────────────────────────────────────────
 
 router.get("/landing/content", async (req, res) => {
-  const preview = req.query.preview === "1";
-  const now = Date.now();
+  try {
+    const preview = req.query.preview === "1";
+    const now = Date.now();
 
-  if (!preview && cache && cache.expiresAt > now) {
-    res.json(cache.data);
-    return;
+    if (!preview && cache && cache.expiresAt > now) {
+      res.json(cache.data);
+      return;
+    }
+
+    const data = await fetchContent();
+
+    if (!preview) {
+      cache = { data, expiresAt: now + 60_000 };
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error("GET /landing/content error:", (err as Error)?.message ?? err);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
-
-  const data = await fetchContent();
-
-  if (!preview) {
-    cache = { data, expiresAt: now + 60_000 };
-  }
-
-  res.json(data);
 });
 
 // ── Admin: reorder sections (must come before /:id to avoid route conflict) ───
