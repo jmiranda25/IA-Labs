@@ -1,8 +1,11 @@
 import "./env"; // validate env vars at startup — throws loudly if anything is missing
 import app from "./app";
 import { logger } from "./lib/logger";
-import { db, usersTable } from "@workspace/db";
+import { db, pool, usersTable } from "@workspace/db";
 import { and, eq, notInArray } from "drizzle-orm";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const rawPort = process.env["PORT"];
 
@@ -45,18 +48,26 @@ async function fixSeedAdminRoles() {
   }
 }
 
-fixSeedAdminRoles()
-  .then(() => {
-    app.listen(port, (err) => {
-      if (err) {
-        logger.error({ err }, "Error listening on port");
-        process.exit(1);
-      }
+async function start() {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const migrationsFolder = path.resolve(__dirname, "../../../../lib/db/migrations");
 
-      logger.info({ port }, "Server listening");
-    });
-  })
-  .catch((err) => {
-    logger.error({ err }, "Startup migration failed");
-    process.exit(1);
+  await migrate(db, { migrationsFolder });
+  logger.info("Migrations applied successfully");
+
+  await fixSeedAdminRoles();
+
+  app.listen(port, (err) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
+
+    logger.info({ port }, "Server listening");
   });
+}
+
+start().catch((err) => {
+  logger.error({ err }, "Startup failed");
+  process.exit(1);
+});
