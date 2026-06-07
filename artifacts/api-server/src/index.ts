@@ -58,7 +58,12 @@ async function start() {
   await migrate(db, { migrationsFolder });
   logger.info("Migrations applied successfully");
 
-  await fixSeedAdminRoles();
+  try {
+    await fixSeedAdminRoles();
+  } catch (err) {
+    logger.warn({ err }, "fixSeedAdminRoles failed — skipping, server will still start");
+    console.warn("fixSeedAdminRoles error:", (err as Error)?.message ?? err);
+  }
 
   app.listen(port, (err) => {
     if (err) {
