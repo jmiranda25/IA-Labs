@@ -49,9 +49,12 @@ async function fixSeedAdminRoles() {
 }
 
 async function start() {
+  // __dirname = /app/artifacts/api-server/dist at runtime (esbuild output)
+  // 3 levels up reaches /app/, then lib/db/migrations
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const migrationsFolder = path.resolve(__dirname, "../../../../lib/db/migrations");
+  const migrationsFolder = path.resolve(__dirname, "../../../lib/db/migrations");
 
+  logger.info({ migrationsFolder }, "Running migrations");
   await migrate(db, { migrationsFolder });
   logger.info("Migrations applied successfully");
 
@@ -69,5 +72,6 @@ async function start() {
 
 start().catch((err) => {
   logger.error({ err }, "Startup failed");
+  console.error("STARTUP ERROR:", err?.message ?? err);
   process.exit(1);
 });
