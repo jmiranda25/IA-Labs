@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { apiUrl } from "@/lib/api-base";
 import { Layout } from "@/components/layout";
 import {
   useGetMe,
@@ -1014,7 +1015,7 @@ function PendingUsersTab() {
 
   async function authFetch(url: string, opts: RequestInit = {}) {
     const token = await getToken();
-    return fetch(url, {
+    return fetch(apiUrl(url), {
       ...opts,
       headers: {
         "Content-Type": "application/json",
@@ -1162,7 +1163,7 @@ function ReferralLinksTab() {
 
   async function authFetch(url: string, opts: RequestInit = {}) {
     const token = await getToken();
-    return fetch(url, {
+    return fetch(apiUrl(url), {
       ...opts,
       headers: {
         "Content-Type": "application/json",
@@ -1371,7 +1372,7 @@ function CoursesAdmin() {
 
   async function authFetch(url: string, opts: RequestInit = {}) {
     const token = await getToken();
-    return fetch(url, {
+    return fetch(apiUrl(url), {
       ...opts,
       headers: {
         "Content-Type": "application/json",
@@ -1504,7 +1505,7 @@ function CoursesAdmin() {
       const token = await getToken();
       const fd = new FormData();
       fd.append("cover", coverFile);
-      const res = await fetch(`/api/admin/courses/${coverUploadId}/cover`, {
+      const res = await fetch(apiUrl(`/api/admin/courses/${coverUploadId}/cover`), {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: fd,

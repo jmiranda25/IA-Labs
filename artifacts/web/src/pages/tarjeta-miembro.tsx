@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { apiUrl } from "@/lib/api-base";
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { toPng } from "html-to-image";
@@ -70,8 +71,8 @@ export default function TarjetaMiembroPage({ username }: { username: string }) {
     setNotFound(false);
 
     Promise.all([
-      fetch(`${basePath}/api/public/users/${encodeURIComponent(username)}`),
-      fetch(`${basePath}/api/public/users/${encodeURIComponent(username)}/stats`),
+      fetch(apiUrl(`/api/public/users/${encodeURIComponent(username)}`)),
+      fetch(apiUrl(`/api/public/users/${encodeURIComponent(username)}/stats`)),
     ])
       .then(async ([cardRes, statsRes]) => {
         if (cancelled) return;
@@ -121,7 +122,7 @@ export default function TarjetaMiembroPage({ username }: { username: string }) {
       toast.success("¡Tarjeta descargada!");
     } catch {
       // Final fallback: open OG image in new tab (iOS long-press to save)
-      const ogUrl = `${window.location.origin}${basePath}/api/og/m/${encodeURIComponent(username)}`;
+      const ogUrl = apiUrl(`/api/og/m/${encodeURIComponent(username)}`);
       window.open(ogUrl, "_blank");
       toast.info("Mantén pulsada la imagen para guardarla.");
     } finally {

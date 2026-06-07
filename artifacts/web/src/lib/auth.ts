@@ -6,6 +6,7 @@
  * must log in again. For persistent sessions, consider an httpOnly cookie
  * approach on the backend.
  */
+import { apiUrl } from "./api-base";
 
 let _accessToken: string | null = null;
 let _refreshToken: string | null = null;
@@ -63,7 +64,7 @@ export async function getValidAccessToken(): Promise<string | null> {
 
   _refreshPromise = (async () => {
     try {
-      const res = await fetch("/api/auth/refresh", {
+      const res = await fetch(apiUrl("/api/auth/refresh"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken: _refreshToken }),

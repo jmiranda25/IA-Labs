@@ -48,6 +48,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+import { apiUrl } from "@/lib/api-base";
+
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export default function PerfilPage() {
@@ -151,7 +153,7 @@ export default function PerfilPage() {
         setIsUploading(true);
         const fd = new FormData();
         fd.append("avatar", avatarFile);
-        const res = await fetch(`${basePath}/api/users/me/avatar`, {
+        const res = await fetch(apiUrl("/api/users/me/avatar"), {
           method: "POST",
           body: fd,
           credentials: "include",
@@ -473,7 +475,7 @@ function CardVisibilityToggle({ username, isPublic: initialIsPublic }: { usernam
     const next = !isPublic;
     setSaving(true);
     try {
-      const res = await fetch(`${basePath}/api/users/me/card-visibility`, {
+      const res = await fetch(apiUrl("/api/users/me/card-visibility"), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

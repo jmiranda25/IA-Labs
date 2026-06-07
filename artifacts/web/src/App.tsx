@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { queryClient } from "@/lib/queryClient";
 import { ViewModeProvider } from "@/contexts/view-mode";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { apiUrl } from "@/lib/api-base";
 
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
@@ -278,7 +279,7 @@ function ReferralRedeemer() {
     (async () => {
       try {
         const token = await getToken();
-        const res = await fetch("/api/referrals/use", {
+        const res = await fetch(apiUrl("/api/referrals/use"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

@@ -13,6 +13,7 @@ import {
   getValidAccessToken,
   setTokens,
 } from "@/lib/auth";
+import { apiUrl } from "@/lib/api-base";
 
 export type AuthUser = {
   id: string;
@@ -76,7 +77,7 @@ export function AuthProvider({ children }: Props) {
           setIsLoading(false);
           return;
         }
-        return fetch("/api/users/me", {
+        return fetch(apiUrl("/api/users/me"), {
           headers: { Authorization: `Bearer ${validToken}` },
         }).then(async (res) => {
           if (res.ok) {
@@ -91,7 +92,7 @@ export function AuthProvider({ children }: Props) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch("/api/auth/login", {
+    const res = await fetch(apiUrl("/api/auth/login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -114,7 +115,7 @@ export function AuthProvider({ children }: Props) {
 
   const register = useCallback(
     async (email: string, password: string, displayName: string) => {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch(apiUrl("/api/auth/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, displayName }),
@@ -140,7 +141,7 @@ export function AuthProvider({ children }: Props) {
   const logout = useCallback(async () => {
     try {
       const token = getAccessToken();
-      await fetch("/api/auth/logout", {
+      await fetch(apiUrl("/api/auth/logout"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
