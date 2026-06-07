@@ -112,7 +112,7 @@ router.post("/auth/register", authLimiter, async (req, res) => {
         displayName,
         passwordHash,
         role: isBootstrapAdmin ? "administrator" : "participant",
-        status: isBootstrapAdmin ? "active" : "pending",
+        status: "active", // auto-verify on registration; pending/approval flow can be re-enabled later
         skills: [],
       })
       .returning();
