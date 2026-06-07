@@ -2,6 +2,8 @@ FROM node:20-alpine
 
 RUN npm install -g pnpm@11
 
+ARG CACHE_BUST=1
+
 WORKDIR /app
 
 COPY pnpm-workspace.yaml ./
