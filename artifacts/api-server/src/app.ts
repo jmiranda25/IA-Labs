@@ -8,6 +8,10 @@ import { env } from "./env";
 
 const app: Express = express();
 
+// Trust Railway's reverse proxy so express-rate-limit sees the real client IP
+// from X-Forwarded-For instead of always blocking the proxy's IP.
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,
