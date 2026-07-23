@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { z } from "zod/v4";
 import bcrypt from "bcryptjs";
-import { db, usersTable, refreshTokensTable } from "@workspace/db";
-import { eq, and, gt } from "drizzle-orm";
-import { randomUUID, createHash } from "crypto";
+import { db, usersTable, refreshTokensTable, passwordResetTokensTable } from "@workspace/db";
+import { eq, and, gt, isNull } from "drizzle-orm";
+import { randomUUID, randomBytes, createHash } from "crypto";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "@workspace/auth";
 import rateLimit from "express-rate-limit";
+import { sendEmail } from "../lib/sendEmail";
 
 const router = Router();
 
@@ -253,6 +254,113 @@ router.post("/auth/logout", async (req, res) => {
       .catch(() => {});
   }
   res.json({ ok: true });
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+});
+
+const GENERIC_FORGOT_MESSAGE =
+  "Si existe una cuenta con ese email, te enviamos instrucciones para restablecer tu contraseña.";
+
+// ── POST /api/auth/forgot-password ────────────────────────────────────────────
+router.post("/auth/forgot-password", authLimiter, async (req, res) => {
+  try {
+    const parsed = forgotPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Email inválido" });
+      return;
+    }
+
+    const normalizedEmail = parsed.data.email.toLowerCase();
+
+    const user = await db.query.usersTable.findFirst({
+      where: eq(usersTable.email, normalizedEmail),
+      columns: { id: true, email: true, displayName: true, passwordHash: true },
+    });
+
+    // Always return the same response, whether or not the account exists,
+    // so this endpoint can't be used to enumerate registered emails.
+    if (user?.passwordHash) {
+      const rawToken = randomBytes(32).toString("hex");
+      const tokenHash = hashToken(rawToken);
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      await db.insert(passwordResetTokensTable).values({
+        id: randomUUID(),
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+      });
+
+      const resetUrl = `${process.env.FRONTEND_URL ?? ""}/recuperar/${rawToken}`;
+      void sendEmail({
+        email: user.email!,
+        subject: "Restablece tu contraseña — IA Labs",
+        body: `Hola ${user.displayName},\n\nRecibimos una solicitud para restablecer tu contraseña.\n\nHaz clic en el siguiente enlace para crear una nueva contraseña (válido por 1 hora):\n${resetUrl}\n\nSi no solicitaste esto, puedes ignorar este correo — tu contraseña actual sigue funcionando.\n\nEl equipo de IA Labs`,
+      });
+    }
+
+    res.json({ message: GENERIC_FORGOT_MESSAGE });
+  } catch (err) {
+    console.error("POST /auth/forgot-password error:", (err as Error)?.message ?? err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// ── POST /api/auth/reset-password ─────────────────────────────────────────────
+router.post("/auth/reset-password", authLimiter, async (req, res) => {
+  try {
+    const parsed = resetPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Datos inválidos" });
+      return;
+    }
+
+    const { token, password } = parsed.data;
+    const tokenHash = hashToken(token);
+
+    const resetToken = await db.query.passwordResetTokensTable.findFirst({
+      where: and(
+        eq(passwordResetTokensTable.tokenHash, tokenHash),
+        isNull(passwordResetTokensTable.usedAt),
+        gt(passwordResetTokensTable.expiresAt, new Date())
+      ),
+    });
+
+    if (!resetToken) {
+      res.status(400).json({ error: "El enlace es inválido o ya expiró" });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await db
+      .update(usersTable)
+      .set({ passwordHash, updatedAt: new Date() })
+      .where(eq(usersTable.id, resetToken.userId));
+
+    await db
+      .update(passwordResetTokensTable)
+      .set({ usedAt: new Date() })
+      .where(eq(passwordResetTokensTable.id, resetToken.id));
+
+    // Invalidate all existing sessions so a stolen/old session can't outlive the reset.
+    await db
+      .update(refreshTokensTable)
+      .set({ revokedAt: new Date() })
+      .where(eq(refreshTokensTable.userId, resetToken.userId));
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("POST /auth/reset-password error:", (err as Error)?.message ?? err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 });
 
 export default router;

@@ -8,6 +8,8 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().default(8080),
   FRONTEND_URL: z.string().optional(),
   ADMIN_BOOTSTRAP_EMAILS: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
   DEFAULT_OBJECT_STORAGE_BUCKET_ID: z.string().optional(),
   PRIVATE_OBJECT_DIR: z.string().optional(),
   PUBLIC_OBJECT_SEARCH_PATHS: z.string().optional(),

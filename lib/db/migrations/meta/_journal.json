@@ -37,5 +37,12 @@
       "tag": "20260608000000_add_missing_schema",
       "breakpoints": true
     }
+    ,{
+      "idx": 5,
+      "version": "7",
+      "when": 1784995200000,
+      "tag": "20260723140000_add_password_reset_tokens",
+      "breakpoints": true
+    }
   ]
 }

@@ -10,3 +10,4 @@ export * from "./landing";
 export * from "./referrals";
 export * from "./courses";
 export * from "./refresh-tokens";
+export * from "./password-reset-tokens";

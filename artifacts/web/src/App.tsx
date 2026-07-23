@@ -123,7 +123,10 @@ function SignInPage() {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="password" className="text-sm font-medium">Contraseña</label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium">Contraseña</label>
+            <a href="/recuperar" className="text-xs text-primary underline">¿Olvidaste tu contraseña?</a>
+          </div>
           <input
             id="password"
             type="password"
@@ -239,22 +242,169 @@ function SignUpPage() {
   );
 }
 
-function RecuperarPage() {
+function ForgotPasswordForm() {
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch(apiUrl("/api/auth/forgot-password"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error ?? "Error al procesar la solicitud");
+      }
+      setSent(true);
+    } catch (err: any) {
+      setError(err.message ?? "Error al procesar la solicitud");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (sent) {
+    return (
+      <div className="flex flex-col gap-4 w-full max-w-sm mx-auto text-center">
+        <h1 className="text-2xl font-semibold">Revisa tu correo</h1>
+        <p className="text-sm text-muted-foreground">
+          Si existe una cuenta con ese email, te enviamos instrucciones para restablecer tu contraseña.
+        </p>
+        <a href="/iniciar-sesion" className="text-sm text-primary underline">
+          Volver al inicio de sesión
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm mx-auto">
+      <h1 className="text-2xl font-semibold text-center">Recuperar contraseña</h1>
+      <p className="text-sm text-muted-foreground text-center">
+        Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña.
+      </p>
+      {error && (
+        <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
+          {error}
+        </p>
+      )}
+      <div className="flex flex-col gap-1">
+        <label htmlFor="email" className="text-sm font-medium">Email</label>
+        <input
+          id="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="rounded-md border border-input bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={submitting}
+        className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+      >
+        {submitting ? "Enviando…" : "Enviar enlace"}
+      </button>
+    </form>
+  );
+}
+
+function ResetPasswordForm({ token }: { token: string }) {
+  const [, navigate] = useLocation();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch(apiUrl("/api/auth/reset-password"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error ?? "Error al restablecer la contraseña");
+      }
+      navigate("/iniciar-sesion");
+    } catch (err: any) {
+      setError(err.message ?? "Error al restablecer la contraseña");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm mx-auto">
+      <h1 className="text-2xl font-semibold text-center">Crear nueva contraseña</h1>
+      {error && (
+        <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
+          {error}
+        </p>
+      )}
+      <div className="flex flex-col gap-1">
+        <label htmlFor="password" className="text-sm font-medium">Nueva contraseña</label>
+        <input
+          id="password"
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={8}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="rounded-md border border-input bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        <p className="text-xs text-muted-foreground">Mínimo 8 caracteres</p>
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar contraseña</label>
+        <input
+          id="confirmPassword"
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={8}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className="rounded-md border border-input bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={submitting}
+        className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+      >
+        {submitting ? "Guardando…" : "Restablecer contraseña"}
+      </button>
+    </form>
+  );
+}
+
+function RecuperarPage({ token }: { token?: string }) {
   return (
     <AuthLayout
       switchText="¿Recuerdas tu contraseña?"
       switchLinkText="Iniciar sesión"
       switchHref="/iniciar-sesion"
     >
-      <div className="flex flex-col gap-4 w-full max-w-sm mx-auto text-center">
-        <h1 className="text-2xl font-semibold">Recuperar contraseña</h1>
-        <p className="text-sm text-muted-foreground">
-          Para restablecer tu contraseña, contacta al administrador de la plataforma.
-        </p>
-        <a href="/iniciar-sesion" className="text-sm text-primary underline">
-          Volver al inicio de sesión
-        </a>
-      </div>
+      {token ? <ResetPasswordForm token={token} /> : <ForgotPasswordForm />}
     </AuthLayout>
   );
 }
@@ -314,7 +464,9 @@ function AppRoutes() {
 
                 <Route path="/iniciar-sesion/*?" component={SignInPage} />
                 <Route path="/registro/*?" component={SignUpPage} />
-                <Route path="/recuperar/*?" component={RecuperarPage} />
+                <Route path="/recuperar/:token?">
+                  {(params) => <RecuperarPage token={params.token as string | undefined} />}
+                </Route>
 
                 <Route path="/sign-in/*?">
                   <Redirect to="/iniciar-sesion" />
