@@ -7,6 +7,7 @@ import { randomUUID, randomBytes, createHash } from "crypto";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "@workspace/auth";
 import rateLimit from "express-rate-limit";
 import { sendEmail } from "../lib/sendEmail";
+import { notify } from "../lib/notify";
 
 const router = Router();
 
@@ -123,6 +124,34 @@ router.post("/auth/register", authLimiter, async (req, res) => {
       user.email!,
       user.role
     );
+
+    if (!isBootstrapAdmin) {
+      const admins = await db.query.usersTable.findMany({
+        where: eq(usersTable.role, "administrator"),
+        columns: { id: true, email: true },
+      });
+
+      await Promise.all(
+        admins.map((admin) =>
+          notify({
+            recipientId: admin.id,
+            type: "admin_action",
+            title: "Nueva solicitud de registro",
+            body: `${displayName} (${normalizedEmail}) se registró y espera aprobación.`,
+            link: "/admin?tab=pendientes",
+          })
+        )
+      );
+
+      for (const admin of admins) {
+        if (!admin.email) continue;
+        void sendEmail({
+          email: admin.email,
+          subject: "Nueva solicitud de registro — IA Labs",
+          body: `Hola,\n\n${displayName} (${normalizedEmail}) se acaba de registrar en IA Labs y está esperando aprobación.\n\nRevísalo aquí: ${process.env.FRONTEND_URL ?? ""}/admin?tab=pendientes\n\nEl equipo de IA Labs`,
+        });
+      }
+    }
 
     res.status(201).json({ user, accessToken, refreshToken });
   } catch (err) {
