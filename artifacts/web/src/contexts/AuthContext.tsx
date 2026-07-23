@@ -30,7 +30,7 @@ type AuthContextValue = {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
+  register: (email: string, password: string, displayName: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
   getToken: () => Promise<string | null>;
 };
@@ -134,6 +134,7 @@ export function AuthProvider({ children }: Props) {
 
       setTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
+      return data.user;
     },
     []
   );

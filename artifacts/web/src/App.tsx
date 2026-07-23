@@ -167,8 +167,8 @@ function SignUpPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await register(email, password, displayName);
-      navigate("/pendiente");
+      const user = await register(email, password, displayName);
+      navigate(user.status === "pending" ? "/pendiente" : "/dashboard");
     } catch (err: any) {
       setError(err.message ?? "Error al crear la cuenta");
     } finally {
