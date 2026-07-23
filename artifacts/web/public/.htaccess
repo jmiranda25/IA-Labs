@@ -1,0 +1,22 @@
+# Never cache the SPA shell — it must always be revalidated so browsers pick
+# up the new hashed asset filenames immediately after a deploy.
+<IfModule mod_headers.c>
+  <FilesMatch "^index\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # Hashed build assets are content-addressed and safe to cache forever.
+  <FilesMatch "\.(js|css|woff2?|svg|webp|jpg|jpeg|png|gif|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# SPA fallback: unknown routes serve index.html (client-side router takes over).
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
